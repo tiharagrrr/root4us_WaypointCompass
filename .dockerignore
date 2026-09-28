@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/coverage
+**/.git
+**/.env
+**/.env.*
+!.env.example
+**/*.log
+**/*.tsbuildinfo
+apps/backend/src/generated
+apps/*/pnpm-lock.yaml
+apps/*/pnpm-workspace.yaml
+datathon
+docs
+.github

@@ -1,0 +1,23 @@
+# Normalise line endings; shell scripts and Docker files must stay LF
+* text=auto eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.pkl binary
+*.joblib binary
+
+# Lockfiles and generated migrations: collapse in diffs
+pnpm-lock.yaml linguist-generated=true -diff
+apps/backend/drizzle/meta/** linguist-generated=true
+
+# Notebooks count as Python for repo language stats
+*.ipynb linguist-language=Python

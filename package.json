@@ -1,0 +1,24 @@
+{
+  "name": "waypoint",
+  "private": true,
+  "description": "Waypoint Group delivery planning system (Tech-Triathlon 2026)",
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @waypoint/shared build && pnpm --parallel --filter @waypoint/shared --filter @waypoint/backend --filter @waypoint/frontend dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "db:generate": "pnpm --filter @waypoint/backend db:generate",
+    "db:migrate": "pnpm --filter @waypoint/backend db:migrate",
+    "db:seed": "pnpm --filter @waypoint/backend db:seed",
+    "db:studio": "pnpm --filter @waypoint/backend db:studio",
+    "infra:up": "docker compose up -d postgres redis minio minio-init",
+    "stack:up": "docker compose up --build",
+    "stack:down": "docker compose down",
+    "stack:reset": "docker compose down -v"
+  }
+}

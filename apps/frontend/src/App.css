@@ -1,0 +1,48 @@
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: left;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+.badge-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge-down {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+}
+.roles a {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 44px;
+  padding: 16px;
+  border: 1px solid #d4d4d8;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+.roles a:hover,
+.roles a:focus-visible {
+  border-color: #0f766e;
+}
+
+.muted {
+  color: #71717a;
+}

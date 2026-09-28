@@ -1,0 +1,207 @@
+# Waypoint: complete stack for judges and local work.
+#
+#   cp .env.example .env      # optional, defaults work without it
+#   docker compose up --build # web on http://localhost:8080
+#
+# Start order: postgres -> seed (migrations + datasets, one-shot) -> api/worker -> web.
+# Observability (Prometheus, Loki, Alloy, Grafana) is opt-in:
+#   docker compose --profile observability up
+name: waypoint
+
+x-api-image: &api-image
+  image: waypoint-api:local
+  build:
+    context: .
+    dockerfile: apps/backend/Dockerfile
+
+x-api-env: &api-env
+  NODE_ENV: production
+  PORT: "3000"
+  DATABASE_URL: postgres://${POSTGRES_USER:-waypoint}:${POSTGRES_PASSWORD:-waypoint}@postgres:5432/${POSTGRES_DB:-waypoint}
+  REDIS_URL: redis://redis:6379
+  APP_URL: ${APP_URL:-http://localhost:8080}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-to-a-long-random-string}
+  SESSION_EXPIRES_IN_DAYS: ${SESSION_EXPIRES_IN_DAYS:-7}
+  S3_ENDPOINT: http://minio:9000
+  S3_REGION: ${S3_REGION:-us-east-1}
+  S3_BUCKET: ${S3_BUCKET:-pod}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-waypoint}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
+  S3_FORCE_PATH_STYLE: "true"
+  DEMO_CLOCK: ${DEMO_CLOCK:-}
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-waypoint}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-waypoint}
+      POSTGRES_DB: ${POSTGRES_DB:-waypoint}
+      TZ: UTC
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # S3-compatible storage for proof-of-delivery photos and signatures.
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-waypoint}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: creates the private POD bucket.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
+        mc mb --ignore-existing "local/$${S3_BUCKET}" &&
+        mc anonymous set none "local/$${S3_BUCKET}"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-waypoint}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
+      S3_BUCKET: ${S3_BUCKET:-pod}
+    restart: "no"
+
+  # One-shot: applies migrations, then seeds the shared datasets (idempotent).
+  seed:
+    <<: *api-image
+    command: ["sh", "-c", "node dist/database/migrate.js && node dist/database/seed.js"]
+    environment: *api-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    restart: "no"
+
+  api:
+    <<: *api-image
+    restart: unless-stopped
+    environment: *api-env
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+
+  # Background jobs (allocation runs, notifications, outbox relay).
+  worker:
+    <<: *api-image
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    environment: *api-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  # Caddy: serves the React PWA and proxies /api to the API on one origin.
+  web:
+    image: waypoint-web:local
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    restart: unless-stopped
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+      API_UPSTREAM: api:3000
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - caddydata:/data
+    depends_on:
+      api:
+        condition: service_healthy
+
+  # --- Observability (profile: observability) --------------------------------
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    profiles: [observability]
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  loki:
+    image: grafana/loki:3.5.3
+    profiles: [observability]
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
+
+  alloy:
+    image: grafana/alloy:v1.10.2
+    profiles: [observability]
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    volumes:
+      - ./deploy/observability/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:12.1.1
+    profiles: [observability]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+  caddydata:
+  grafanadata:
