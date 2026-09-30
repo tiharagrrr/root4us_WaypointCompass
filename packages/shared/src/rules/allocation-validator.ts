@@ -2,7 +2,7 @@ import {
   MAX_TRIPS_PER_VEHICLE_PER_DAY,
   type Brand,
   type ParkingConstraint,
-  type TempRequirement,
+  type TempClass,
   type VehicleTemp,
   type VehicleType,
 } from '../domain';
@@ -48,7 +48,7 @@ export interface ValidatorOrder {
   brand: Brand;
   district: string;
   depot: string;
-  tempRequirement: TempRequirement;
+  tempClass: TempClass;
   parkingConstraint: ParkingConstraint;
   weightKg: number;
   volumeM3: number;
@@ -89,14 +89,14 @@ export function validateTrip(
         message: `A trip serves one brand and district (${first.brand}/${first.district}); ${order.ref} is ${order.brand}/${order.district}`,
       });
     }
-    if (order.tempRequirement === 'chilled' && vehicle.temp !== 'reefer') {
+    if (order.tempClass === 'CHILLED' && vehicle.temp !== 'REEFER') {
       violations.push({
         ...o,
         rule: 'refrigeration',
         message: `${order.ref} is chilled but ${vehicle.id} is not refrigerated`,
       });
     }
-    if (order.parkingConstraint === 'van_only' && vehicle.type !== 'van') {
+    if (order.parkingConstraint === 'VAN_ONLY' && vehicle.type !== 'VAN') {
       violations.push({
         ...o,
         rule: 'vehicle_access',

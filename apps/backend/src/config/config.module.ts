@@ -6,6 +6,9 @@ import { validateEnv } from './env.schema';
 export const AppConfigModule = ConfigModule.forRoot({
   isGlobal: true,
   cache: true,
-  envFilePath: [resolve(process.cwd(), '.env'), resolve(__dirname, '../../../../.env')],
+  envFilePath: [
+    resolve(process.cwd(), '.env'),
+    resolve(__dirname, '../../../../.env'),
+  ],
   validate: validateEnv,
 });

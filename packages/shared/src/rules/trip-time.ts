@@ -12,7 +12,7 @@ export const DAILY_TIME_BUDGET_MIN = {
 export type BudgetWindow = keyof typeof DAILY_TIME_BUDGET_MIN;
 
 export function budgetWindowFor(brand: Brand): BudgetWindow {
-  return brand === 'Fresh' ? 'fresh' : 'styleAndTech';
+  return brand === 'FRESH' ? 'fresh' : 'styleAndTech';
 }
 
 export interface TripTimeInput {

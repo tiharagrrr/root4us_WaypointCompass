@@ -1,0 +1,23 @@
+{
+  // Hidden from the explorer and search: installed, built or generated, never edited by hand.
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/*.tsbuildinfo": true,
+    "apps/backend/drizzle/meta": true
+  },
+
+  // Config files folded under a related file: click the arrow next to it to see them.
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    "package.json": "pnpm-lock.yaml, pnpm-workspace.yaml, .nvmrc, .prettierrc, eslint.config.*, nest-cli.json, tsup.config.ts",
+    "tsconfig.json": "tsconfig.*.json",
+    ".gitignore": ".gitattributes, .dockerignore, .rgignore, .editorconfig",
+    "CLAUDE.md": "AGENTS.md, .mcp.json",
+    "docker-compose.yml": ".env, .env.example"
+  }
+}

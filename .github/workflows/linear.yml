@@ -1,0 +1,26 @@
+name: Linear
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  issue-link:
+    name: PR references a Linear issue
+    runs-on: ubuntu-latest
+    steps:
+      - name: Look for ROO-<n> in the branch, title or body
+        env:
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if printf '%s\n%s\n%s' "$BRANCH" "$TITLE" "$BODY" | grep -qiE '\bROO-[0-9]+\b'; then
+            echo "Linked to $(printf '%s\n%s\n%s' "$BRANCH" "$TITLE" "$BODY" | grep -oiE '\bROO-[0-9]+\b' | sort -u | tr '\n' ' ')"
+          else
+            echo "::error::Add the Linear issue to the branch name (feat/roo-19-...) or the PR body (Closes ROO-19)."
+            exit 1
+          fi

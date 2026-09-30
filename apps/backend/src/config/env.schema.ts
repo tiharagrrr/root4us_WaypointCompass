@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
-/** Validated at boot; see .env.example at the repo root for documentation. */
+/** Validated at boot; documented in apps/backend/.env.example. */
 export const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   PORT: z.coerce.number().int().default(3000),
   DATABASE_URL: z.url(),
   REDIS_URL: z.url(),

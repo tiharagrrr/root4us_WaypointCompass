@@ -19,13 +19,20 @@ async function bootstrap() {
 
   const openApi = new DocumentBuilder()
     .setTitle('Waypoint API')
-    .setDescription('Delivery planning for Waypoint Group (Tech-Triathlon 2026)')
+    .setDescription(
+      'Delivery planning for Waypoint Group (Tech-Triathlon 2026)',
+    )
     .setVersion('1')
     .addCookieAuth('better-auth.session_token')
     .build();
-  SwaggerModule.setup('api/docs', app, () => SwaggerModule.createDocument(app, openApi), {
-    jsonDocumentUrl: 'api/docs/openapi.json',
-  });
+  SwaggerModule.setup(
+    'api/docs',
+    app,
+    () => SwaggerModule.createDocument(app, openApi),
+    {
+      jsonDocumentUrl: 'api/docs/openapi.json',
+    },
+  );
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);

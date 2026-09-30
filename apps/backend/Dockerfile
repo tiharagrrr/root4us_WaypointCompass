@@ -11,14 +11,14 @@ COPY apps/backend/package.json apps/backend/
 
 FROM base AS build
 RUN if [ -f pnpm-lock.yaml ]; then FROZEN=--frozen-lockfile; else FROZEN=--no-frozen-lockfile; fi \
- && pnpm install $FROZEN --filter "@waypoint/backend..."
+ && pnpm install $FROZEN --filter "@waypoint/api..."
 COPY packages/shared packages/shared
 COPY apps/backend apps/backend
-RUN pnpm --filter "@waypoint/backend..." build
+RUN pnpm --filter "@waypoint/api..." build
 
 FROM base AS prod-deps
 RUN if [ -f pnpm-lock.yaml ]; then FROZEN=--frozen-lockfile; else FROZEN=--no-frozen-lockfile; fi \
- && pnpm install $FROZEN --prod --filter "@waypoint/backend..."
+ && pnpm install $FROZEN --prod --filter "@waypoint/api..."
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production
@@ -27,7 +27,6 @@ COPY --from=prod-deps --chown=node:node /repo /repo
 COPY --from=build --chown=node:node /repo/packages/shared/dist packages/shared/dist
 COPY --from=build --chown=node:node /repo/apps/backend/dist apps/backend/dist
 COPY --chown=node:node apps/backend/drizzle apps/backend/drizzle
-COPY --chown=node:node apps/backend/src/database/sql apps/backend/src/database/sql
 # Shared challenge datasets used by the seed job (SEED_DATA_DIR).
 COPY --chown=node:node data/seed data/seed
 USER node
