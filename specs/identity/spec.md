@@ -20,6 +20,7 @@ every request; the UI only reflects them.
 In:
 - BetterAuth inside the API (`apps/backend/src/modules/identity/auth/auth.ts`) with sessions in Postgres and
   the plugins username, admin, phoneNumber, the custom `loaderPin`, and bearer (off until Flutter).
+- The persona accounts and a dock tablet per depot (`src/db/seed-users.ts`, run by `pnpm db:seed`).
 - Sign-in for all five roles: email or username and password (A0), phone and SMS code (D0a, D0b), depot
   and dock PIN (L1, L1m); sign-out (D13, Switch user).
 - The API root `GET /` with each role's landing links; `/me` and the caller's devices.
@@ -41,7 +42,7 @@ Out:
 - The `deferral_reasons` table: planning owns it (`planning.ts`); only its A6 endpoint is listed here.
 - Each module's own `ScopePolicy` subclass (for example `OrderScope`): that module.
 - Pausing the offline outbox on 401 and replaying it after sign-in: sync and the web offline layer.
-- Seeded users and PINs: the master-data seed.
+- Reference data the personas point at (depots, outlets, vehicles): the master-data seed.
 
 ### Screens
 | Frame | Node | Route | Data | Actions and states |
@@ -164,7 +165,15 @@ default 10, max 100) with `meta.page { limit, offset, total }`.
 The API root as Tihara (dispatcher, all depots) carries `_links` self, me, today
 (`/api/v1/depots/PLG/days/<today>`), tomorrowPlan (`/api/v1/depots/PLG/plans/<tomorrow>`), orders
 (templated), alerts, tracking, events (`/api/v1/streams/me`) and docs. A driver's root carries myTrips, a
-loader's loadingBoard, and a store manager's myOrders and deliveries instead.
+loader's loadingBoard, and a store manager's myOrders and deliveries instead:
+
+| Role | Links besides self, me, events and docs |
+| --- | --- |
+| dispatcher | today, tomorrowPlan, orders (templated), alerts, tracking; depot PLG when the dispatcher has none |
+| driver | myTrips (`/api/v1/me/trips?date=<today>`) |
+| loader | loadingBoard (`/api/v1/depots/<depotId>/loading/runs?date=<today>`) |
+| store_manager | myOrders (`/api/v1/orders{?filter,sort,q,limit,offset}`), deliveries (`/api/v1/orders?filter[deliveryDate]=<today>`) |
+| admin | users (`/api/v1/users{?filter,q,limit,offset}`), settings (`/api/v1/settings`) |
 
 ## Services and helpers
 - Request pipeline (Step 2): BetterAuth's global AuthGuard resolves the session from the cookie
@@ -258,8 +267,12 @@ Scopes applied by every ScopePolicy, and the seeded judge accounts:
 | Driver | Trips where driverId = actor.id in the last 7 days (D10) | Aniqa Razick, +94 77 604 1932, REF-07 |
 | Driver, second story | Same rule | Dinushi Rathnayake, +94 77 555 0107, DRY-31 |
 
-Passwords come from SEED_PASSWORD. The seed creates users through BetterAuth's server API, so hashes match
-real sign-ups, and hashes PINs with the same password hasher.
+Passwords come from SEED_PASSWORD (10+ characters; unset skips the accounts). The seed creates users through
+BetterAuth's server API, so hashes match real sign-ups, and hashes PINs with the same password hasher.
+Usernames are the email's local part (rusiru.w, tihara.e, nimesha.p, harini.d) and aniqa.r and dinushi.r for
+the drivers. Harini's email is harini.d@waypoint.lk. A driver's depot is her vehicle's depot. The seed also
+registers the dock tablets dock-plg-01 (PLG) and dock-kdy-01 (KDY), so a loader can sign in before A6 exists.
+Re-running the seed keeps each id and resets role, scope, PIN and password.
 
 | Role | Screens | Sign-in method |
 | --- | --- | --- |
@@ -282,8 +295,8 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [ ] AC-IDN-09 Email sign-in opens a session
 - [ ] AC-IDN-10 A wrong password is refused
 - [ ] AC-IDN-11 Eleventh email sign-in gets 429
-- [ ] AC-IDN-12 Dispatcher root lists landing links
-- [ ] AC-IDN-13 Field roles get their landing links
+- [x] AC-IDN-12 Dispatcher root lists landing links
+- [x] AC-IDN-13 Field roles get their landing links
 - [ ] AC-IDN-14 Sign-in code reaches the demo inbox
 - [ ] AC-IDN-15 Driver signs in with the code
 - [ ] AC-IDN-16 Fourth code request gets 429
@@ -292,10 +305,10 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [ ] AC-IDN-19 D13 waits for an empty outbox
 - [ ] AC-IDN-20 Dock signs out after 20 idle minutes
 - [ ] AC-IDN-21 Switch user returns to L1
-- [ ] AC-IDN-22 /me shows role, scope and permissions
-- [ ] AC-IDN-23 A user changes their own locale
-- [ ] AC-IDN-24 /me refuses role and scope edits
-- [ ] AC-IDN-25 A device registers itself
+- [x] AC-IDN-22 /me shows role, scope and permissions
+- [x] AC-IDN-23 A user changes their own locale
+- [x] AC-IDN-24 /me refuses role and scope edits
+- [x] AC-IDN-25 A device registers itself
 - [ ] AC-IDN-26 A device saves its push subscription
 - [ ] AC-IDN-27 Admin marks a dock device
 - [ ] AC-IDN-28 Admin lists and searches users
@@ -771,6 +784,13 @@ AC-IDN-60  Routes match the permission matrix
   handler running, and the criterion keeps its wording. A route that declares none, or more than one, of
   `@RequirePermission`, `@AnyRole` and `@AllowAnonymous` also fails it; `PermissionGuard` refuses such a
   route with 403.
+- AC-IDN-13: decided. The hrefs of the field roles' links and admin's links are in the table under Endpoints;
+  owners of those screens can change them.
+- AC-IDN-56 (inbox part): decided. With DEMO_MODE=false, GET /demo/inbox answers 404, as if it did not exist.
+  PUT /clock and POST /demo/reset (ROO-27) are still open.
+- Driver sign-in codes: the API queues an `auth.otp` job on the notifications queue and the worker writes it
+  to the demo inbox (Redis, last 50) when DEMO_MODE=true. Without demo mode the job fails until notifications
+  adds an SMS provider (Step 7).
 - AC-IDN-36: status for a PIN already used in the depot is not specified; 409 CONFLICT_STATE assumed. Decides: Nimesha.
 - AC-IDN-56: status for PUT /clock, POST /demo/reset and GET /demo/inbox when DEMO_MODE=false is not specified. Decides: Nimesha.
 - AC-IDN-57: the PATCH path for one reason (for example /deferral-reasons/{code}), the status for removing an engine reason, and which module serves the controller, since planning owns the table. Decides: Tihara with Nimesha.
@@ -794,3 +814,5 @@ AC-IDN-60  Routes match the permission matrix
 - 2026-09-30 AC-IDN-01, 02, 05, 60 implemented (ROO-8): BetterAuth with the username, admin, phoneNumber,
   loaderPin and optional bearer plugins; `ActorGuard`, `PermissionGuard`, `ScopePolicy`; admin without
   user:delete and user:impersonate; auth built through Nest DI instead of at import time
+- 2026-09-30 AC-IDN-12, 13, 22 to 25 implemented (ROO-8): GET /, GET and PATCH /me, GET and POST /me/devices,
+  GET /demo/inbox, the persona seed and the dock tablets

@@ -30,6 +30,7 @@ x-api-env: &api-env
   S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
   S3_FORCE_PATH_STYLE: "true"
   DEMO_CLOCK: ${DEMO_CLOCK:-}
+  DEMO_MODE: ${DEMO_MODE:-true}
 
 services:
   postgres:
@@ -116,6 +117,7 @@ services:
     environment:
       <<: *api-env
       DIRECT_URL: postgres://compass_owner:${COMPASS_OWNER_PASSWORD:-compass_owner}@postgres:5432/${POSTGRES_DB:-waypoint}
+      SEED_PASSWORD: ${SEED_PASSWORD:-Waypoint@2026}
     depends_on:
       postgres:
         condition: service_healthy

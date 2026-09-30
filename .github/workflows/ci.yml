@@ -51,6 +51,7 @@ jobs:
     env:
       DIRECT_URL: postgres://compass_owner:compass_owner@localhost:5432/waypoint
       DATABASE_URL: postgres://compass_app:compass_app@localhost:5432/waypoint
+      SEED_PASSWORD: ci-seed-password
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
