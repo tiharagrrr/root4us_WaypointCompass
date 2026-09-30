@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AppConfigModule } from './config/config.module';
+import { CoreModule } from './core/core.module';
 import { DatabaseModule } from './db/database.module';
 import { HealthModule } from './health/health.module';
 import { MetricsController } from './metrics/metrics.controller';
@@ -28,6 +29,7 @@ import { BullRootModule, QUEUES } from './queues';
   imports: [
     AppConfigModule,
     DatabaseModule,
+    CoreModule,
     BullRootModule,
     BullModule.registerQueue(
       { name: QUEUES.allocation },

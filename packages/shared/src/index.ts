@@ -5,3 +5,4 @@ export * from './schemas/sync';
 export * from './machines';
 export * from './auth/actor';
 export * from './auth/permissions';
+export * from './api/link';

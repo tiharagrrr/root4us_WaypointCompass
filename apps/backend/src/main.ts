@@ -1,20 +1,16 @@
-import { Logger, RequestMethod } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { configureApp } from './app.setup';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-
-  // Caddy serves the web app and proxies /api to this service on one origin,
-  // so no CORS is needed. Probes and Prometheus hit /health and /metrics.
-  app.setGlobalPrefix('api/v1', {
-    exclude: [
-      { path: 'health', method: RequestMethod.GET },
-      { path: 'health/live', method: RequestMethod.GET },
-      { path: 'metrics', method: RequestMethod.GET },
-    ],
+  // BetterAuth parses its own request bodies (see app.setup.ts).
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
   });
+  configureApp(app);
   app.enableShutdownHooks();
 
   const openApi = new DocumentBuilder()
@@ -23,7 +19,7 @@ async function bootstrap() {
       'Delivery planning for Waypoint Group (Tech-Triathlon 2026)',
     )
     .setVersion('1')
-    .addCookieAuth('better-auth.session_token')
+    .addCookieAuth('__Secure-better-auth.session_token')
     .build();
   SwaggerModule.setup(
     'api/docs',

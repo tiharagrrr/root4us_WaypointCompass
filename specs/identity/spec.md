@@ -1,7 +1,7 @@
 ---
 module: identity
 owner: Nimesha
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [A0, A1, A2, A6, D0a, D0b, L1, L1m, D12, D13]
 depends-on: [core]
 ---
@@ -173,12 +173,20 @@ loader's loadingBoard, and a store manager's myOrders and deliveries instead.
   `@RequirePermission('<resource>:<action>')` against the shared matrix and answers 403.
 - Policies: the `ScopePolicy` base class and `can(actor, permission)` from `packages/shared`. Out of scope
   is 404; a missing permission is 403.
-- Auth: `auth.ts` is built at import time with its own pg pool, a Drizzle instance and a BullMQ producer,
-  so it needs no Nest DI; `AuthModule.forRoot({ auth })` from `@thallesp/nestjs-better-auth` gives the
-  global guard, `@Session()` and `@AllowAnonymous()`. `loader-pin.plugin.ts` adds `/sign-in/pin`: it loads
-  the device, refuses with FORBIDDEN unless `isDockDevice` and the depot match, verifies the PIN against
-  each loader of that depot, then creates the session and sets the cookie; otherwise UNAUTHORIZED
-  "Wrong PIN". Check `createSession` and `setSessionCookie` against the pinned BetterAuth version.
+- Auth: `auth.ts` exports `createAuth(deps)`. `IdentityAuthModule` builds it from Nest's database (the
+  API's one pool), config and `AuthMessages`, and exposes it as the `AUTH` token;
+  `AuthModule.forRootAsync()` from `@thallesp/nestjs-better-auth` mounts `/api/auth` with its global guard
+  turned off, because `CoreModule` runs BetterAuth's `AuthGuard`, `ActorGuard` and `PermissionGuard` as one
+  ordered chain. `loader-pin.plugin.ts` adds `/sign-in/pin`: it loads the device, refuses with 403
+  `NOT_A_DOCK_DEVICE` unless `isDockDevice` and the depot match, verifies the PIN against each active
+  loader of that depot (home depot or `loader_depots`), then creates the session and sets the cookie;
+  otherwise 401 `WRONG_PIN` "Wrong PIN". Errors under `/api/auth` are BetterAuth's `{ code, message }`,
+  not problem+json.
+- Rate limits are BetterAuth's, per client IP (a single `x-forwarded-for` value, which Caddy sets) and
+  path, held in memory in each API instance. They are on in every environment, and explicit rules
+  replace BetterAuth's built-in `/sign-in*` rule of 3 per 10 s. Several API replicas need Redis storage.
+- Sign-up is off (`disableSignUp`): accounts come from invitations and the seed. Admin routes that delete
+  or impersonate users are disabled (`disabledPaths`).
 - identity: `MeService`; `UsersService` (list, role and scope changes with session revocation,
   deactivate); `InvitationsService` with `newToken()` and `hashToken()`; `DevicesService` (register, dock
   flag, push subscription); `PinService` (set, verify, per-depot uniqueness).
@@ -225,12 +233,16 @@ list covers `req.headers.cookie`, `req.headers.authorization`, `*.password`, `*.
 `*.phoneNumber` and `*.email`.
 
 ## Permissions
-From `packages/shared/src/auth/permissions.ts`. The `user:*` permissions come from BetterAuth's
-`defaultStatements`; only admin holds them, through `adminAc.statements`.
+From `packages/shared/src/auth/permissions.ts`. The `user:*` and `session:*` permissions come from
+BetterAuth's `defaultStatements`; only admin holds them, as `adminAc` without `user:delete` and
+`user:impersonate`, because users are never deleted and nobody acts as someone else.
+`permissions.test.ts` there lists every permission with the roles that hold it.
 
 | Permission | admin | dispatcher | store_manager | loader | driver |
 | --- | --- | --- | --- | --- | --- |
-| user:list, user:set-role, user:ban, user:set-password, user:create | yes | — | — | — | — |
+| user:list, user:set-role, user:ban, user:set-password, user:create, user:set-email, user:get, user:update | yes | — | — | — | — |
+| user:delete, user:impersonate | — | — | — | — | — |
+| session:list, session:revoke, session:delete | yes | — | — | — | — |
 | settings:read | yes | yes | — | — | — |
 | settings:manage | yes | — | — | — | — |
 | deferral:read | — | yes | yes | — | — |
@@ -259,11 +271,11 @@ real sign-ups, and hashes PINs with the same password hasher.
 Times are Asia/Colombo. "Real time" means `ClockService.realNow()` (token and session expiry); "the demo
 clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec gave them.
 
-- [ ] AC-IDN-01 Another outlet's order is not found
-- [ ] AC-IDN-02 PIN needs this depot's dock device
+- [x] AC-IDN-01 Another outlet's order is not found
+- [x] AC-IDN-02 PIN needs this depot's dock device
 - [ ] AC-IDN-03 Late invitation acceptance gets 409
 - [ ] AC-IDN-04 Role change revokes sessions
-- [ ] AC-IDN-05 Sixth PIN attempt gets 429
+- [x] AC-IDN-05 Sixth PIN attempt gets 429
 - [ ] AC-IDN-06 Row-level security backs up scope
 - [ ] AC-IDN-07 PIN signs a loader in
 - [ ] AC-IDN-08 A wrong PIN is refused
@@ -318,7 +330,7 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [ ] AC-IDN-57 Engine deferral reasons stay active
 - [ ] AC-IDN-58 Admin adds a deferral reason
 - [ ] AC-IDN-59 Demo reset rebuilds the demo day
-- [ ] AC-IDN-60 Routes match the permission matrix
+- [x] AC-IDN-60 Routes match the permission matrix
 
 ```gherkin
 AC-IDN-01  Another outlet's order is not found
@@ -751,6 +763,14 @@ AC-IDN-60  Routes match the permission matrix
 - AC-IDN-04, 32, 39: identity audit action names are not listed. The spec assumes identity.user.role_changed, identity.user.scope_changed (the reasons table says user.scope_changed) and identity.invitation.created. Action names for sign-in, failed sign-in, sign-out, resend and revoke are not given (AC-IDN-07 to 10, 18, 47). Decides: Nimesha.
 - The Step 2 boundaries table lets identity import only core, yet identity writes audit rows through AuditService in modules/audit. May identity import audit? Decides: Nimesha.
 - AC-IDN-17, 44: status codes for an expired or over-tried code and for a mismatched email on accept are not specified, nor how short passwords (under 10 characters) are reported on accept. Decides: Nimesha.
+- AC-IDN-01: decided (Nimesha, 30 Sep). GET /orders/{id} is ordering's and does not exist yet, so the test
+  mounts a stand-in route with the order scope rule over the real orders table. When ordering ships its
+  route and OrderScope, the test moves to that route.
+- AC-IDN-02, 07, 08: decided. The refusal codes are `NOT_A_DOCK_DEVICE` (403) and `WRONG_PIN` (401).
+- AC-IDN-60: decided. The test stops each request after the guards, so allowed roles get 2xx without any
+  handler running, and the criterion keeps its wording. A route that declares none, or more than one, of
+  `@RequirePermission`, `@AnyRole` and `@AllowAnonymous` also fails it; `PermissionGuard` refuses such a
+  route with 403.
 - AC-IDN-36: status for a PIN already used in the depot is not specified; 409 CONFLICT_STATE assumed. Decides: Nimesha.
 - AC-IDN-56: status for PUT /clock, POST /demo/reset and GET /demo/inbox when DEMO_MODE=false is not specified. Decides: Nimesha.
 - AC-IDN-57: the PATCH path for one reason (for example /deferral-reasons/{code}), the status for removing an engine reason, and which module serves the controller, since planning owns the table. Decides: Tihara with Nimesha.
@@ -771,3 +791,6 @@ AC-IDN-60  Routes match the permission matrix
 ## Changelog
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `loader_depots` for loaders who work at more than one depot (merged from the Supabase draft)
+- 2026-09-30 AC-IDN-01, 02, 05, 60 implemented (ROO-8): BetterAuth with the username, admin, phoneNumber,
+  loaderPin and optional bearer plugins; `ActorGuard`, `PermissionGuard`, `ScopePolicy`; admin without
+  user:delete and user:impersonate; auth built through Nest DI instead of at import time
