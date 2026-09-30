@@ -1,20 +1,36 @@
+## Linear
+
+<!-- Closes ROO-___ moves the issue to Done when this PR merges. Use "Refs ROO-___" for partial work. The branch name should carry the ID too (feat/roo-19-ordering-submit). -->
+Closes ROO-
+
 ## What
 
 <!-- One or two sentences on what this PR changes. -->
 
-## Why
+## Spec
 
-<!-- Link the spec section, design screen or issue. Note any departure from the Day 5 Designathon design (also add it to the README). -->
+<!-- The acceptance criteria from specs/<module>/spec.md that this PR implements; tick each one whose test passes. -->
+- [ ] AC-ORD-01 ...
+- [ ] AC-ORD-02 ...
 
 ## How to test
 
 1.
 
-## Checklist
+## Checks
 
-- [ ] `pnpm lint && pnpm typecheck && pnpm test` pass
-- [ ] Schema changed → ran `pnpm db:generate` and committed the migration
-- [ ] New env var → added to `.env.example` and `env.schema.ts`
-- [ ] State changes write an audit event (with a reason where required)
-- [ ] Driver/loader screens checked at phone width
-- [ ] Docs updated (`docs/`, README walkthrough) if behaviour changed
+- [ ] `pnpm check` green
+- [ ] Migration: none | `<name>` (one at most)
+- [ ] `openapi.json` diff reviewed (`/api-sync`)
+- [ ] Screens checked at frame size (`/fidelity`): <frame codes>; departures logged in `docs/departures.md`
+- [ ] Spec file updated in this PR (criteria ticked, status, changelog)
+- [ ] New env var → added to `.env.example` and the config schema
+- [ ] New dependency → why:
+
+## AI assistance
+
+Tool and model:
+What the agent did:
+What I changed or rejected:
+
+- [ ] Row added to `docs/ai-log.md`

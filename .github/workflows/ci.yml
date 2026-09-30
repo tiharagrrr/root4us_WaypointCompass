@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   checks:
-    name: Lint, typecheck, test, build
+    name: Lint, typecheck, boundaries, test, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,8 +24,51 @@ jobs:
       - run: pnpm --filter @waypoint/shared build
       - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm check:boundaries
       - run: pnpm test
       - run: pnpm build
+
+  database:
+    name: Migrations and database guarantees
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: waypoint
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d waypoint"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DIRECT_URL: postgres://compass_owner:compass_owner@localhost:5432/waypoint
+      DATABASE_URL: postgres://compass_app:compass_app@localhost:5432/waypoint
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @waypoint/shared build
+      - name: Create the three database roles
+        run: >-
+          psql "postgres://postgres:postgres@localhost:5432/waypoint" -v ON_ERROR_STOP=1
+          -v db=waypoint -v owner_password=compass_owner -v app_password=compass_app
+          -v readonly_password=compass_readonly -f deploy/db/roles.sql
+      - run: pnpm --filter api db:migrate
+      # Fails if a schema file changed without a committed migration.
+      - run: pnpm --filter api db:generate
+      - run: pnpm --filter api db:check
+      - run: pnpm --filter api db:seed
+      - name: Row-level security, append-only audit and plan integrity
+        run: pnpm --filter api test -- src/db
+        env:
+          TEST_DIRECT_URL: ${{ env.DIRECT_URL }}
+          TEST_DATABASE_URL: ${{ env.DATABASE_URL }}
 
   compose:
     name: docker compose up (smoke test)

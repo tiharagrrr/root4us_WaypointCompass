@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { HealthIndicatorService } from '@nestjs/terminus';
 import { Pool } from 'pg';
-import { PG_POOL } from '../database/database.module';
+import { PG_POOL } from '../db/database.module';
 
 @Injectable()
 export class DatabaseHealthIndicator {

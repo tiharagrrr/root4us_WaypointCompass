@@ -76,7 +76,8 @@ Credentials come from the `SEED_*` variables in `.env`.
 
 ```bash
 pnpm install
-cp .env.example .env
+cp .env.example .env      # Compose + shared defaults; per-app overrides:
+                          # apps/backend/.env.example, apps/frontend/.env.example
 pnpm infra:up             # postgres, redis, minio in Docker
 pnpm db:generate          # only after schema changes: writes apps/backend/drizzle/*.sql
 pnpm db:migrate
@@ -92,7 +93,7 @@ The web dev server proxies `/api` to the API, so both run on one origin, as they
 | --- | --- |
 | `pnpm dev` | Shared package in watch mode, API with hot reload, Vite dev server |
 | `pnpm build` / `lint` / `typecheck` / `test` | Runs across all workspaces |
-| `pnpm db:generate` | Generate a migration from `apps/backend/src/database/schema.ts` |
+| `pnpm db:generate` | Generate a migration from `apps/backend/src/db/schema/<module>.ts`; name it with `pnpm --filter api db:generate --name=<module>_<change>` |
 | `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, open Drizzle Studio |
 | `pnpm infra:up` | Start only the backing services in Docker |
 | `pnpm stack:up` / `stack:down` / `stack:reset` | Full Compose stack; reset also wipes volumes |
@@ -107,16 +108,20 @@ packages/
   shared/         Domain types, constraint validator, trip-time rules, Zod schemas
 data/seed/        Shared challenge datasets (outlets, vehicles, calendar, ...)
 datathon/         Datathon notebooks, models and submissions (data git-ignored)
-deploy/           Caddyfile, observability configs, Kubernetes manifests
+deploy/           Caddyfile, database roles, observability configs, Kubernetes manifests
 docs/             Architecture, data model, AI disclosure, ADRs, spec, brief
+specs/            One spec per module with acceptance criteria, plus API, data, engine and screen references
+.claude/          Shared Claude Code settings, hooks, commands and skills (CLAUDE.md at the root)
 docker-compose.yml
-.env.example
+.env.example      Compose and shared defaults (each app also has its own .env.example)
 ```
 
 ### Git workflow
 
-- `main` is always deployable and protected. Work on short-lived branches: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
-- Use [Conventional Commits](https://www.conventionalcommits.org/) with the workspace as scope, e.g. `feat(api): add allocation endpoint`, `fix(web): driver offline badge`, `docs: update walkthrough`.
+- Tasks are tracked in [Linear](https://linear.app/root4us/project/waypoint-compass-hackathon-build-2a91249f70e7) (`ROO-<n>`); see [docs/linear.md](docs/linear.md).
+- `main` is always deployable and protected. Work on short-lived branches that carry the Linear issue ID: `feat/roo-19-ordering-submit`, `fix/…`, `docs/…`, `chore/…`. Put `Closes ROO-19` in the PR body so the issue closes on merge.
+- Use [Conventional Commits](https://www.conventionalcommits.org/) with the module as scope, e.g. `feat(ordering): submit order before cutoff`, `fix(execution): driver offline badge`, `docs: update walkthrough`.
+- Coding agents (Claude Code and others) follow [CLAUDE.md](CLAUDE.md) and the module specs in [specs/](specs/README.md). Start feature work with `/implement <module> <AC ids>` in a worktree per branch, and log AI-assisted work in [docs/ai-log.md](docs/ai-log.md).
 - Open a PR into `main`. CI must pass (lint, typecheck, tests, build, and a `docker compose up` smoke test), with one review.
 - Commit the lockfile (`pnpm-lock.yaml`) and every generated migration. Never commit `.env` or Datathon data.
 - **Code freeze:** Sun 4 Oct 2026, 8 PM (Asia/Colombo). Code pushed after 11:59 PM is not judged.

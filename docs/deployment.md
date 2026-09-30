@@ -48,4 +48,4 @@ See the team spec for the full design. In summary:
 
 ## Environment variables
 
-Every variable is documented in [`.env.example`](../.env.example). The API validates its environment at boot ([`env.schema.ts`](../apps/backend/src/config/env.schema.ts)) and refuses to start with a clear message if anything is missing.
+Every variable is documented in [`.env.example`](../.env.example), which Compose reads. Each app also has its own example for running it outside Compose: [`apps/backend/.env.example`](../apps/backend/.env.example) (loaded before the root `.env`, so its values win) and [`apps/frontend/.env.example`](../apps/frontend/.env.example) (Vite reads only this folder; `VITE_*` values are public and baked in at build time). The API validates its environment at boot ([`env.schema.ts`](../apps/backend/src/config/env.schema.ts)) and refuses to start with a clear message if anything is missing.

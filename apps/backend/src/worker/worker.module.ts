@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { AppConfigModule } from '../config/config.module';
-import { DatabaseModule } from '../database/database.module';
+import { DatabaseModule } from '../db/database.module';
 import { BullRootModule, QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
 
@@ -11,7 +11,10 @@ import { AllocationProcessor } from './allocation.processor';
     AppConfigModule,
     DatabaseModule,
     BullRootModule,
-    BullModule.registerQueue({ name: QUEUES.allocation }, { name: QUEUES.notifications }),
+    BullModule.registerQueue(
+      { name: QUEUES.allocation },
+      { name: QUEUES.notifications },
+    ),
   ],
   providers: [AllocationProcessor],
 })

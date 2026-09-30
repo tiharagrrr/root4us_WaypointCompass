@@ -1,0 +1,5 @@
+# ripgrep skips these folders, and so do Claude Code's Grep and Glob, which run on it.
+# The competition datasets must never reach an AI tool (see CLAUDE.md and specs/data/datasets.md).
+# Open the files directly if you need them; editor search may skip them too.
+data/seed/
+datathon/data/

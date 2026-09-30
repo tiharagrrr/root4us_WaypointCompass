@@ -34,3 +34,9 @@ datathon/data/*
 datathon/.venv/
 .ipynb_checkpoints/
 __pycache__/
+
+# Claude Code: personal settings, handoff notes, /fidelity screenshots
+.claude/settings.local.json
+.claude/handoff/
+CLAUDE.local.md
+.fidelity/

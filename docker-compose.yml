@@ -17,7 +17,8 @@ x-api-image: &api-image
 x-api-env: &api-env
   NODE_ENV: production
   PORT: "3000"
-  DATABASE_URL: postgres://${POSTGRES_USER:-waypoint}:${POSTGRES_PASSWORD:-waypoint}@postgres:5432/${POSTGRES_DB:-waypoint}
+  # The API and worker connect as compass_app, which row-level security filters.
+  DATABASE_URL: postgres://compass_app:${COMPASS_APP_PASSWORD:-compass_app}@postgres:5432/${POSTGRES_DB:-waypoint}
   REDIS_URL: redis://redis:6379
   APP_URL: ${APP_URL:-http://localhost:8080}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-to-a-long-random-string}
@@ -39,10 +40,17 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-waypoint}
       POSTGRES_DB: ${POSTGRES_DB:-waypoint}
       TZ: UTC
+      # Passwords for the three database roles, created on first start by
+      # deploy/db/init/00-roles.sh (run `docker compose down -v` to recreate).
+      COMPASS_OWNER_PASSWORD: ${COMPASS_OWNER_PASSWORD:-compass_owner}
+      COMPASS_APP_PASSWORD: ${COMPASS_APP_PASSWORD:-compass_app}
+      COMPASS_READONLY_PASSWORD: ${COMPASS_READONLY_PASSWORD:-compass_readonly}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./deploy/db/init:/docker-entrypoint-initdb.d:ro
+      - ./deploy/db/roles.sql:/waypoint/roles.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -101,10 +109,13 @@ services:
     restart: "no"
 
   # One-shot: applies migrations, then seeds the shared datasets (idempotent).
+  # Runs as compass_owner, the only role that changes the schema.
   seed:
     <<: *api-image
-    command: ["sh", "-c", "node dist/database/migrate.js && node dist/database/seed.js"]
-    environment: *api-env
+    command: ["sh", "-c", "node dist/db/migrate.js && node dist/db/seed.js"]
+    environment:
+      <<: *api-env
+      DIRECT_URL: postgres://compass_owner:${COMPASS_OWNER_PASSWORD:-compass_owner}@postgres:5432/${POSTGRES_DB:-waypoint}
     depends_on:
       postgres:
         condition: service_healthy

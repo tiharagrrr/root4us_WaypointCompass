@@ -25,20 +25,20 @@ describe('tripMinutes', () => {
 describe('validateVehicleDay', () => {
   const reeferTruck: ValidatorVehicle = {
     id: 'VEH014',
-    type: 'truck',
-    temp: 'reefer',
-    depot: 'Peliyagoda',
+    type: 'TRUCK',
+    temp: 'REEFER',
+    depot: 'PLG',
     weightCapKg: 5000,
     volumeCapM3: 30,
     available: true,
   };
   const order = (ref: string, district: string, extra: Partial<ValidatorOrder> = {}): ValidatorOrder => ({
     ref,
-    brand: 'Fresh',
+    brand: 'FRESH',
     district,
-    depot: 'Peliyagoda',
-    tempRequirement: 'chilled',
-    parkingConstraint: 'normal',
+    depot: 'PLG',
+    tempClass: 'CHILLED',
+    parkingConstraint: 'NORMAL',
     weightKg: 100,
     volumeM3: 1,
     ...extra,
@@ -55,7 +55,7 @@ describe('validateVehicleDay', () => {
   it('flags a third trip, a busted Fresh budget, van-only access and mixed districts', () => {
     const trips = [
       { vehicleId: 'VEH014', tripNumber: 1, minutes: 101, orders: [order('A', 'Gampaha'), order('B', 'Colombo')] },
-      { vehicleId: 'VEH014', tripNumber: 2, minutes: 112, orders: [order('C', 'Colombo', { parkingConstraint: 'van_only' })] },
+      { vehicleId: 'VEH014', tripNumber: 2, minutes: 112, orders: [order('C', 'Colombo', { parkingConstraint: 'VAN_ONLY' })] },
       { vehicleId: 'VEH014', tripNumber: 3, minutes: 90, orders: [order('D', 'Colombo')] },
     ];
     const rules = validateVehicleDay(reeferTruck, trips).map((v) => v.rule);
@@ -65,7 +65,7 @@ describe('validateVehicleDay', () => {
   });
 
   it('rejects chilled goods on an ambient vehicle', () => {
-    const ambient = { ...reeferTruck, temp: 'ambient' as const };
+    const ambient = { ...reeferTruck, temp: 'AMBIENT' as const };
     const trips = [{ vehicleId: 'VEH014', tripNumber: 1, minutes: 50, orders: [order('A', 'Colombo')] }];
     expect(validateVehicleDay(ambient, trips).map((v) => v.rule)).toEqual(['refrigeration']);
   });

@@ -1,0 +1,14 @@
+# AI log
+
+One row per meaningful AI-assisted task, added in the same PR as the work. The person who ran the
+tool fills in the last column after reviewing the output. On Sunday,
+[ai-tool-disclosure.md](ai-tool-disclosure.md) summarises this log for the judges: where AI was used,
+which decisions people made and why, how every output was reviewed, and the dataset guardrail
+(agents never read `data/seed/`).
+
+| Date | Person | Tool and model | Task | Used in | Human review and changes |
+| --- | --- | --- | --- | --- | --- |
+| 2026-09-30 | Nimesha | Claude Code (Claude Opus 5.5) | Merged the team's updated Supabase schema into the Drizzle schema (ROO-21): compared it table by table, added what was missing as additive columns and two tables, regenerated the unmerged baseline migration, added database tests, a Supabase-to-Drizzle name map and spec updates. Scaffolded the 16 backend modules with a boundaries check that reads each spec's depends-on, and repointed docs and skills to `apps/backend` and `apps/frontend` | `apps/backend/src/db/`, `apps/backend/drizzle/`, `apps/backend/src/modules/`, `apps/backend/scripts/check-module-deps.ts`, `packages/shared/src/domain.ts`, `specs/`, `docs/data-model.md`, `.claude/`, `CLAUDE.md` | _To fill after review_ |
+| 2026-09-30 | Nimesha | Claude Code (Claude Opus 5.5) | Agentic coding kit (ROO-11): CLAUDE.md files, `.claude/` settings, hooks, commands and skills, and first drafts of every spec in `specs/`, from the Build Spec | `CLAUDE.md`, `apps/*/CLAUDE.md`, `packages/engine/CLAUDE.md`, `.claude/`, `specs/`, `.github/pull_request_template.md` | _To fill after review_ |
+| 2026-09-30 | Nimesha | Claude (claude.ai) | Drafted the Build Spec from the booklet, design files and stack spec | `docs/` and `specs/` | Team reviewed on Wednesday; ownership, gates and departures confirmed |
+| 2026-09-28 | Nimesha | Claude Code | Monorepo scaffolding: Compose stack, Dockerfiles, `.env.example`, docs skeleton, initial Drizzle schema, shared constraint validator and its tests | repo root, `apps/`, `packages/shared`, `docs/` | _To fill_ |
