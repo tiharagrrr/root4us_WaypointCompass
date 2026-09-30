@@ -201,11 +201,18 @@ Services throw `DomainError` subclasses from `core/errors`. One filter maps them
 | `PlanLockedError` | `PLAN_LOCKED` | 409 | |
 | `VersionMismatchError` | `VERSION_MISMATCH` | 412 | Thrown by the service when a versioned update returns no row |
 | `PreconditionRequiredError` | `PRECONDITION_REQUIRED` | 428 | Thrown by `@IfMatch()` when the header is missing |
-| `RuleViolationError` | `PLAN_RULE_VIOLATION` | 422 | Carries `violations` |
+| `RuleViolationError` | `PLAN_RULE_VIOLATION` | 422 | Carries `violations`, and `_links` such as `fixes` |
+| `UnauthenticatedError` | `UNAUTHENTICATED` | 401 | No session on a signed-in route |
+| `IdempotencyKeyReusedError` | `IDEMPOTENCY_KEY_REUSED` | 422 | Thrown by `@UseIdempotency()` |
+| `IdempotencyInFlightError` | `CONFLICT_STATE` | 409 | Thrown by `@UseIdempotency()`; sends `Retry-After: 1` |
+| `PayloadTooLargeError` | `PAYLOAD_TOO_LARGE` | 413 | |
+| `RateLimitedError` | `RATE_LIMITED` | 429 | Sends `Retry-After` |
+| `DependencyUnavailableError` | `DEPENDENCY_UNAVAILABLE` | 503 | Sends `Retry-After` (30 s by default) |
 
 - `assertTransition(machine, status, event)` answers 409 `CONFLICT_STATE`.
 - Out-of-scope rows answer 404; missing permissions answer 403.
-- The spec names no class for `UNAUTHENTICATED`, `IDEMPOTENCY_KEY_REUSED`, `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `INTERNAL` or `DEPENDENCY_UNAVAILABLE` (see Open questions).
+- `INTERNAL` has no class: anything unexpected answers 500 with no detail, and the filter logs it with the request id.
+- A zod error answers 400 with field errors; a CHECK constraint violation answers 400 naming the constraint.
 
 ### Status codes by request
 
@@ -277,9 +284,10 @@ Two dispatchers editing one plan, a double-tapped button and a phone replaying i
 - **Plan edits** carry the plan's version, and every edit bumps it, so two dispatchers can't interleave moves on one plan. The loser sees the latest plan and redoes one step.
 - **Conditional reads.** `If-None-Match` answers 304, which saves mobile data when a screen polls.
 - **Idempotency keys.** Creates and non-repeatable actions send `Idempotency-Key`, which the web generates once per button press. The server keeps key, user, method, path, request hash, status and body for 24 hours.
-    - The same key and body return the stored response with `Idempotent-Replayed: true`.
-    - The same key with a different body answers 422 `IDEMPOTENCY_KEY_REUSED`.
-    - A duplicate still in flight answers 409 with `Retry-After: 1`.
+    - The same key and body return the stored response with `Idempotent-Replayed: true` (and its `Location`).
+    - The same key with a different body, path or user answers 422 `IDEMPOTENCY_KEY_REUSED`.
+    - A duplicate still in flight answers 409 `CONFLICT_STATE` with `Retry-After: 1`.
+    - `@UseIdempotency()` stores the response inside the request's transaction, under a transaction-scoped advisory lock on the key. A request that fails stores nothing, so it can be retried with the same key. Without the header the request runs normally.
 - **Offline events** carry a device-made `clientUuid`, so replays hit a unique constraint and come back as duplicates. They also carry the stop or trip version the device saw. When the server's state makes an event impossible (stop cancelled, trip reassigned), the event becomes a sync conflict for 19c instead of applying. Events from one device apply in `deviceSeq` order.
 
 | Operation | `If-Match` | `Idempotency-Key` | `clientUuid` |
@@ -636,6 +644,14 @@ export abstract class SimpleCrudCommands<TTable extends VersionableTable, TCreat
 
 Resources with a lifecycle (orders, plans, trips, stops, deferrals) never use `SimpleCrudCommands`. Each of their writes is an explicit use case with its own state check and audit reason.
 
+As built (ROO-7), with these differences from the excerpts above:
+
+- `core/` imports no module, so `SimpleCrudCommands` takes two interfaces from `core/persistence/ports.ts`, `AuditRecorder` and `OutboxWriter`; the subclass injects `AuditService` and `OutboxService` and passes them to `super()`. It also declares `module`, so audit actions read `fleet.vehicle.updated` while events read `vehicle.updated`.
+- `LinkBuilder.actions()` is abstract (return `{}` for none), and `links.page()` returns cursor pages too.
+- A feed sorted by an instant compares it to the millisecond (`date_trunc`), the precision a cursor carries, in both `ORDER BY` and the keyset condition. A cursor also carries its sort and answers 400 on any other.
+- Every transaction is stamped for row-level security as it opens (`StampedDrizzleAdapter`): a request as its actor, a job or tick as the system. Inject `TransactionHost<StampedDrizzleAdapter>`.
+- Operation ids read `<resource><Method>` (`OrdersController.list` is `ordersList`, so the hook is `useOrdersList`).
+
 ## 8. DTOs, validation and mappers
 
 Each layer has its own shape, with small pure mappers between them. One shared class for all three would leak internal fields such as `pinHash` and scope columns, and would let a client set `depotId` on an order.
@@ -822,11 +838,10 @@ This mirrors the `rest-endpoint` skill.
 
 - **Idempotency decorator, pagination helpers, If-Match.** The Build Spec's Step 3 text names `@IdempotencyKey()` on creates, `paginateOffset`/`paginateCursor`, and a version check only when `If-Match` is present. Step 4 has `@UseIdempotency()` on creates and non-repeatable actions, `CrudQueryService.list()` choosing offset or cursor from `ResourceSpec.pagination`, and a required `If-Match` (428 when missing). This file, the `rest-endpoint` and `contract-first` skills and `apps/backend/CLAUDE.md` follow Step 4; update Step 3 in the Build Spec to match.
 - **Order lines verb.** Step 4 says PUT replaces a whole line set, but its validation example is `PATCH /api/v1/orders/{id}/lines`. Pick one.
-- **In-flight duplicate.** A duplicate `Idempotency-Key` still in flight answers 409 with `Retry-After: 1`, but Step 4 names no problem code for it.
-- **Error classes.** Step 2 names eight `DomainError` subclasses and Step 4 adds `PreconditionRequiredError`. No class is named for `UNAUTHENTICATED`, `IDEMPOTENCY_KEY_REUSED`, `PAYLOAD_TOO_LARGE`, `RATE_LIMITED`, `INTERNAL` or `DEPENDENCY_UNAVAILABLE`. The class-to-code pairs in section 3 are read from the class names; confirm them in `core/errors`.
-- **Storing idempotent responses.** Step 2 says `EnvelopeInterceptor` stores them. Step 4's interceptor excerpt does not, which suggests `@UseIdempotency()` does. Confirm where it happens.
+- **ETag and time-dependent links.** The ETag is the version alone, so `If-None-Match` can answer 304 after the cutoff even though the `edit` and `cancel` links have gone. The next write then answers 409 `CUTOFF_PASSED`. Either accept this, or add a time bucket to the ETag of resources whose links depend on the clock.
 - **Rate limits and versioning.** Step 4 defines `RATE_LIMITED` (429) but no API-wide limit; only the auth limits and the client-log limit exist. It also sets no rule for when a change needs `/api/v2` or a new `apiVersion`.
 
 ## Changelog
 
+- 2026-10-01 ROO-7 kernel: named the remaining error classes, `@UseIdempotency()` stores responses in the request transaction and answers an in-flight duplicate with 409 `CONFLICT_STATE`, notes on the CRUD layer as built; new open question on ETags and time-dependent links
 - 2026-09-30 created from the Build Spec
