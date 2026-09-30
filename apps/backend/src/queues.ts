@@ -5,6 +5,8 @@ export const QUEUES = {
   allocation: 'allocation',
   notifications: 'notifications',
   outbox: 'outbox',
+  /** One job a minute that runs every @OnTick handler (core/scheduling). */
+  ticker: 'ticker',
 } as const;
 
 export const BullRootModule = BullModule.forRootAsync({

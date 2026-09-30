@@ -1,12 +1,16 @@
-import {
-  type ArgumentsHost,
-  Catch,
-  HttpException,
-  Logger,
-} from '@nestjs/common';
+import { type ArgumentsHost, Catch, HttpException } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
+import { TransitionError } from '@waypoint/shared';
 import type { Request, Response } from 'express';
-import { DomainError } from '../errors/domain-errors';
+import { PinoLogger } from 'nestjs-pino';
+import { ZodError } from 'zod';
+import {
+  DomainError,
+  type FieldError,
+  PayloadTooLargeError,
+  StateConflictError,
+  ValidationError,
+} from '../errors/domain-errors';
 import { requestId } from './request-id';
 
 const PROBLEM_BASE = 'https://compass.waypoint.lk/problems/';
@@ -29,9 +33,12 @@ const CODE_BY_STATUS: Record<number, [code: string, title: string]> = {
   403: ['FORBIDDEN', "You don't have access to this"],
   404: ['NOT_FOUND', 'Not found'],
   409: ['CONFLICT_STATE', 'This conflicts with the current state'],
+  412: ['VERSION_MISMATCH', 'Someone else changed this'],
   413: ['PAYLOAD_TOO_LARGE', 'The request is too large'],
+  428: ['PRECONDITION_REQUIRED', 'If-Match is required'],
   429: ['RATE_LIMITED', 'Too many requests'],
   500: ['INTERNAL', 'Something went wrong'],
+  503: ['DEPENDENCY_UNAVAILABLE', 'A service we depend on is unavailable'],
 };
 
 /** Postgres error codes the database raises as the last line of defence. */
@@ -43,12 +50,16 @@ const CODE_BY_PG: Record<string, number> = {
 };
 
 /**
- * Renders every error under /api as RFC 9457 problem+json with a stable code
- * and the request id. Other paths (/health, /metrics) keep Nest's default.
+ * Step 9 of the request lifecycle: renders every error under /api as RFC 9457
+ * problem+json with a stable code and the request id, plus the error's
+ * headers (Retry-After). Other paths (/health, /metrics) keep Nest's default.
  */
 @Catch()
 export class ProblemDetailsFilter extends BaseExceptionFilter {
-  private readonly log = new Logger('http');
+  constructor(private readonly log: PinoLogger) {
+    super();
+    this.log.setContext('http');
+  }
 
   catch(err: unknown, host: ArgumentsHost) {
     const req = host.switchToHttp().getRequest<Request>();
@@ -62,32 +73,41 @@ export class ProblemDetailsFilter extends BaseExceptionFilter {
         'unhandled error',
       );
     }
+    const domain = asDomainError(err);
+    for (const [name, value] of Object.entries(domain?.headers() ?? {}))
+      res.setHeader(name, value);
     res.status(problem.status).type('application/problem+json').json(problem);
   }
 }
 
 export function toProblem(err: unknown, req: Request): Problem {
   const base = { instance: req.originalUrl, requestId: requestId(req) };
-  if (err instanceof DomainError) {
+  const domain = asDomainError(err);
+  if (domain) {
     return {
-      type: typeUrl(err.code),
-      title: err.title,
-      status: err.status,
-      code: err.code,
-      ...(err.detail && { detail: err.detail }),
+      type: typeUrl(domain.code),
+      title: domain.title,
+      status: domain.status,
+      code: domain.code,
+      ...(domain.detail && { detail: domain.detail }),
       ...base,
-      ...err.extensions(),
+      ...domain.extensions(),
     };
   }
 
+  const pg = pgError(err);
   const status =
     err instanceof HttpException
       ? err.getStatus()
-      : (CODE_BY_PG[pgCode(err) ?? ''] ?? 500);
+      : (CODE_BY_PG[pg?.code ?? ''] ?? 500);
   const [code, title] =
     CODE_BY_STATUS[status] ?? CODE_BY_STATUS[status >= 500 ? 500 : 400];
   const detail =
-    err instanceof HttpException && status < 500 ? err.message : undefined;
+    err instanceof HttpException && status < 500
+      ? err.message
+      : pg?.code === '23514' && pg.constraint
+        ? `The value breaks the ${pg.constraint} rule.`
+        : undefined;
   return {
     type: typeUrl(code),
     title,
@@ -98,12 +118,56 @@ export function toProblem(err: unknown, req: Request): Problem {
   };
 }
 
+/** Errors from outside core/errors that have a domain meaning. */
+function asDomainError(err: unknown): DomainError | undefined {
+  if (err instanceof DomainError) return err;
+  if (err instanceof TransitionError)
+    return new StateConflictError(err.message);
+  if (err instanceof ZodError) return new ValidationError(zodFieldErrors(err));
+  // body-parser's errors (JSON body re-added by BetterAuth's module)
+  const type = (err as { type?: unknown } | null)?.type;
+  if (type === 'entity.too.large') return new PayloadTooLargeError();
+  if (type === 'entity.parse.failed')
+    return new ValidationError([
+      {
+        field: 'body',
+        code: 'json',
+        message: 'The request body is not valid JSON.',
+      },
+    ]);
+  return undefined;
+}
+
+export function zodFieldErrors(err: ZodError): FieldError[] {
+  return err.issues.map((issue) => ({
+    field: issue.path
+      .map((p, i) =>
+        typeof p === 'number'
+          ? `[${p}]`
+          : i === 0
+            ? String(p)
+            : `.${String(p)}`,
+      )
+      .join(''),
+    code: issue.code,
+    message: issue.message,
+  }));
+}
+
 const typeUrl = (code: string) =>
   PROBLEM_BASE + code.toLowerCase().replaceAll('_', '-');
 
 /** A DrizzleQueryError carries the pg error in `cause`. */
-function pgCode(err: unknown): string | undefined {
-  const e = err as { code?: unknown; cause?: { code?: unknown } } | null;
-  const code = e?.cause?.code ?? e?.code;
-  return typeof code === 'string' ? code : undefined;
+function pgError(
+  err: unknown,
+): { code: string; constraint?: string } | undefined {
+  type PgLike = { code?: unknown; constraint?: unknown };
+  const e = err as (PgLike & { cause?: PgLike }) | null;
+  const source = typeof e?.cause?.code === 'string' ? e.cause : e;
+  if (typeof source?.code !== 'string') return undefined;
+  return {
+    code: source.code,
+    constraint:
+      typeof source.constraint === 'string' ? source.constraint : undefined,
+  };
 }

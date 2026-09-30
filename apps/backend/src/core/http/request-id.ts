@@ -1,15 +1,11 @@
 import type { Request } from 'express';
-import { uuidv7 } from 'uuidv7';
-
-const REQUEST_ID = Symbol('requestId');
-type WithRequestId = Request & { [REQUEST_ID]?: string };
+import { ensureRequestId } from '../context/request-context';
 
 /**
- * The request id: Caddy's x-request-id, or a new UUIDv7. It comes back as
- * meta.requestId and a problem's requestId. ROO-7 moves this into nestjs-cls.
+ * The request id: Caddy's x-request-id, or a new UUIDv7. The same value is
+ * the CLS id and pino's reqId, and comes back as meta.requestId, a problem's
+ * requestId and the x-request-id response header.
  */
 export function requestId(req: Request): string {
-  const r = req as WithRequestId;
-  r[REQUEST_ID] ??= req.header('x-request-id') || uuidv7();
-  return r[REQUEST_ID];
+  return ensureRequestId(req);
 }

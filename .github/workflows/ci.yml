@@ -27,6 +27,10 @@ jobs:
       - run: pnpm check:boundaries
       - run: pnpm test
       - run: pnpm build
+      # The API contract: fails if a controller or DTO changed without
+      # `pnpm api:gen` and a committed openapi.json.
+      - name: openapi.json is up to date
+        run: pnpm api:gen && git diff --exit-code apps/backend/openapi.json
 
   database:
     name: Migrations and database guarantees

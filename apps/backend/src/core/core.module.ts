@@ -3,26 +3,32 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
 import { ActorGuard } from './auth/actor.guard';
 import { PermissionGuard } from './auth/permission.guard';
-import { ClockService } from './clock/clock.service';
 import { EnvelopeInterceptor } from './http/envelope.interceptor';
+import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
+import { KernelModule } from './kernel.module';
+import { ActorTransactionInterceptor } from './persistence/actor-transaction.interceptor';
 
 /**
  * The request pipeline every module shares (specs/api-conventions.md,
- * section 6). Global guards run in the order listed: BetterAuth resolves the
- * session (401 without one, unless @AllowAnonymous), ActorGuard builds the
- * Actor, PermissionGuard checks @RequirePermission (403).
+ * section 6), on top of the kernel. Global guards run in the order listed:
+ * BetterAuth resolves the session (401 without one, unless @AllowAnonymous),
+ * ActorGuard builds the Actor, PermissionGuard checks @RequirePermission
+ * (403). Interceptors nest in the order listed: the request's transaction
+ * outside, the envelope inside it, and @UseIdempotency() innermost.
  */
 @Global()
 @Module({
+  imports: [KernelModule],
   providers: [
-    ClockService,
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ActorGuard },
     { provide: APP_GUARD, useClass: PermissionGuard },
+    { provide: APP_INTERCEPTOR, useClass: ActorTransactionInterceptor },
     { provide: APP_INTERCEPTOR, useClass: EnvelopeInterceptor },
     { provide: APP_FILTER, useClass: ProblemDetailsFilter },
+    IdempotencyInterceptor,
   ],
-  exports: [ClockService],
+  exports: [KernelModule, IdempotencyInterceptor],
 })
 export class CoreModule {}
