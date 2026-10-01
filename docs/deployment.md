@@ -22,7 +22,7 @@ docker compose up --build
 | `seed` | One-shot: migrations + datasets, then exits | none |
 | `postgres` | PostgreSQL 17 | `5432` |
 | `redis` | Redis 7 | `6379` |
-| `minio` / `minio-init` | S3 storage for POD + bucket creation | `9000`, console `9001` |
+| `s3` / `s3-init` | Garage: S3 storage for POD, plus bucket and key creation | `9000`, admin API `9001` |
 | `prometheus`, `loki`, `alloy`, `grafana` | `--profile observability` only | Grafana `3001` |
 
 Reset everything, including the database: `docker compose down -v`.
@@ -30,8 +30,8 @@ Reset everything, including the database: `docker compose down -v`.
 ### Hosting on a single VM (fallback)
 
 1. Point a DNS name (or a free `sslip.io` hostname) at the VM.
-2. In `.env`, set `SITE_ADDRESS=waypoint.example.com`, `APP_URL=https://waypoint.example.com`, a strong `BETTER_AUTH_SECRET` and strong DB/S3 passwords.
-3. Publish ports 80 and 443 for `web` (add `"443:443"` to its `ports`) and remove the host ports for `postgres`, `redis` and `minio`.
+2. In `.env`, set `SITE_ADDRESS=waypoint.example.com`, `APP_URL=https://waypoint.example.com`, a strong `BETTER_AUTH_SECRET`, strong DB/S3 passwords and fresh `GARAGE_RPC_SECRET` and `GARAGE_ADMIN_TOKEN` values.
+3. Publish ports 80 and 443 for `web` (add `"443:443"` to its `ports`) and remove the host ports for `postgres`, `redis` and `s3` — the Garage admin API manages buckets and keys and must never be public.
 4. `docker compose up -d --build`. Caddy obtains the TLS certificate automatically.
 
 ## Kubernetes (public URL)
