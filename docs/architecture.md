@@ -22,7 +22,7 @@ flowchart LR
 
   API --> PG[(PostgreSQL<br/>data + audit trail)]
   API --> R[(Redis)]
-  API --> S3[(MinIO / Supabase Storage<br/>POD photos, signatures)]
+  API --> S3[(Garage / Supabase Storage<br/>POD photos, signatures)]
   R --> W[Worker<br/>BullMQ jobs]
   W --> PG
 ```
@@ -35,7 +35,7 @@ flowchart LR
 | Shared (`packages/shared`) | TypeScript, Zod | Domain enums, **constraint validator** and trip-time rules, sync payload schemas. The same code runs in the UI, the API and the Datathon Task 2B check. |
 | PostgreSQL | 17 | Master data, operational data, append-only audit trail, transactional outbox. |
 | Redis | 7 | BullMQ queues; pub/sub so SSE works across API replicas. |
-| Object storage | MinIO locally, Supabase Storage in production | Private POD bucket; the API hands out short-lived signed URLs. |
+| Object storage | Garage locally, Supabase Storage in production | Private POD bucket; the API hands out short-lived signed URLs. |
 | Caddy | 2 | Same-origin serving (cookie sessions, no CORS) and automatic HTTPS. |
 
 ## Backend modules
