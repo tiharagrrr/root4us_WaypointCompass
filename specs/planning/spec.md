@@ -50,7 +50,7 @@ strings in Asia/Colombo; instants are `timestamptz`.
 | `trips` | `planId`, `depotId`, `vehicleId`, `driverId`, `tripNo`, `brand`, `districtId`, `tempClass`, `status`, `isReserved`, `locked`, `waveId`, `plannedDepartAt`, `plannedReturnAt`, `budgetMinutes`, `plannedKm`, `plannedFuelL`, `loadWeightKg`, `loadVolumeM3`, `releasedAt`, `releasedById`, `releaseTempC`, `downloadedAt`, `startedAt`, `completedAt`, `cantRunReason` (BREAKDOWN, COOLING, UNWELL, OTHER; projected from execution's CANT_RUN event), `cancelReason`, `version` | `(planId, depotId)` references plans and `(vehicleId, depotId)` references vehicles, so a vehicle serves only its home depot. `tripNo` is 1 or 2, null once cancelled (which frees the slot); unique `(planId, vehicleId, tripNo)` caps a vehicle at two trips a day. `locked` marks trips built or edited by hand. `isReserved` marks a plan-ahead reservation with no stops |
 | `stops` | `tripId`, `orderId`, `outletId`, `depotId`, `brand`, `districtId`, `seq`, `status`, `plannedArrivalAt`, `plannedTravelMin` (the leg into this stop), `plannedServiceMin`, `predictedServiceMin` (service-time model, informational), `windowOpenMin`, `windowCloseMin`, `etaAt`, `etaUpdatedAt`, `lateRiskProb` (0 to 1), `arrivedAt`, `arrivedLat`, `arrivedLng`, `completedAt`, `outcome`, `unitsDelivered` (>= 0), `receiverName`, `exceptionNote`, `cancelledReason`, `version` | Composite keys to trips and outlets on `(depotId, brand, districtId)`: one brand and one district per trip. Unique `(tripId, seq)`; `seq` is null once cancelled; re-sequencing writes negative values first, then the final ones, in one transaction. The window columns snapshot the effective window |
 | `deferral_reasons` | `code` (key), `label`, `description`, `fromEngine`, `active`, `sortOrder` | Seeded. Engine reasons (`fromEngine`) cannot be deleted on A6. Codes and store wording: `specs/engine/rules.md` |
-| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `swappedForOrderId`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `swappedForOrderId` names the order served instead (16). Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
+| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
 
 Other invariants:
 - Whole orders on one trip each: `orders.activeStopId` is unique (owned by ordering).
@@ -233,7 +233,7 @@ AC-PLN-01  Engine run leaves no hard violation
     And POST /plans/{id}/validate on the saved plan returns no violation with severity HARD
     And every CONFIRMED order for the day is on exactly one trip or listed by GET /plans/{id}/unplanned, never both
     And every unplanned order is listed with a reasonCode from the engine's reason map, its priority and its repeatSkip flag
-    And every unplanned order has a PROPOSED deferral with source ENGINE that records UNAVOIDABLE or PRIORITY_CHOICE, with displacedBy for a choice
+    And every unplanned order has a PROPOSED deferral with source ENGINE whose choice column is UNAVOIDABLE or PRIORITY_CHOICE and whose bindingRule is set, with displacedBy in reasonDetail for a choice
 
 AC-PLN-02  Moving onto a full vehicle is refused
   Given the DRAFT plan for PLG on 2026-10-02 at version 7
@@ -362,7 +362,8 @@ AC-PLN-18  Swapping serves a repeat skip
   Given order A, a repeat skip with a PROPOSED deferral, and order B, a lower-priority order on a trip where A fits once B leaves
   When Tihara posts a SWAP decision on 16 serving A in place of B, with a reason for each
   Then A is a stop on that trip and A's deferral is CANCELLED
-    And B is unplanned with a CONFIRMED deferral whose swappedForOrderId is A and whose reasonCode is the one she chose
+    And B is unplanned with a CONFIRMED deferral whose reasonCode is the one she chose
+    And an audit row planning.order.swapped exists whose after is { deferredOrderId: B, addedOrderId: A, tripId }, with the reasons for A and B
     And an audit row planning.deferral.confirmed exists for B, and the plan has no hard violation
 
 AC-PLN-19  Publishing commits the day

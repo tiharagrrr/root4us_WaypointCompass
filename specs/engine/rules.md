@@ -481,13 +481,20 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 - Scope per rule: Step 5 lists the scope values but assigns only `CAP_VOLUME`. Confirm the assignments in section 3.
 - Messages: Step 5 fixes only the `CAP_VOLUME` template. Confirm the proposed wording for the other 17.
-- `OPERATING_DAY` needs the calendar's `isOperating` and each outlet's `styleDeliveryDow`; Step 5's `EngineInput` does not list them yet. What does the allocator do with a Style order that is not due today?
 - `FUEL_WEEKLY` in repair mode: published trips already put planned fuel in the ledger. Does `fuelUsedThisWeek` exclude `fixedTrips` so they are not counted twice? What does a missing entry mean (0 assumed)?
 - `TECH_VALUE_LIMIT`: `valueLkr` is optional. Does a missing value count as 0?
 - `LATE_RISK`: does it run when `enforceWindows` is off (the Task 2B export)?
-- Soft overrides: the engine reports soft violations; which API field stores the override note?
+- Soft overrides: the engine reports soft violations; which API field stores the override note? (`deferrals.overrideNote` for REPEAT_SKIP; Tech value and late risk notes are still open.)
 - Trip order on a vehicle: which trip goes first is not specified. For Fresh it decides whether trip 2 ends before 08:00 (see `BUDGET_FRESH`).
 - Fixtures: Step 5 names `fixtures/rules/*.json` but not the folder's place; this file assumes `packages/engine/fixtures/`.
+
+### Decided 2026-10-01
+
+- `OPERATING_DAY` inputs: `EngineInput.isOperatingDay` (required boolean; the API reads `calendar_days.isOperating`, the Task 2B export passes `true`) and `styleDeliveryDow` on each outlet (null means no constraint). The weekday comes from `input.date` by integer arithmetic, 0 = Monday.
+- Normal path: Ordering sets a Style order's `deliveryDate` to the outlet's next weekly delivery day when it is placed (as a late order rolls to the next run), and the API queues only orders whose `deliveryDate` is the plan date. A not-due Style order therefore never reaches the engine.
+- Safety net: `OPERATING_DAY` stays a HARD rule in `validate()` (a manual edit, an API date bug, or `styleDeliveryDow` changed after placement). HARD rules have no override, so a not-due order is never forced through. If one does reach `allocate()`, the pre-screen leaves it out so `validate(allocate(x))` stays free of HARD violations, and lists it in `output.excluded[]` with `NOT_DUE_TODAY`. It is not a deferral: no `deferrals` row and no store notice. `excluded[]` is a rare signal that something upstream went wrong, and the API raises an alert for it. On a non-operating date the allocator plans nothing and returns a plan-level `OPERATING_DAY` violation.
+- `choice` and `bindingRule` are real columns on `deferrals` (nullable, null for a manual deferral); `tried[]` and `displacedBy` stay in `reasonDetail`. `swappedForOrderId` is dropped: a dispatcher swap is audited as `planning.order.swapped`.
+- The engine owns the code lists (`RULE_CODES`, `DEFERRAL_CHOICES`, the reason map). The `deferral_reasons` seed and the schema enums are generated from them, never typed by hand.
 
 ## 10. Differences from other sources
 
@@ -504,3 +511,4 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 ## Changelog
 
 - 2026-09-30 created from the Build Spec
+- 2026-10-01 settled OPERATING_DAY inputs (not-due Style orders are a rare safety-net case); deferral choice and bindingRule columns; engine owns the code lists

@@ -1,0 +1,7 @@
+{
+  "district": { "id": "fx-colombo", "depotToDistrictMin": 24, "interStopMin": 8 },
+  "brand": "FRESH",
+  "dockTypes": ["STREET", "STREET", "STREET", "STREET"],
+  "allowances": { "FRESH:STREET": 16 },
+  "expect": { "minutes": 112 }
+}

@@ -232,7 +232,7 @@ stateDiagram-v2
 | Plan | DRAFT → PUBLISHED → CLOSED | REVISE while PUBLISHED raises `revision` |
 | Trip | RESERVED → PLANNED → LOADING → RELEASED → IN_PROGRESS → COMPLETED | CANCEL before start; REASSIGN keeps the state; a released trip moved to another vehicle goes back to LOADING |
 | Stop | PENDING → ARRIVED → DELIVERED, PARTIAL or FAILED | PENDING → CANCELLED when deferred mid-route or moved; CANCELLED → PENDING (REINSTATE) when a device's delivery is kept |
-| Deferral | PROPOSED → CONFIRMED | PROPOSED → CANCELLED (planned after all, or swapped); CONFIRMED → REVERSED (19c) |
+| Deferral | PROPOSED → CONFIRMED | PROPOSED → CANCELLED (planned after all, or swapped for another order; the swap is audited as planning.order.swapped); CONFIRMED → REVERSED (19c) |
 | Store response | AWAITING → ACKNOWLEDGED or PRIORITY_REQUESTED | |
 | Load flag | OPEN → AWAITING_RECHECK → RESOLVED | OPEN → RESOLVED on REMOVE, or on UNDO before the dispatcher decides |
 | Alert | OPEN → ACKNOWLEDGED → RESOLVED | RESOLVE or AUTO_RESOLVE from OPEN too |
@@ -279,7 +279,7 @@ The first draft (Supabase, 29 Sep) was reviewed against the Challenge Booklet, t
 | No travel times, service allowances, calendar or fuel record | `districts` (from `district_travel.csv`), `service_allowances`, `calendar_days`, `fuel_ledger_entries` by ISO week, planned km and minutes on trips |
 | Order size only as lines × items | Totals on `orders` (the dataset's figures); lines snapshot unit weight, volume and value at submit |
 | Drafts stamped as placed; no order number or cutoff flag | `DRAFT` status, nullable `submittedAt`, brand-prefixed `orderNo` from per-brand sequences, `requestedDate` against `deliveryDate`, `afterCutoff`, `urgent` |
-| Deferral reason is free text | `deferral_reasons` table (admins add reasons in A6; engine reasons can't be removed), with source, status, from and to dates, repeat-skip override note, swap, partial flag, store response and reversal |
+| Deferral reason is free text | `deferral_reasons` table (admins add reasons in A6; engine reasons can't be removed), with source, status, from and to dates, repeat-skip override note, engine choice and binding rule, partial flag, store response and reversal |
 | Screens with nowhere to save data | `order_templates`, `receiving_roster_entries`, `load_check_lines`, `load_flags`, `delivery_lines`, `receipt_lines`, `issues`, `alerts`, `attachments`, `invitations`, `devices`, `settings`, `comments`, `depot_waves`, `plan_revisions`, `engine_runs`, `demand_forecasts` |
 | Arrival can't be saved before an outcome; no GPS | Append-only `stop_events` (ARRIVED first, with position), projected onto `stops.arrivedAt` and `outcome` |
 | No version or soft status for offline sync, no conflict record | `version` on aggregates, `CANCELLED` instead of delete, `clientUuid` everywhere offline, `sync_batches` and `sync_conflicts` |
