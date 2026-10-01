@@ -34,6 +34,7 @@ export const AUTH = Symbol('AUTH');
           appUrl: config.get('APP_URL', { infer: true }),
           trustedOrigins: config.get('TRUSTED_ORIGINS', { infer: true }),
           enableBearer: config.get('ENABLE_BEARER', { infer: true }),
+          demoMode: config.get('DEMO_MODE', { infer: true }),
           sendOtp: (phone, code) => messages.enqueueOtp(phone, code),
         }),
     },

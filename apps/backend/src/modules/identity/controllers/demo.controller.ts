@@ -4,11 +4,14 @@ import { DemoInbox } from '../../../core/demo/demo-inbox';
 import { NotFoundError } from '../../../core/errors/domain-errors';
 import {
   AllowAnonymous,
+  AnyRole,
   ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
 import { DemoResetDto } from '../dto/settings.dto';
+import { DemoUsersDto } from '../dto/user.dto';
 import { DemoCommands } from '../services/demo.commands';
+import { DemoQueries } from '../services/demo.queries';
 
 @ApiTags('demo')
 @Controller('demo')
@@ -16,6 +19,7 @@ export class DemoController {
   constructor(
     private readonly inbox: DemoInbox,
     private readonly demo: DemoCommands,
+    private readonly queries: DemoQueries,
   ) {}
 
   /**
@@ -28,6 +32,21 @@ export class DemoController {
   async list() {
     if (!this.inbox.enabled) throw new NotFoundError('demo inbox');
     return this.inbox.list();
+  }
+
+  /**
+   * Who the account menu can switch to, in the order a demo walks the day. Any signed-in role may
+   * read it, and only in demo mode: otherwise it does not exist (404). Switching itself is
+   * POST /api/auth/sign-in/demo (auth/demo-switch.plugin.ts).
+   */
+  @Get('users')
+  @AnyRole()
+  @ApiOperation({
+    summary: 'Demo users to switch between (DEMO_MODE=true only)',
+  })
+  @ApiResource(DemoUsersDto)
+  async users(): Promise<DemoUsersDto> {
+    return { users: await this.queries.cast() };
   }
 
   /** A6 Reset demo day; 404 unless DEMO_MODE=true. */

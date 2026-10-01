@@ -27,6 +27,7 @@ import { RootLinks } from './policies/root.links';
 import { SettingLinks } from './policies/setting.links';
 import { UserLinks } from './policies/user.links';
 import { DemoCommands } from './services/demo.commands';
+import { DemoQueries } from './services/demo.queries';
 import { DeviceQueries } from './services/device.queries';
 import { DevicesService } from './services/devices.service';
 import { DockService } from './services/dock.service';
@@ -90,6 +91,7 @@ import { UsersService } from './services/users.service';
     SettingsCommands,
     SettingLinks,
     DemoCommands,
+    DemoQueries,
   ],
   exports: [IdentityAuthModule],
 })
