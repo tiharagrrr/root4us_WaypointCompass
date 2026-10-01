@@ -10,6 +10,7 @@ import { UsersPage } from '@/features/identity/users-page'
 import { Navigate, type RouteObject } from 'react-router'
 import { AdminShell } from '../layouts/admin-shell'
 import { prefetchLoader } from '../loaders'
+import { RoleArea } from '../role-area'
 import type { RouteHandle } from '../route-handle'
 import { ScreenPlaceholder } from '../screen-placeholder'
 
@@ -22,7 +23,11 @@ const handle = (title: string): RouteHandle => ({ title })
 export const adminRoutes: RouteObject[] = [
   {
     path: 'admin',
-    element: <AdminShell />,
+    element: (
+      <RoleArea allow={['admin']}>
+        <AdminShell />
+      </RoleArea>
+    ),
     loader: prefetchLoader((qc) => qc.prefetchQuery(getMeGetQueryOptions())),
     children: [
       { index: true, element: <Navigate to="users" replace /> },

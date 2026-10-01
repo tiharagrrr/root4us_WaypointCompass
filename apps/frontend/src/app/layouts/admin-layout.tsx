@@ -6,8 +6,9 @@ import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
 import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
+import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
-import { AdminHeaderSlotContext } from './admin-header-slot'
+import { HeaderSlotContext } from './header-slot'
 
 export type AdminSection = 'users' | 'outlets' | 'depots' | 'vehicles' | 'settings'
 
@@ -29,11 +30,12 @@ export interface AdminLayoutProps {
 }
 
 export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }: AdminLayoutProps) {
+  useEventStream()
   const { title } = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <AdminHeaderSlotContext.Provider value={actionsSlot}>
+    <HeaderSlotContext.Provider value={actionsSlot}>
       <div className="flex min-h-svh bg-background text-foreground">
         <aside className="sticky top-0 flex h-svh w-[232px] shrink-0 flex-col gap-[18px] border-r border-border bg-background py-[18px] pl-3 pr-[13px]">
           <div className="border-b border-border px-2 pb-[15px]">
@@ -97,6 +99,6 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
           </main>
         </div>
       </div>
-    </AdminHeaderSlotContext.Provider>
+    </HeaderSlotContext.Provider>
   )
 }

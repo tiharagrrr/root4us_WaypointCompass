@@ -9,6 +9,7 @@ import { Skeleton } from '@/ui/skeleton'
 import { toast } from '@/ui/toast-store'
 import { authClient } from './auth-client'
 import { ROLE_HOME } from './role-home'
+import { useSignOut } from './sign-out'
 import { scopeLabel } from './scope-label'
 
 /**
@@ -23,6 +24,7 @@ export function AccountMenu() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const me = useMeGet()
+  const endSession = useSignOut()
   const cast = useDemoUsers()
   const [busy, setBusy] = useState(false)
 
@@ -57,8 +59,7 @@ export function AccountMenu() {
   const signOut = async () => {
     setBusy(true)
     try {
-      await authClient.signOut()
-      await start('/sign-in')
+      await endSession()
     } finally {
       setBusy(false)
     }

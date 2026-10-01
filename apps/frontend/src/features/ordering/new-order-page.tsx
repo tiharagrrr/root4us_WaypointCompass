@@ -19,7 +19,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { StoreHeaderActions } from '@/app/layouts/store-header-actions'
+import { HeaderActions } from '@/app/layouts/header-actions'
 import { getLink } from '@/lib/links'
 import { useServerClock } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
@@ -196,7 +196,7 @@ export function NewOrderPage() {
 
   return (
     <>
-      <StoreHeaderActions>
+      <HeaderActions>
         <Button variant="outline" onClick={() => setPresetOpen(true)} disabled={!selected}>
           Load a saved preset
         </Button>
@@ -208,7 +208,7 @@ export function NewOrderPage() {
         >
           Save as preset
         </Action>
-      </StoreHeaderActions>
+      </HeaderActions>
 
       <div className="flex items-start gap-4">
         <div className="flex w-[240px] shrink-0 flex-col gap-2">

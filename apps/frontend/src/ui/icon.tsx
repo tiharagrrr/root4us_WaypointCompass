@@ -1,44 +1,61 @@
 import type { CSSProperties } from 'react'
 import { cn } from '@/lib/cn'
-import bell from './icons/bell.svg'
-import chevronDown from './icons/chevron-down.svg'
-import chevronDownSmall from './icons/chevron-down-small.svg'
-import close from './icons/close.svg'
-import deferrals from './icons/deferrals.svg'
-import depots from './icons/depots.svg'
-import itemCatalog from './icons/item-catalog.svg'
-import newOrder from './icons/new-order.svg'
-import orders from './icons/orders.svg'
-import outlets from './icons/outlets.svg'
-import plus from './icons/plus.svg'
-import receipts from './icons/receipts.svg'
-import search from './icons/search.svg'
-import settings from './icons/settings.svg'
-import users from './icons/users.svg'
-import vehicles from './icons/vehicles.svg'
+import add from '@material-symbols/svg-400/rounded/add-fill.svg'
+import assignmentTurnedIn from '@material-symbols/svg-400/rounded/assignment_turned_in-fill.svg'
+import backspace from '@material-symbols/svg-400/rounded/backspace-fill.svg'
+import calendarToday from '@material-symbols/svg-400/rounded/calendar_today-fill.svg'
+import close from '@material-symbols/svg-400/rounded/close-fill.svg'
+import dragIndicator from '@material-symbols/svg-400/rounded/drag_indicator-fill.svg'
+import dashboard from '@material-symbols/svg-400/rounded/dashboard-fill.svg'
+import eco from '@material-symbols/svg-400/rounded/eco-fill.svg'
+import eventUpcoming from '@material-symbols/svg-400/rounded/event_upcoming-fill.svg'
+import formatListBulleted from '@material-symbols/svg-400/rounded/format_list_bulleted-fill.svg'
+import gridView from '@material-symbols/svg-400/rounded/grid_view-fill.svg'
+import group from '@material-symbols/svg-400/rounded/group-fill.svg'
+import history from '@material-symbols/svg-400/rounded/history-fill.svg'
+import keyboardArrowDown from '@material-symbols/svg-400/rounded/keyboard_arrow_down-fill.svg'
+import localShipping from '@material-symbols/svg-400/rounded/local_shipping-fill.svg'
+import navigation from '@material-symbols/svg-400/rounded/navigation-fill.svg'
+import notifications from '@material-symbols/svg-400/rounded/notifications-fill.svg'
+import person from '@material-symbols/svg-400/rounded/person-fill.svg'
+import route from '@material-symbols/svg-400/rounded/route-fill.svg'
+import search from '@material-symbols/svg-400/rounded/search-fill.svg'
+import settings from '@material-symbols/svg-400/rounded/settings-fill.svg'
+import storefront from '@material-symbols/svg-400/rounded/storefront-fill.svg'
+import warehouse from '@material-symbols/svg-400/rounded/warehouse-fill.svg'
 
 /**
- * The single-colour icons exported from the Figma file, unchanged. The library is Material
- * Symbols: take a new icon from the frame that needs it, or from Material Symbols Rounded at the
- * size the frame uses, and never redraw one by hand.
+ * The Figma file draws its icons in Material Symbols (rounded, filled, weight 400), so the app
+ * takes them from @material-symbols/svg-400 instead of keeping exported copies. The key is what
+ * the icon means here; the value is the Material glyph the frames use.
  */
 const icons = {
-  bell,
-  'chevron-down': chevronDown,
-  'chevron-down-small': chevronDownSmall,
+  account: person,
+  backspace,
+  bell: notifications,
+  'chevron-down': keyboardArrowDown,
+  'chevron-down-small': keyboardArrowDown,
   close,
-  deferrals,
-  depots,
-  'item-catalog': itemCatalog,
-  'new-order': newOrder,
-  orders,
-  outlets,
-  plus,
-  receipts,
+  dashboard,
+  deferrals: eventUpcoming,
+  drag: dragIndicator,
+  depots: warehouse,
+  forecast: calendarToday,
+  'item-catalog': gridView,
+  leaf: eco,
+  'new-order': add,
+  orders: formatListBulleted,
+  plus: add,
+  outlets: storefront,
+  plan: route,
+  receipts: assignmentTurnedIn,
   search,
   settings,
-  users,
-  vehicles,
+  today: localShipping,
+  tracking: navigation,
+  trips: history,
+  users: group,
+  vehicles: localShipping,
 } as const
 
 export type IconName = keyof typeof icons
@@ -51,8 +68,8 @@ export interface IconProps {
 }
 
 /**
- * A Figma icon drawn as a CSS mask, so it takes the text colour (currentColor) of its parent:
- * the same SVG serves the default and active tones.
+ * A Material Symbols glyph drawn as a CSS mask, so it takes the text colour (currentColor) of its
+ * parent: the same SVG serves the default and active tones.
  */
 export function Icon({ name, size = 16, className }: IconProps) {
   const url = `url("${icons[name]}")`

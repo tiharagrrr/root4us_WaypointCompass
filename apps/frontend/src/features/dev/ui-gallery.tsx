@@ -1,19 +1,24 @@
 // Development only (/dev/ui): every Compass component in src/ui, built from the A1, A2 and A6
 // frames, for side-by-side checks with Figma. Not linked from the app and not in production builds.
 import { useState } from 'react'
-import { AdminHeaderActions } from '@/app/layouts/admin-header-actions'
+import { HeaderActions } from '@/app/layouts/header-actions'
 import { Action } from '@/ui/action'
 import { Badge } from '@/ui/badge'
 import { Button } from '@/ui/button'
+import { CapacityMeter } from '@/ui/capacity-meter'
+import { DeliveryWindow } from '@/ui/delivery-window'
 import { DemoTimeBadge } from '@/ui/demo-time-badge'
+import { DriverStopCard } from '@/ui/driver-stop-card'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTrigger } from '@/ui/dialog'
 import { Field } from '@/ui/field'
 import { Icon } from '@/ui/icon'
 import { Input } from '@/ui/input'
 import { Pagination } from '@/ui/pagination'
-import { QuantityStepper } from '@/ui/quantity-stepper'
+import { PinKeypad } from '@/ui/pin-keypad'
 import { RadioCards } from '@/ui/radio-cards'
 import { SegmentedControl } from '@/ui/segmented-control'
+import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTrigger } from '@/ui/sheet'
+import { StopSequenceRow } from '@/ui/stop-sequence-row'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
 import { Skeleton } from '@/ui/skeleton'
 import { StatusChip } from '@/ui/status-chip'
@@ -42,11 +47,10 @@ export function UiGallery() {
   const [channel, setChannel] = useState<'email' | 'sms'>('sms')
   const [offset, setOffset] = useState(0)
   const [limit, setLimit] = useState(10)
-  const [packs, setPacks] = useState(5)
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminHeaderActions>
+      <HeaderActions>
         <Input size="sm" className="w-60" placeholder="Search users" leading={<Icon name="search" />} />
         <Select defaultValue="all">
           <SelectTrigger size="sm" className="w-auto">
@@ -58,7 +62,7 @@ export function UiGallery() {
           </SelectContent>
         </Select>
         <Button variant="primary">Invite user</Button>
-      </AdminHeaderActions>
+      </HeaderActions>
 
       <p className="type-body m-0 text-muted-foreground">Every user is scoped to an outlet, depot or vehicle. They only see data for that scope.</p>
       <SegmentedControl
@@ -116,12 +120,6 @@ export function UiGallery() {
           }}
         />
       </TableContainer>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <QuantityStepper label="Sugar 1 kg" value={packs} onValueChange={setPacks} />
-        <QuantityStepper label="Fresh milk 1 L" value={1} min={1} onValueChange={() => undefined} />
-        <QuantityStepper label="Ceylon tea 400 g" value={4} onValueChange={() => undefined} disabled />
-      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary">Publish plan</Button>
@@ -218,6 +216,65 @@ export function UiGallery() {
           <Skeleton className="h-8 w-60" />
           <ErrorState error={problem} onRetry={() => undefined} />
           <EmptyState title="No invitations yet" description="Invite a store manager, dispatcher, loader or driver." />
+        </div>
+      </div>
+
+      {/* The composites the plan, dock and driver screens are built from (ROO-15). */}
+      <div className="flex flex-col gap-3">
+        <h2 className="type-section m-0 text-foreground">Planning and field</h2>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] items-start gap-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
+            <CapacityMeter label="WEIGHT" value={3610} limit={4000} unit="kg" />
+            <CapacityMeter label="VOLUME" value={19.2} limit={18} unit="m³" fractionDigits={1} />
+            <StopSequenceRow
+              seq={1}
+              name="Kadawatha"
+              code="WF-0210"
+              arrival="12:10"
+              window={{ open: '12:00', close: '14:00' }}
+              load="1,020 kg"
+              actions={
+                <Button size="icon-sm" variant="ghost" aria-label="Remove Kadawatha">
+                  <Icon name="close" />
+                </Button>
+              }
+            />
+            <StopSequenceRow seq={2} name="Kelaniya" code="WF-0224" arrival="12:35" window={{ open: '12:00', close: '15:00' }} load="860 kg" draggable />
+          </div>
+
+          <DriverStopCard
+            eyebrow="NEXT STOP"
+            name="Ja-Ela"
+            address="No. 48, Negombo Rd, Ja-Ela"
+            chilled
+            rows={[
+              { label: 'ETA', value: '07:18' },
+              { label: 'Window', value: <DeliveryWindow open="07:00" close="08:00" strong /> },
+              { label: 'Mall window', value: <DeliveryWindow open="06:30" close="09:30" strong /> },
+            ]}
+          />
+
+          <div className="flex flex-col items-start gap-3 rounded-lg border border-border p-4">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline">Open sheet</Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader title="Flag an item" description="Tell the dispatcher what is wrong with this line." />
+                <SheetBody>
+                  <Field label="What is wrong">{(control) => <Input {...control} placeholder="Short by 2 cases" />}</Field>
+                </SheetBody>
+                <SheetFooter>
+                  <Button variant="primary" size="touch">
+                    Send to dispatcher
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+            <div data-density="touch" className="w-[260px]">
+              <PinKeypad onComplete={(pin) => toast({ title: `PIN ${pin.length} digits entered` })} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
