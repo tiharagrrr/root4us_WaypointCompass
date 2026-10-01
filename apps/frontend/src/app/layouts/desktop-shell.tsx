@@ -1,15 +1,13 @@
 // Figma: the desktop chrome behind the store frames (M1 185:10376) and the dispatcher frames
 // (03 185:12856): a 232 px sidebar with the wordmark, the nav and the account card, and a header
 // carrying the page title, the page's own actions, a status slot and the notification bell.
-import { useMeGet } from '@compass/api-client'
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
-import { initials, roleLabel } from '@/lib/roles'
 import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
-import { Skeleton } from '@/ui/skeleton'
+import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
@@ -83,7 +81,7 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
             ))}
           </nav>
           <div className="flex-1" />
-          <AccountCard />
+          <AccountMenu />
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -115,36 +113,5 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
         </div>
       </div>
     </HeaderSlotContext.Provider>
-  )
-}
-
-/** The signed-in person at the foot of the sidebar (GET /me). */
-function AccountCard() {
-  const { t } = useTranslation()
-  const me = useMeGet()
-  return (
-    <div className="flex items-center gap-2.5 border-t border-border px-2 pt-[13px]">
-      {me.data ? (
-        <>
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent font-sans text-[12px] font-bold text-primary">
-            {initials(me.data.data.name)}
-          </span>
-          <div className="flex min-w-0 flex-col gap-px leading-auto">
-            <span className="truncate font-sans text-[13px] font-bold text-foreground">{me.data.data.name}</span>
-            <span className="type-caption truncate text-muted-foreground">{roleLabel(me.data.data.role)}</span>
-          </div>
-        </>
-      ) : me.isPending ? (
-        <>
-          <Skeleton className="size-8 rounded-full" />
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </>
-      ) : (
-        <span className="type-caption text-muted-foreground">{t('shell.notSignedIn')}</span>
-      )}
-    </div>
   )
 }

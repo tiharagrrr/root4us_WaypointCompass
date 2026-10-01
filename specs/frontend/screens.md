@@ -317,6 +317,9 @@ Screen-specific states and actions, from Step 8:
   `/driver/stops/:id/exception` and `/driver/trips/:id/done`. This file uses the frame tables.
 - The architecture table names the dock phone frames "L2m–L5m" and the store frames "M1–M9"; the
   real codes include L2m-a, L2m-b, L3m-a, M1a and M1b.
+- The store sidebar (M1) lists Receipts between Deferrals and Item catalog, but no receipts list
+  has a frame: M5 is one order's receipt. Is Receipts a list of its own, or M3 filtered to the
+  receipts still to confirm? `/store/receipts` is a placeholder until this is settled.
 - Dock tablet landing: `/dock` is L2m-a Runs on the phone. What does the tablet show at `/dock`
   before a trip is chosen? L2's data includes the trip list.
 - 01 Dashboard has no single owning module: alerts owns the exception panel, loading owns the flag
@@ -349,3 +352,4 @@ Screen-specific states and actions, from Step 8:
   on the control tokens; `useEventStream`; i18n in `src/i18n/en.json`; the service worker. Icons now
   come from @material-symbols. The dock and driver areas are `/dock` and `/driver`, as Step 8 says.
 - 2026-09-30 created from the Build Spec
+- 2026-10-01 M1, M1a, M1b and M2 built on mocks with the store shell (ROO-20)

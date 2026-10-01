@@ -45,6 +45,7 @@ const icons = {
   leaf: eco,
   'new-order': add,
   orders: formatListBulleted,
+  plus: add,
   outlets: storefront,
   plan: route,
   receipts: assignmentTurnedIn,

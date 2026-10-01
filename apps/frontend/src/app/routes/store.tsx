@@ -1,5 +1,7 @@
-import { getMeGetQueryOptions } from '@compass/api-client'
+import { getMeGetQueryOptions, getOrdersListQueryOptions } from '@compass/api-client'
 import { Navigate, type RouteObject } from 'react-router'
+import { NewOrderPage } from '@/features/ordering/new-order-page'
+import { STORE_OPEN_ORDERS } from '@/features/ordering/open-orders-query'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
 import type { RouteHandle } from '../route-handle'
@@ -24,7 +26,8 @@ export const storeRoutes: RouteObject[] = [
           {
             path: 'orders/new',
             handle: handle('New order', 'New order · Fresh Kadawatha'),
-            element: <ScreenPlaceholder code="M1" name="New order" node="185:10376" />,
+            element: <NewOrderPage />,
+            loader: prefetchLoader((qc) => qc.prefetchQuery(getOrdersListQueryOptions(STORE_OPEN_ORDERS))),
           },
           { path: 'orders', handle: handle('Orders'), element: <ScreenPlaceholder code="M3" name="Orders" node="185:10924" /> },
           {

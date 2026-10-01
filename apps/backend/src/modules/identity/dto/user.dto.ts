@@ -162,3 +162,39 @@ export class UserDto {
   @ApiLinks()
   _links!: Record<string, Link>;
 }
+
+/**
+ * One of the users the demo can switch between, for the account menu (DEMO_MODE only). It carries
+ * no contact details beyond the sign-in email the seed uses, and never a password or a PIN.
+ */
+export class DemoUserDto {
+  @ApiProperty({ example: '0192a3f4-0000-7000-8000-000000000001' })
+  id!: string;
+
+  @ApiProperty({ example: 'Nimesha Periyapperuma' })
+  name!: string;
+
+  @ApiProperty({ example: 'nimesha.p@waypoint.lk' })
+  email!: string;
+
+  @ApiProperty({ enum: USER_ROLES, enumName: 'UserRole' })
+  role!: UserRole;
+
+  @ApiProperty({ nullable: true, type: String, example: null })
+  depotId!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: 'OUT014' })
+  outletId!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: null })
+  vehicleId!: string | null;
+
+  @ApiProperty({ type: ScopeNamesDto })
+  scopeNames!: ScopeNamesDto;
+}
+
+/** GET /demo/users: the cast the account menu switches between, in demo order. */
+export class DemoUsersDto {
+  @ApiProperty({ type: [DemoUserDto] })
+  users!: DemoUserDto[];
+}
