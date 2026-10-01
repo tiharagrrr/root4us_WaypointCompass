@@ -1,7 +1,7 @@
 import type { EngineParams } from '../params';
 import type { EngineDistrict } from '../types';
 
-// Windows and display only. Budgets always use the booklet minutes (trip-minutes.ts).
+// Windows and display only. Budgets always use the trip minutes (trip-minutes.ts).
 
 export interface ScheduleStopInput {
   allowanceMin: number;

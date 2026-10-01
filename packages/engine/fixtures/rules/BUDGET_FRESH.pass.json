@@ -1,0 +1,110 @@
+{
+  "rule": "BUDGET_FRESH",
+  "description": "Two Fresh trips of 101 and 112 minutes use 213 of 270",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1"
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {},
+      "fx-out-2": {},
+      "fx-out-3": {
+        "dockType": "STREET"
+      },
+      "fx-out-4": {
+        "dockType": "STREET"
+      },
+      "fx-out-5": {
+        "dockType": "STREET"
+      },
+      "fx-out-6": {
+        "dockType": "STREET"
+      },
+      "fx-out-7": {
+        "dockType": "STREET"
+      }
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1"
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-2"
+      },
+      {
+        "id": "fx-ord-3",
+        "outletId": "fx-out-3"
+      },
+      {
+        "id": "fx-ord-4",
+        "outletId": "fx-out-4",
+        "districtId": "fx-colombo"
+      },
+      {
+        "id": "fx-ord-5",
+        "outletId": "fx-out-5",
+        "districtId": "fx-colombo"
+      },
+      {
+        "id": "fx-ord-6",
+        "outletId": "fx-out-6",
+        "districtId": "fx-colombo"
+      },
+      {
+        "id": "fx-ord-7",
+        "outletId": "fx-out-7",
+        "districtId": "fx-colombo"
+      }
+    ],
+    "districts": {
+      "fx-gampaha": {
+        "depotToDistrictMin": 37,
+        "interStopMin": 9
+      },
+      "fx-colombo": {
+        "depotToDistrictMin": 24,
+        "interStopMin": 8,
+        "depotToDistrictKm": 12,
+        "interStopKm": 3
+      }
+    },
+    "allowances": {
+      "FRESH:REAR_DOCK": 15,
+      "FRESH:STREET": 16
+    }
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1",
+          "fx-ord-2",
+          "fx-ord-3"
+        ]
+      },
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 2,
+        "brand": "FRESH",
+        "districtId": "fx-colombo",
+        "orderIds": [
+          "fx-ord-4",
+          "fx-ord-5",
+          "fx-ord-6",
+          "fx-ord-7"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": []
+}

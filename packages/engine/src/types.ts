@@ -72,16 +72,31 @@ export interface Trip {
   /** "<vehicle code>#<tripNo>", for example "REF-07#1". */
   key: string;
   vehicleId: string;
-  tripNo: 1 | 2;
+  /** The vehicle's slot in the day's plan: 1 or 2 in storage; the TRIP_LIMIT rule catches more. */
+  tripNo: number;
   brand: Brand;
   districtId: string;
+  /** In stop order. */
   orderIds: readonly string[];
-  /** Booklet formula, return leg excluded. */
+  /** Trip minutes from the time model, return leg excluded. */
   minutes: number;
   km: number;
   litres: number;
   weightKg: number;
   volumeM3: number;
+  /** Minutes after midnight. When absent the schedule derives it. */
+  departMin?: number;
+}
+
+/** A trip as the allocator or the plan editor proposes it; validate() measures it. */
+export interface TripDraft {
+  key?: string;
+  vehicleId: string;
+  tripNo: number;
+  brand: Brand;
+  districtId: string;
+  orderIds: readonly string[];
+  departMin?: number;
 }
 
 export interface Unplanned {
@@ -94,7 +109,7 @@ export interface Unplanned {
 }
 
 export interface Plan {
-  trips: readonly Trip[];
+  trips: readonly TripDraft[];
   unplanned: readonly Unplanned[];
 }
 
@@ -129,11 +144,16 @@ export interface Violation {
   message: string;
 }
 
-/** What a rule's check() receives. A clean result is []. */
+/** What a rule's check() receives. Which of trip, vehicle, vehicleTrips and unplannedOrder are set depends on the rule's scope. */
 export interface RuleContext {
   readonly input: EngineInput;
   readonly params: EngineParams;
-  readonly plan: Plan;
+  /** Every trip in the plan, fixed trips included, measured and sorted by key. */
+  readonly trips: readonly Trip[];
+  readonly unplanned: readonly Unplanned[];
+  readonly orderById: ReadonlyMap<string, EngineOrder>;
   readonly trip?: Trip;
   readonly vehicle?: EngineVehicle;
+  readonly vehicleTrips?: readonly Trip[];
+  readonly unplannedOrder?: Unplanned;
 }

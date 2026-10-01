@@ -26,7 +26,7 @@ export function allowanceMinutes(
 }
 
 /**
- * Booklet trip minutes: outbound travel once, inter-stop travel between stops, and handling per
+ * Trip minutes: outbound travel once, inter-stop travel between stops, and handling per
  * stop. The return journey is not counted. Stop order does not matter; a trip with no stops is 0.
  */
 export function tripMinutes({ district, brand, dockTypes, allowances }: TripMinutesInput): number {
