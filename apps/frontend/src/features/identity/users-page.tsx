@@ -12,7 +12,7 @@ import {
 } from '@compass/api-client'
 import { keepPreviousData, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useDeferredValue, useState } from 'react'
-import { AdminHeaderActions } from '@/app/layouts/admin-header-actions'
+import { HeaderActions } from '@/app/layouts/header-actions'
 import { cn } from '@/lib/cn'
 import { getLink } from '@/lib/links'
 import { roleLabel } from '@/lib/roles'
@@ -98,7 +98,7 @@ export function UsersPage() {
 
   return (
     <>
-      <AdminHeaderActions>
+      <HeaderActions>
         <Input
           size="sm"
           className="w-60"
@@ -129,7 +129,7 @@ export function UsersPage() {
             {create.title ?? 'Invite user'}
           </Button>
         ) : null}
-      </AdminHeaderActions>
+      </HeaderActions>
 
       <p className="type-body m-0 text-muted-foreground">Every user is scoped to an outlet, depot or vehicle. They only see data for that scope.</p>
       <SegmentedControl

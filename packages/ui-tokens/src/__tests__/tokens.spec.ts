@@ -45,6 +45,12 @@ describe('Figma values', () => {
     expect(status.warning.fg).toBe('#a15c07');
   });
 
+  it('ROO-15 AC-2 touch density raises every control to the 44 px target', () => {
+    const css = renderTokensCss();
+    expect(css).toMatch(/:root \{[^}]*--compass-size-touch-target: 44px;/);
+    expect(css).toMatch(/\[data-density="touch"\] \{\n  --compass-size-control: 44px;\n  --compass-size-control-sm: 44px;\n\}/);
+  });
+
   it('renders Compass/Label and Compass/Body small as text-style classes', () => {
     expect(textStyles.label).toMatchObject({ family: 'mono', size: 11, letterSpacing: 0.44 });
     const css = renderTokensCss();

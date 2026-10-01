@@ -13,6 +13,12 @@ export type Brand = (typeof BRANDS)[number];
 export const DEPOTS = ["PLG", "KDY"] as const;
 export type Depot = (typeof DEPOTS)[number];
 
+/** How a depot id reads in the UI: the dock and dispatcher shells name their depot. */
+export const DEPOT_NAMES: Record<Depot, string> = {
+  PLG: "Peliyagoda",
+  KDY: "Kandy",
+};
+
 /** Peliyagoda is the central distribution centre; Kandy is a regional depot. */
 export const DEPOT_KINDS = ["CENTRAL", "REGIONAL"] as const;
 export type DepotKind = (typeof DEPOT_KINDS)[number];

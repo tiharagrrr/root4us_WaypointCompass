@@ -17,6 +17,16 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
       }
+    },
+    "./domain": {
+      "import": {
+        "types": "./dist/domain.d.mts",
+        "default": "./dist/domain.mjs"
+      },
+      "require": {
+        "types": "./dist/domain.d.ts",
+        "default": "./dist/domain.js"
+      }
     }
   },
   "files": [

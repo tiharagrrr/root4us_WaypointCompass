@@ -5,6 +5,6 @@ export const ROLE_HOME: Record<UserRole, string> = {
   admin: '/admin/users',
   dispatcher: '/dispatch',
   store_manager: '/store',
-  loader: '/load',
-  driver: '/drive',
+  loader: '/dock',
+  driver: '/driver',
 }

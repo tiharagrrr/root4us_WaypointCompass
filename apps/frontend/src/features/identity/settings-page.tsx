@@ -9,7 +9,7 @@ import {
 } from '@compass/api-client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { AdminHeaderActions } from '@/app/layouts/admin-header-actions'
+import { HeaderActions } from '@/app/layouts/header-actions'
 import { cn } from '@/lib/cn'
 import { getLink } from '@/lib/links'
 import { Button } from '@/ui/button'
@@ -176,11 +176,11 @@ export function SettingsPage() {
   return (
     <>
       {canSave ? (
-        <AdminHeaderActions>
+        <HeaderActions>
           <Button variant="primary" loading={saving} disabled={changed.length === 0} onClick={() => void saveAll()}>
             Save changes
           </Button>
-        </AdminHeaderActions>
+        </HeaderActions>
       ) : null}
 
       <div className="flex gap-8">

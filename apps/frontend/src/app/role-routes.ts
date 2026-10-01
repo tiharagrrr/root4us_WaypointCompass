@@ -1,4 +1,4 @@
-import type { UserRole } from '@waypoint/shared'
+import type { UserRole } from '@waypoint/shared/domain'
 
 export interface RoleRoute {
   role: UserRole
@@ -23,13 +23,13 @@ export const ROLE_ROUTES: RoleRoute[] = [
   },
   {
     role: 'loader',
-    path: '/load',
+    path: '/dock',
     label: 'Loader',
     summary: 'Load in reverse stop order, flag missing or damaged items, release vehicles.',
   },
   {
     role: 'driver',
-    path: '/drive',
+    path: '/driver',
     label: 'Driver',
     summary: 'Follow the route, record each stop and proof of delivery, even offline.',
   },

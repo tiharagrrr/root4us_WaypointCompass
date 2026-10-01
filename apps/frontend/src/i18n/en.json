@@ -1,0 +1,36 @@
+{
+  "shell": {
+    "notifications": "Notifications",
+    "notificationsUnread": "Notifications, {{count}} unread",
+    "notSignedIn": "Not signed in",
+    "switchUser": "Switch user",
+    "dock": "DOCK",
+    "dockOf": "{{depot}} DOCK",
+    "sharedTablet": "· SHARED TABLET",
+    "driver": "Driver",
+    "depot": "Depot"
+  },
+  "nav": {
+    "admin": "SUPER ADMIN",
+    "store": "STORE",
+    "dispatch": "DISPATCH · {{depot}}",
+    "users": "Users",
+    "outlets": "Outlets",
+    "depots": "Depots",
+    "vehicles": "Vehicles",
+    "settings": "Settings",
+    "newOrder": "New order",
+    "orders": "Orders",
+    "deferrals": "Deferrals",
+    "receipts": "Receipts",
+    "itemCatalog": "Item catalog",
+    "dashboard": "Dashboard",
+    "orderQueue": "Order queue",
+    "plan": "Plan",
+    "tracking": "Tracking",
+    "forecast": "Forecast",
+    "today": "Today",
+    "trips": "Trips",
+    "account": "Account"
+  }
+}
