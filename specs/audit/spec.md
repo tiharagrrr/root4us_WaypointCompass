@@ -375,3 +375,7 @@ AC-AUD-22  Drivers read their own trip timeline
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-01 AuditService.record() landed with ROO-27, minimally: the transaction check, REASON_REQUIRED for
+  user.role_changed and user.scope_changed only (matched on the action without its module), advisory lock 4747,
+  GENESIS_HASH, canonicalJson and the sha256 chain. The rest of the reason table, clientUuid idempotency, the feed,
+  the export, timelines and the chain verifier are still open (ROO-23). No AC-AUD criterion is ticked yet

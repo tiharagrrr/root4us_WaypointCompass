@@ -1,4 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiLinks } from '../../../core/http/decorators';
+import type { Link } from '@waypoint/shared';
 import {
   IsIn,
   IsOptional,
@@ -69,4 +71,18 @@ export class DeviceDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: string;
+}
+
+/** PUT /devices/{id}/dock: the depot this tablet serves as a dock device. */
+export class DockDeviceDto {
+  @IsString()
+  @Length(1, 40)
+  @ApiProperty({ example: 'PLG' })
+  depotId!: string;
+}
+
+/** A device on A6's dock tablets card, with what the admin may do to it. */
+export class AdminDeviceDto extends DeviceDto {
+  @ApiLinks()
+  _links!: Record<string, Link>;
 }

@@ -17,6 +17,7 @@ import { admin, bearer, phoneNumber, username } from 'better-auth/plugins';
 import { uuidv7 } from 'uuidv7';
 import type { Database } from '../../../db/client';
 import { accounts, sessions, users, verifications } from '../../../db/schema';
+import { invitationSession } from './invitation-session.plugin';
 import { loaderPin } from './loader-pin.plugin';
 
 export const AUTH_BASE_PATH = '/api/auth';
@@ -53,7 +54,10 @@ export function createAuth(deps: AuthDeps) {
     session: {
       expiresIn: 7 * DAY_S,
       updateAge: DAY_S,
-      cookieCache: { enabled: true, maxAge: 300 },
+      // No cookie cache: a cached session outlives its deleted row by up to
+      // its maxAge, and a role or scope change must sign the user out at once
+      // (AC-IDN-04). Every request reads the session row instead.
+      cookieCache: { enabled: false },
     },
     user: {
       additionalFields: {
@@ -104,6 +108,7 @@ export function createAuth(deps: AuthDeps) {
         sendOTP: ({ phoneNumber: phone, code }) => deps.sendOtp(phone, code),
       }),
       loaderPin(deps.db),
+      invitationSession(),
       ...(deps.enableBearer ? [bearer()] : []),
     ],
   });

@@ -1,0 +1,27 @@
+{
+  "name": "@compass/ui-tokens",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Compass design tokens from the Waypoint Figma file: CSS custom properties, text styles, the Tailwind 4 theme and a TS object",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./tailwind.css": "./src/tailwind.css"
+  },
+  "scripts": {
+    "build": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/build-css.ts",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.11"
+  }
+}

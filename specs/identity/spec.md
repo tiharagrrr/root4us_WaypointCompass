@@ -3,7 +3,7 @@ module: identity
 owner: Nimesha
 status: in-progress    # draft | ready | in-progress | done
 screens: [A0, A1, A2, A6, D0a, D0b, L1, L1m, D12, D13]
-depends-on: [core]
+depends-on: [core, audit]
 ---
 
 # Identity, access and admin settings
@@ -102,7 +102,7 @@ BetterAuth configuration:
 | --- | --- |
 | basePath | /api/auth |
 | Password | emailAndPassword enabled, minPasswordLength 10, reset through `authMessages.enqueue('password-reset', ...)` |
-| Session | expiresIn 7 days, updateAge 1 day, cookieCache 300 s |
+| Session | expiresIn 7 days, updateAge 1 day, no cookie cache: a cached session outlives its deleted row, and a role or scope change must sign the user out at once (AC-IDN-04) |
 | Cookie | HttpOnly, Secure, SameSite=Lax, one origin (no CORS, no token in localStorage) |
 | phoneNumber | otpLength 6, expiresIn 300 s, allowedAttempts 5, `authMessages.enqueueOtp` (SMS provider) |
 | admin | `admin({ ac, roles, defaultRole: 'store_manager' })` |
@@ -145,18 +145,23 @@ BetterAuth routes sit under `/api/auth/*`; every other path below is under `/api
 | GET, POST | /me/devices | any | Register the device: id, platform, app version |
 | PUT | /me/devices/{id}/push | any | Save a Web Push subscription |
 | GET | /users | user:list | A1: filter by role, depot, outlet, status; search by name; offset pages |
+| GET | /users/scope-options | user:list | Depots, outlets and vehicles a user or invitation can be linked to (A1, A2). Reads master data until /depots, /outlets and /vehicles exist |
 | GET, PATCH | /users/{id} | user:list, user:set-role | Role and scope changes need a reason and revoke the user's sessions |
 | POST | /users/{id}/deactivate, /users/{id}/reactivate | user:ban | Keeps the row; 409 if the driver has trips today, with a link to 20 Reassign |
 | PUT | /users/{id}/pin | user:set-password | Loader PIN, unique per depot |
 | GET, POST | /invitations | user:create | A1 pending list, A2 create; Idempotency-Key on create |
+| GET | /invitations/{id} | user:create | One invitation; the self link and the Location of a create |
 | POST | /invitations/{id}/resend, /invitations/{id}/revoke | user:create | New token and expiry on resend |
 | GET | /invitations/by-token/{token} | public | Invite landing: name, role, expiry |
 | POST | /invitations/{token}/accept | public | Creates the user and signs them in |
-| PUT | /devices/{id}/dock | settings:manage | Marks a tablet as a dock device for a depot |
-| GET, PUT | /settings, /settings/{key} | settings:read, settings:manage | A6; validated by the key's schema |
-| GET, POST, PATCH | /deferral-reasons | deferral:read, settings:manage | A6 reason list; engine reasons can't be removed |
+| GET | /devices, /devices/{id} | settings:manage | A6 dock tablets card: registered devices; filter by isDockDevice, depotId, platform |
+| PUT, DELETE | /devices/{id}/dock | settings:manage | Marks a tablet as a dock device for a depot (body `{ depotId }`), or stops it being one |
+| GET, PUT | /settings, /settings/{key} | settings:read, settings:manage | A6; validated by the key's schema. `?depotId=` resolves or sets a depot override (keys with one only) |
+| DELETE | /settings/{key}?depotId= | settings:manage | Removes a depot's override |
+| GET, POST | /deferral-reasons | deferral:read, settings:manage | A6 reason list. Served by the planning module, which owns the table |
+| GET, PATCH | /deferral-reasons/{code} | deferral:read, settings:manage | Engine reasons can be relabelled, never switched off (409) |
 | GET, PUT | /clock | any, settings:manage | Demo time travel, only when DEMO_MODE=true |
-| POST | /demo/reset | settings:manage | Rebuilds the demo day; demo mode only |
+| POST | /demo/reset | settings:manage | Rebuilds the demo day; demo mode only. 501 until the S1 seed registers a DemoDayBuilder (ROO-22) |
 | GET | /demo/inbox | public, demo mode only | The last 50 SMS and emails, so judges can read OTP codes |
 
 A1 example request: `GET /users?filter[role]=driver&q=aniqa&limit=10`. Tables use offset pages (limit
@@ -196,8 +201,8 @@ loader's loadingBoard, and a store manager's myOrders and deliveries instead:
   replace BetterAuth's built-in `/sign-in*` rule of 3 per 10 s. Several API replicas need Redis storage.
 - Sign-up is off (`disableSignUp`): accounts come from invitations and the seed. Admin routes that delete
   or impersonate users are disabled (`disabledPaths`).
-- identity: `MeService`; `UsersService` (list, role and scope changes with session revocation,
-  deactivate); `InvitationsService` with `newToken()` and `hashToken()`; `DevicesService` (register, dock
+- identity: `MeService`; `UsersService` (role and scope changes with session revocation, deactivate, reactivate,
+  PIN); `UserQueries`; `InvitationsService` with `newToken()` and `hashToken()`; `DevicesService` (register, dock
   flag, push subscription); `PinService` (set, verify, per-depot uniqueness).
 - Invitation flow: A2 posts name, role, scope and email or phone; `POST /invitations` stores the token as a
   sha256 hash with a 72-hour expiry and queues the invite email or SMS. The link opens `/invite/:token`:
@@ -222,11 +227,27 @@ Emits (through `OutboxService.add()` in the use case's transaction):
 | identity.user.invited | notifications (invite email, or SMS for drivers: "You're invited to Waypoint Compass.") |
 | identity.user.joined | notifications (welcome) |
 | identity.user.role_changed | realtime (force the client to refresh /me) |
+| identity.user.scope_changed | realtime (force the client to refresh /me); a change of depot, outlet or vehicle with the same role |
 | identity.user.deactivated | realtime (force the client to refresh /me) |
+| identity.user.reactivated, identity.user.pin_set | none yet (rule 4: every state change emits) |
+| identity.invitation.revoked | none yet |
+| identity.device.dock_changed | realtime (the depot's dock tablets) |
+| deferral_reason.created, deferral_reason.updated (planning) | realtime (refetch the reason list) |
+| demo.reset (core) | realtime to every client |
 | settings.changed, clock.changed (core) | realtime to every client, on the broadcast channel |
 
 Payloads follow the Step 2 rule: typed, `v: 1`, ids and the few fields consumers need. The doc gives no
 field list for these events.
+
+`identity.user.role_changed` and `identity.user.scope_changed` carry `{ v: 1, userId, role, depotId, outletId }`
+(`UserAccessChangedEvent` in `events/identity.events.ts`). They route by the aggregate `['user', id]` only:
+`outbox_events` has no column for user channels yet, so realtime reads the userId from the payload.
+
+The other payloads (`events/identity.events.ts`): `identity.user.invited` `{ v, invitationId, role, channel, resend }`,
+`identity.user.joined` `{ v, userId, invitationId, role }`, `identity.user.deactivated`, `reactivated` and `pin_set`
+`{ v, userId }`, `identity.invitation.revoked` `{ v, invitationId }`, `identity.device.dock_changed`
+`{ v, deviceId, isDockDevice, depotId }`, `settings.changed` `{ v, key, depotId }`, `clock.changed` `{ v, mode }`,
+`demo.reset` `{ v, days }`. None carries a name, email, phone number, PIN or token.
 
 Consumes: none.
 
@@ -234,7 +255,11 @@ Consumes: none.
 - `auth.sign_in.succeeded`, `auth.sign_in.failed` (method, role)
 - `auth.otp.sent` (masked phone)
 - `auth.pin.failed` (device, depot)
-- `identity.invitation.created`, `identity.invitation.accepted`
+- `identity.invitation.created`, `identity.invitation.sent` (channel only), `identity.invitation.resent`,
+  `identity.invitation.revoked`, `identity.invitation.accepted`
+- `identity.user.role_changed`, `identity.user.scope_changed`, `identity.user.deactivated`, `identity.user.reactivated`,
+  `identity.user.pin_set`, `identity.device.dock_changed` (ids and sessionsRevoked only)
+- `core.setting.changed` (key, depotId), `core.clock.changed` (mode)
 - `demo.reset`
 
 Never logged: cookies, tokens, passwords, PINs, OTP codes, full phone numbers and emails. The pino redact
@@ -254,7 +279,7 @@ BetterAuth's `defaultStatements`; only admin holds them, as `adminAc` without `u
 | session:list, session:revoke, session:delete | yes | — | — | — | — |
 | settings:read | yes | yes | — | — | — |
 | settings:manage | yes | — | — | — | — |
-| deferral:read | — | yes | yes | — | — |
+| deferral:read | yes | yes | yes | — | — |
 
 Scopes applied by every ScopePolicy, and the seeded judge accounts:
 
@@ -286,8 +311,8 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 
 - [x] AC-IDN-01 Another outlet's order is not found
 - [x] AC-IDN-02 PIN needs this depot's dock device
-- [ ] AC-IDN-03 Late invitation acceptance gets 409
-- [ ] AC-IDN-04 Role change revokes sessions
+- [x] AC-IDN-03 Late invitation acceptance gets 409
+- [x] AC-IDN-04 Role change revokes sessions
 - [x] AC-IDN-05 Sixth PIN attempt gets 429
 - [ ] AC-IDN-06 Row-level security backs up scope
 - [ ] AC-IDN-07 PIN signs a loader in
@@ -310,38 +335,38 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [x] AC-IDN-24 /me refuses role and scope edits
 - [x] AC-IDN-25 A device registers itself
 - [ ] AC-IDN-26 A device saves its push subscription
-- [ ] AC-IDN-27 Admin marks a dock device
-- [ ] AC-IDN-28 Admin lists and searches users
-- [ ] AC-IDN-29 Non-admins are refused admin routes
-- [ ] AC-IDN-30 No session gets 401
-- [ ] AC-IDN-31 Role change needs a reason
-- [ ] AC-IDN-32 Scope change revokes sessions
-- [ ] AC-IDN-33 Driver with trips today stays active
-- [ ] AC-IDN-34 Deactivation keeps the user row
-- [ ] AC-IDN-35 Reactivation restores the user
-- [ ] AC-IDN-36 PIN is unique per depot
-- [ ] AC-IDN-37 PIN must be four digits
-- [ ] AC-IDN-38 Admin sets a loader PIN
-- [ ] AC-IDN-39 Admin invites a driver
-- [ ] AC-IDN-40 Invitation create is idempotent
-- [ ] AC-IDN-41 Invitation scope follows the role
-- [ ] AC-IDN-42 Invite landing shows name and expiry
-- [ ] AC-IDN-43 Accepting creates the user
-- [ ] AC-IDN-44 Accept refuses a mismatched email
-- [ ] AC-IDN-45 A used invitation can't be reused
-- [ ] AC-IDN-46 Driver accepts with an SMS code
-- [ ] AC-IDN-47 Resend issues a new token
-- [ ] AC-IDN-48 Revoked invitation can't be accepted
-- [ ] AC-IDN-49 Dispatchers read settings
-- [ ] AC-IDN-50 A setting must match its schema
-- [ ] AC-IDN-51 A setting change is audited and broadcast
-- [ ] AC-IDN-52 Settings resolve override, global, then default
-- [ ] AC-IDN-53 Admin freezes the demo clock
-- [ ] AC-IDN-54 Admin shifts the demo clock
-- [ ] AC-IDN-55 Admin returns the clock to real
-- [ ] AC-IDN-56 Demo mode off disables time travel
-- [ ] AC-IDN-57 Engine deferral reasons stay active
-- [ ] AC-IDN-58 Admin adds a deferral reason
+- [x] AC-IDN-27 Admin marks a dock device
+- [x] AC-IDN-28 Admin lists and searches users
+- [x] AC-IDN-29 Non-admins are refused admin routes
+- [x] AC-IDN-30 No session gets 401
+- [x] AC-IDN-31 Role change needs a reason
+- [x] AC-IDN-32 Scope change revokes sessions
+- [x] AC-IDN-33 Driver with trips today stays active
+- [x] AC-IDN-34 Deactivation keeps the user row
+- [x] AC-IDN-35 Reactivation restores the user
+- [x] AC-IDN-36 PIN is unique per depot
+- [x] AC-IDN-37 PIN must be four digits
+- [x] AC-IDN-38 Admin sets a loader PIN
+- [x] AC-IDN-39 Admin invites a driver
+- [x] AC-IDN-40 Invitation create is idempotent
+- [x] AC-IDN-41 Invitation scope follows the role
+- [x] AC-IDN-42 Invite landing shows name and expiry
+- [x] AC-IDN-43 Accepting creates the user
+- [x] AC-IDN-44 Accept refuses a mismatched email
+- [x] AC-IDN-45 A used invitation can't be reused
+- [x] AC-IDN-46 Driver accepts with an SMS code
+- [x] AC-IDN-47 Resend issues a new token
+- [x] AC-IDN-48 Revoked invitation can't be accepted
+- [x] AC-IDN-49 Dispatchers read settings
+- [x] AC-IDN-50 A setting must match its schema
+- [x] AC-IDN-51 A setting change is audited and broadcast
+- [x] AC-IDN-52 Settings resolve override, global, then default
+- [x] AC-IDN-53 Admin freezes the demo clock
+- [x] AC-IDN-54 Admin shifts the demo clock
+- [x] AC-IDN-55 Admin returns the clock to real
+- [x] AC-IDN-56 Demo mode off disables time travel
+- [x] AC-IDN-57 Engine deferral reasons stay active
+- [x] AC-IDN-58 Admin adds a deferral reason
 - [ ] AC-IDN-59 Demo reset rebuilds the demo day
 - [x] AC-IDN-60 Routes match the permission matrix
 
@@ -772,10 +797,16 @@ AC-IDN-60  Routes match the permission matrix
 - Demo features (clock, reset, inbox) work only when DEMO_MODE=true.
 
 ## Open questions
-- AC-IDN-03, 45, 48: the doc says 409 without a code; CONFLICT_STATE is assumed as the only 409 code for a state refusal. Decides: Nimesha.
-- AC-IDN-04, 32, 39: identity audit action names are not listed. The spec assumes identity.user.role_changed, identity.user.scope_changed (the reasons table says user.scope_changed) and identity.invitation.created. Action names for sign-in, failed sign-in, sign-out, resend and revoke are not given (AC-IDN-07 to 10, 18, 47). Decides: Nimesha.
-- The Step 2 boundaries table lets identity import only core, yet identity writes audit rows through AuditService in modules/audit. May identity import audit? Decides: Nimesha.
-- AC-IDN-17, 44: status codes for an expired or over-tried code and for a mismatched email on accept are not specified, nor how short passwords (under 10 characters) are reported on accept. Decides: Nimesha.
+- AC-IDN-03, 45, 48: decided (Nimesha, 1 Oct). A refused accept is 409 CONFLICT_STATE, with a detail per status.
+- AC-IDN-04, 32: decided (Nimesha, 1 Oct). The audit actions are identity.user.role_changed and
+  identity.user.scope_changed; a change of role and scope together is one role_changed row. AuditService matches
+  REASON_REQUIRED on the action without its module (user.role_changed).
+- AC-IDN-39: identity.invitation.created is assumed. Action names for sign-in, failed sign-in, sign-out, resend and
+  revoke are not given (AC-IDN-07 to 10, 18, 47). Decides: Nimesha.
+- Identity imports audit: decided (Nimesha, 1 Oct). depends-on is [core, audit], like every other module that audits.
+- AC-IDN-44: decided (Nimesha, 1 Oct). Accept with another email or phone is 400 VALIDATION_FAILED on that field (code
+  `mismatch`); a password under 10 characters is 400 on password; a wrong, expired or over-tried code on accept is 400
+  on code. AC-IDN-17 (sign-in codes) stays BetterAuth's own answer.
 - AC-IDN-01: decided (Nimesha, 30 Sep). GET /orders/{id} is ordering's and does not exist yet, so the test
   mounts a stand-in route with the order scope rule over the real orders table. When ordering ships its
   route and OrderScope, the test moves to that route.
@@ -787,23 +818,51 @@ AC-IDN-60  Routes match the permission matrix
 - AC-IDN-13: decided. The hrefs of the field roles' links and admin's links are in the table under Endpoints;
   owners of those screens can change them.
 - AC-IDN-56 (inbox part): decided. With DEMO_MODE=false, GET /demo/inbox answers 404, as if it did not exist.
-  PUT /clock and POST /demo/reset (ROO-27) are still open.
+  PUT /clock and POST /demo/reset answer 404 the same way (decided, 1 Oct).
 - Driver sign-in codes: the API queues an `auth.otp` job on the notifications queue and the worker writes it
   to the demo inbox (Redis, last 50) when DEMO_MODE=true. Without demo mode the job fails until notifications
   adds an SMS provider (Step 7).
-- AC-IDN-36: status for a PIN already used in the depot is not specified; 409 CONFLICT_STATE assumed. Decides: Nimesha.
-- AC-IDN-56: status for PUT /clock, POST /demo/reset and GET /demo/inbox when DEMO_MODE=false is not specified. Decides: Nimesha.
-- AC-IDN-57: the PATCH path for one reason (for example /deferral-reasons/{code}), the status for removing an engine reason, and which module serves the controller, since planning owns the table. Decides: Tihara with Nimesha.
-- GET /deferral-reasons needs deferral:read, which admin lacks in the Step 2 matrix, yet A6 is an admin screen. Decides: Nimesha.
-- AC-IDN-03: what moves an invitation from PENDING to EXPIRED: a job, or a check on read? Decides: Nimesha.
-- AC-IDN-39: how the raw token reaches the invite message if only its hash is stored (an outbox payload would persist it). Decides: Nimesha.
-- AC-IDN-46: the accept body for drivers (code in the accept call, or a verify call first) is not specified. Decides: Nimesha.
-- Loaders sign in only by PIN. How does a loader accept an invitation, and who sets the first PIN? Decides: Nimesha with Harini.
-- Can an EXPIRED invitation be revoked? The machine lists only PENDING → REVOKED; A1 says Revoke is always available. Decides: Nimesha.
-- AC-IDN-32: does a scope-only change emit identity.user.role_changed, or its own event? Only role_changed is in the catalog. Decides: Nimesha.
-- AC-IDN-34: does deactivate revoke the user's sessions? The doc says so only for role and scope changes. Decides: Nimesha.
-- Reason codes for user.role_changed and user.scope_changed are not listed. Decides: Nimesha.
-- AC-IDN-52: how PUT /settings/{key} addresses a depot override, and how the ordering.cutoffMin override relates to depots.cutoffMin (A4). Decides: Nimesha with Harini.
+- AC-IDN-36: decided. A PIN another loader of one of the depots already holds is 409 CONFLICT_STATE; uniqueness covers
+  every depot the loader works at (home and loader_depots), under a per-depot advisory lock.
+- AC-IDN-56: decided. With DEMO_MODE=false all three answer 404, and ClockSync ignores the demo.clock setting.
+- AC-IDN-57: decided (Nimesha, 1 Oct; tell Tihara). PATCH /deferral-reasons/{code}; switching off an engine reason is
+  409 CONFLICT_STATE; the planning module serves the endpoints because it owns the table.
+- GET /deferral-reasons: decided. Admin holds deferral:read.
+- AC-IDN-03: decided (Nimesha, 1 Oct). A check on read: a PENDING invitation whose expiresAt has passed in real time
+  reads as EXPIRED (`effectiveStatus`), and accept refuses it. No job and no write; the stored status stays PENDING
+  until resend or revoke, so a status filter on GET /invitations must use the same rule.
+- AC-IDN-39: decided (Nimesha, 1 Oct). The raw link goes only into an `auth.invite` job on the notifications queue
+  (Redis, removed when sent); the worker sends it (demo inbox in demo mode). The outbox event carries no token.
+- AC-IDN-46: decided. The landing calls /api/auth/phone-number/send-otp for the invited phone, then accept takes
+  `{ phoneNumber, code }`; the API checks the code with BetterAuth's server-only consumePhoneNumberOTP before
+  createUser, then signs the driver in through the server-only invitation-session plugin.
+- Loader invitations: decided (Nimesha, 1 Oct; tell Harini). A loader is invited by email or phone and accepts with
+  that email or phone and the 4-digit PIN they will use (unique per depot). No session: they sign in at the dock.
+  Without an email their account gets `<id>@loaders.waypoint.local`.
+- An EXPIRED invitation can be revoked: decided; the shared invitation machine already allows it.
+- AC-IDN-32: a scope-only change emits identity.user.scope_changed (added to Events), mirroring the audit action.
+  Chosen while building ROO-27; confirm or change. Decides: Nimesha.
+- AC-IDN-34: decided. Deactivate deletes the user's sessions too. A driver's trips today are trips on a plan dated
+  today's business date (demo clock) that are not COMPLETED or CANCELLED.
+- Reason codes for user.role_changed and user.scope_changed: decided (Nimesha, 1 Oct). `USER_CHANGE_REASONS` in
+  packages/shared: TRANSFER, PROMOTION, CORRECTION, OFFBOARDING, OTHER, plus an optional reasonNote.
+- Session cookie cache: off (AC-IDN-04), because BetterAuth answers from a cached session cookie for up to its maxAge
+  without reading the sessions row. Every request reads the session instead. Turn it back on only with a revocation
+  check (for example cookieCache.version). Decides: Nimesha.
+- May an admin change their own role or scope, or deactivate themselves? It signs them out and could leave no admin. Decides: Nimesha.
+- AC-IDN-59 is blocked by ROO-22: POST /demo/reset runs every registered DemoDayBuilder (core/demo/demo-day.ts) in one
+  transaction, clears the demo inbox and audits; with none registered it answers 501. The S1 seed registers one.
+- Accept creates the account through BetterAuth on its own connection, before the accept transaction commits. If a
+  later write fails, the account exists and the invitation stays PENDING, and a retry gets 409 (account exists).
+  Rare; a fix needs BetterAuth to share the transaction. Decides: Nimesha.
+- planning.priorityWeights uses the keys deferredOnLastRun, consecutiveDeferrals, daysSinceLastServed, fresh, chilled,
+  urgent and tightWindow from the engine formula; the allocator (ROO-28) should read them. Decides: Tihara.
+- Settings that A6 doesn't edit refuse PUT /settings with 409: demo.clock (PUT /clock), planning.enforceWindows and
+  planning.priorityWeights (set in code).
+- Event routing to user channels: realtime routes by userIds, which outbox_events cannot store yet. OutboxService
+  refuses routing.userIds until ROO-24 adds a column or another rule. Decides: Nimesha.
+- AC-IDN-52: decided (Nimesha, 1 Oct). `?depotId=` on GET, PUT and DELETE /settings/{key}; only ordering.cutoffMin takes
+  an override. depots.cutoffMin (A4) now duplicates it: Harini to drop it or keep it in sync. Decides: Harini.
 - A3 flags outlets with no manager, which needs users data, but master-data may import only core and audit. Which module supplies the flag? Decides: Harini with Nimesha.
 - A0 has "forgot password", but no password-reset route is in the endpoints table. Decides: Nimesha.
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
@@ -816,3 +875,20 @@ AC-IDN-60  Routes match the permission matrix
   user:delete and user:impersonate; auth built through Nest DI instead of at import time
 - 2026-09-30 AC-IDN-12, 13, 22 to 25 implemented (ROO-8): GET /, GET and PATCH /me, GET and POST /me/devices,
   GET /demo/inbox, the persona seed and the dock tablets
+- 2026-10-01 AC-IDN-03, 04 implemented (ROO-27, on the ROO-7 kernel): PATCH and GET /users/{id} (role and scope
+  changes with a reason code, session revocation, audit row and outbox event in one transaction); GET /invitations
+  and GET /invitations/{id} with expiry checked on read and a resend link; POST /invitations/{token}/accept refuses
+  with 404, 409 and 400, and answers 501 until AC-IDN-43; POST /invitations/{id}/resend answers 501 until AC-IDN-47.
+  The session cookie cache is off, and depends-on gains audit. A minimal AuditService (modules/audit) and
+  OutboxService (core) came with it, for ROO-23 and ROO-24 to extend
+- 2026-10-01 AC-IDN-27 to 58 implemented (ROO-27): users list, deactivate, reactivate and PINs; invitations create
+  (by email or SMS through an auth.invite job), resend, revoke, the invite landing and accept for every role (email
+  and password, phone and code, or a loader's PIN) with the server-only invitation-session plugin; dock devices;
+  settings with depot overrides (SettingsService in core); the demo clock in demo.clock with ClockSync; deferral
+  reasons in the planning module; admin gains deferral:read. AC-IDN-59 waits for the S1 seed (ROO-22)
+- 2026-10-01 Users and invitations carry `scopeNames` (depot, outlet, vehicle names) for A1's Linked to column;
+  GET /users/scope-options feeds A2's Link to select (ROO-27)
+- 2026-10-01 Screens A0 Sign in, A1 Users with A2 Invite user and the edit dialog, A6 Settings (with dock tablets, time
+  travel and reset), the invite landing and the header demo-time badge built on the generated client (ROO-27).
+  Checked against the frames at 1440x960 on the real API; differences are logged in docs/departures.md. The badge
+  part of AC-IDN-53 and 55 is checked by screenshot, not by an automated test

@@ -76,6 +76,8 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | GET | `/depots/{id}/plans/{date}` | `plan:read` | The day's plan, created as a draft on first access (05, 09) |
 | GET | `/plans/{id}`, `/plans/{id}/trips`, `/trips/{id}` | `plan:read`, `trip:read` | |
 | GET | `/plans/{id}/context` | `plan:read` | Everything the engine needs, so the web validates edits instantly |
+| GET, POST | `/deferral-reasons` | `deferral:read`, `settings:manage` | A6 reason list (built in ROO-27, specified as AC-IDN-57 and 58); 201 with Location on create |
+| GET, PATCH | `/deferral-reasons/{code}` | `deferral:read`, `settings:manage` | Engine reasons can be relabelled, never switched off (409 CONFLICT_STATE) |
 | POST | `/plans/{id}/engine-runs` | `plan:build` | 05, 09: `{ mode, keepLocked }`; 202 with the run; progress over SSE |
 | GET | `/plans/{id}/engine-runs/{runId}` | `plan:read` | Status, counts, limiting resources |
 | GET | `/plans/{id}/vehicle-options` | `plan:build` | 06: vehicles with trips left, capacity, fuel left, or why unavailable |
@@ -574,3 +576,6 @@ Checklist (tick in the PR that adds the passing test):
 ## Changelog
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `plans.createdById`, `trips.cantRunReason`, stop travel, predicted service, arrival position and units delivered, with range checks (merged from the Supabase draft)
+- 2026-10-01 GET, POST /deferral-reasons and GET, PATCH /deferral-reasons/{code} added by ROO-27 (Nimesha) in this module,
+  which owns the table: `DeferralReasonsService`, audit `planning.deferral_reason.created|updated`, events
+  `deferral_reason.created|updated`. Tihara owns them from here

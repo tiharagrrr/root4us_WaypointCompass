@@ -58,6 +58,8 @@ const roleStatements = {
     masterData: ["read", "manage"],
     audit: ["read", "export"],
     settings: ["read", "manage"],
+    // A6 edits the deferral reason list, so admin reads it too.
+    deferral: ["read"],
     webhook: ["manage"],
     simulation: ["run"],
   },

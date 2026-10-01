@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { type Actor, isUserRole } from '@waypoint/shared';
 import type { Request } from 'express';
+import { ClsService } from 'nestjs-cls';
+import { PinoLogger } from 'nestjs-pino';
+import { type AppClsStore, deviceIdOf } from '../context/request-context';
 import { ForbiddenError } from '../errors/domain-errors';
 
 /** The session user BetterAuth's AuthGuard puts on the request, with Waypoint's fields. */
@@ -25,15 +28,32 @@ export type ActorRequest = Request & {
 /**
  * Step 4 of the request lifecycle: turns the session BetterAuth resolved into
  * the Actor (id, role, scope, device) that PermissionGuard, @Actor() and the
- * scope policies read. Public routes with no session pass through with no
- * actor. ROO-7 also puts the actor into CLS and the logger context.
+ * scope policies read, and puts it into CLS (which stamps the request's
+ * transaction for row-level security) and into the request's log lines.
+ * Public routes with no session pass through with no actor.
  */
 @Injectable()
 export class ActorGuard implements CanActivate {
+  constructor(
+    private readonly cls: ClsService<AppClsStore>,
+    private readonly log: PinoLogger,
+  ) {}
+
   canActivate(ctx: ExecutionContext): boolean {
     if (ctx.getType() !== 'http') return true;
     const req = ctx.switchToHttp().getRequest<ActorRequest>();
-    if (req.user) req.actor = toActor(req.user, req.header('x-device-id'));
+    if (!req.user) return true;
+    const actor = toActor(req.user, deviceIdOf(req) ?? undefined);
+    req.actor = actor;
+    if (this.cls.isActive()) this.cls.set('actor', actor);
+    try {
+      // No names: the log carries ids and the role only.
+      this.log.assign({
+        actor: { id: actor.id, role: actor.role, depotId: actor.depotId },
+      });
+    } catch {
+      // Outside pino-http's request scope (a route it excludes): nothing to tag.
+    }
     return true;
   }
 }

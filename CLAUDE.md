@@ -53,7 +53,7 @@ pnpm test`) and report which.
 - Each acceptance criterion is one test named after it: it('AC-ORD-02 a late order rolls to the next run').
 - Conventional Commits with the module as scope: feat(ordering): submit order before cutoff
 - Branches carry the Linear issue: `<type>/roo-<n>-<short>`; the PR body says `Closes ROO-<n>`
-  (docs/linear.md). One git worktree per branch; at most one migration and ~400 changed lines per PR.
+  (docs/linear.md). One git worktree per branch; at most one migration per PR, and no limit on its size.
 - UI uses Compass tokens and text styles from packages/ui-tokens; no hex values.
 
 ## Workflow
@@ -73,8 +73,9 @@ fails for a reason you don't understand, `ship-pr` to open the PR and `handoff` 
   failing test.
 - Add a dependency without saying why in the PR.
 - Commit to or push main directly.
+- Mention the Challenge Booklet or AI assistance in a commit message or a PR, including
+  Co-Authored-By and "Generated with" lines. AI use is disclosed separately, later.
 
 ## Done means
 The spec's acceptance criteria pass, pnpm check is green, the screen matches its Figma frame in its
-loading, empty, error and offline states, the spec file is updated, and the PR says what was
-AI-assisted (with a row in docs/ai-log.md).
+loading, empty, error and offline states, and the spec file is updated.

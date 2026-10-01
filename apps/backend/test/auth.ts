@@ -117,6 +117,27 @@ export async function signIn(
   return sessionCookie(res);
 }
 
+/**
+ * Signs in with email and password and returns every cookie a browser would
+ * keep, not only the session token: a cached session cookie, if BetterAuth
+ * ever sets one again, must not outlive a revoked session.
+ */
+export async function signInAsBrowser(
+  app: NestExpressApplication,
+  email: string,
+): Promise<string> {
+  const res = await request(app.getHttpServer())
+    .post('/api/auth/sign-in/email')
+    .set(browser())
+    .send({ email, password: TEST_PASSWORD })
+    .expect(200);
+  const raw = res.headers['set-cookie'] as unknown as string[] | undefined;
+  return (raw ?? [])
+    .map((c) => c.split(';')[0])
+    .filter((c) => !c.endsWith('='))
+    .join('; ');
+}
+
 /** A signed-in user of that role and scope: the user and their session cookie. */
 export async function signedInAs(
   app: NestExpressApplication,

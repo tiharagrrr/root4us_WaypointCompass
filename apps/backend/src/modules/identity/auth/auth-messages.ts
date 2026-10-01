@@ -5,6 +5,7 @@ import { QUEUES } from '../../../queues';
 import { maskPhone } from '../domain/mask-phone';
 
 export const AUTH_OTP_JOB = 'auth.otp';
+export const AUTH_INVITE_JOB = 'auth.invite';
 
 export interface AuthOtpJob {
   v: 1;
@@ -13,7 +14,22 @@ export interface AuthOtpJob {
 }
 
 /**
- * Messages BetterAuth asks us to send. The API only queues them; the worker
+ * An invitation link to send (A2, resend on A1). The raw token lives only in
+ * this job, in Redis until the worker sends it; Postgres keeps its hash.
+ */
+export interface AuthInviteJob {
+  v: 1;
+  invitationId: string;
+  channel: 'sms' | 'email';
+  to: string;
+  name: string;
+  link: string;
+  /** Asia/Colombo ISO 8601, for the message text. */
+  expiresAt: string;
+}
+
+/**
+ * Messages BetterAuth and invitations ask us to send. The API only queues them; the worker
  * sends them (the SMS provider, or the demo inbox when DEMO_MODE=true), so a
  * slow provider never holds up a sign-in request.
  */
@@ -36,6 +52,23 @@ export class AuthMessages {
     this.log.log(
       { event: 'auth.otp.sent', phone: maskPhone(phoneNumber) },
       'sign-in code queued',
+    );
+  }
+
+  async enqueueInvite(job: AuthInviteJob): Promise<void> {
+    await this.queue.add(AUTH_INVITE_JOB, job, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: true,
+      removeOnFail: 100,
+    });
+    this.log.log(
+      {
+        event: 'identity.invitation.sent',
+        invitationId: job.invitationId,
+        channel: job.channel,
+      },
+      'invitation queued',
     );
   }
 }
