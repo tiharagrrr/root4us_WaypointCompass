@@ -1,0 +1,77 @@
+import { useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { eventBus, isDomainEvent, type DomainEvent } from './event-bus'
+
+/**
+ * Which cached paths an event makes stale. The generated hooks key their queries by URL
+ * (`['/api/v1/orders', params]`), so a cache entry matches when its key starts with one of these
+ * paths — Step 8's `['orders']` keys predate the orval client.
+ *
+ * One line per event type in the Step 2 catalogue; add an event here when its module publishes it.
+ */
+const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
+  'order.submitted': (e) => ['/api/v1/orders', `/api/v1/depots/${String(e.routing.depotId)}/days`],
+  'order.cancelled': () => ['/api/v1/orders'],
+  'order.rolled_to_next_run': () => ['/api/v1/orders'],
+  'plan.published': (e) => [`/api/v1/plans/${e.aggregate.id}`, '/api/v1/me/trips', '/api/v1/depots'],
+  'plan.revised': (e) => [`/api/v1/plans/${e.aggregate.id}`, '/api/v1/me/trips', '/api/v1/depots'],
+  'load.flag_raised': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`],
+  'load.flag_decided': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`],
+  'trip.released': (e) => [`/api/v1/trips/${e.aggregate.id}`, '/api/v1/depots'],
+  'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders'],
+  'eta.updated': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, `/api/v1/orders/${String(e.data.orderId)}/eta`],
+  'alert.raised': () => ['/api/v1/alerts'],
+  'alert.resolved': () => ['/api/v1/alerts'],
+  'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
+  'clock.changed': () => ['/api/v1/clock'],
+  'settings.changed': () => ['/api/v1/settings'],
+  'identity.user.role_changed': () => ['/api/v1/me'],
+  'identity.user.deactivated': () => ['/api/v1/me'],
+}
+
+/** Positions move constantly; frame 19 reads them off the bus instead of refetching. */
+const LIVE_ONLY = ['vehicle.position']
+
+export const EVENT_STREAM_URL = '/api/v1/streams/me'
+
+/**
+ * One SSE connection per shell. The browser reconnects on its own and sends Last-Event-ID, so the
+ * server replays what was missed; a `resync` frame means the replay window was too old and the
+ * whole cache is stale (specs/realtime/spec.md, AC-RT-06).
+ */
+export function useEventStream(): void {
+  const qc = useQueryClient()
+
+  useEffect(() => {
+    // jsdom and old browsers have no EventSource; the app still works, it just stops being live.
+    if (typeof EventSource === 'undefined') return
+
+    const source = new EventSource(EVENT_STREAM_URL, { withCredentials: true })
+
+    const onEvent = (message: MessageEvent<string>) => {
+      const parsed: unknown = JSON.parse(message.data)
+      if (!isDomainEvent(parsed)) return
+      const paths = INVALIDATES[parsed.type]?.(parsed) ?? []
+      if (paths.length > 0) {
+        void qc.invalidateQueries({
+          predicate: (query) => {
+            const [key] = query.queryKey
+            return typeof key === 'string' && paths.some((path) => key.startsWith(path))
+          },
+        })
+      }
+      eventBus.emit(parsed)
+    }
+
+    const types = [...Object.keys(INVALIDATES), ...LIVE_ONLY]
+    for (const type of types) source.addEventListener(type, onEvent)
+    const onResync = () => void qc.invalidateQueries()
+    source.addEventListener('resync', onResync)
+
+    return () => {
+      for (const type of types) source.removeEventListener(type, onEvent)
+      source.removeEventListener('resync', onResync)
+      source.close()
+    }
+  }, [qc])
+}

@@ -168,8 +168,13 @@ the seed fixed.
 Build from these before writing screen-specific markup. If a Figma component has no React twin,
 add it to `src/ui` first: one component, its variants, a story.
 
-- `src/ui` (Compass): Button, Badge, Input, Select, Table, Pagination, Dialog, Sheet, Toast,
-  StatusChip, CapacityMeter, DeliveryWindow, StopSequenceRow, DriverStopCard, PinKeypad.
+- `src/ui` (Compass), all built: Button, Badge, Card, Input, Field, Select, Switch, RadioCards,
+  SegmentedControl, Table, Pagination, Dialog, Sheet, Toast, StatusChip, Skeleton, Empty and error
+  states, Avatar, DemoTimeBadge, CapacityMeter, DeliveryWindow, StopSequenceRow, DriverStopCard,
+  PinKeypad. `/admin/dev/ui` renders every one of them beside its frame.
+- Icons come from `@material-symbols/svg-400` (rounded, filled, weight 400), the set the Figma file
+  draws with; `Icon` names them for Waypoint (`deferrals` is Material's `event_upcoming`). The
+  compass mark in the wordmark is the only local SVG.
 - `src/ui/action.tsx`: `<Action>` renders a button only when the resource carries the link. It
   sends one Idempotency-Key per press, adds If-Match when the link requires it, and shows a confirm
   or a reason picker when needed.
@@ -178,6 +183,19 @@ add it to `src/ui` first: one component, its variants, a story.
   sidebar; the dispatcher adds the depot switch, the demo-time badge and the 02 bell), dock (tablet
   1194x834 or phone 390) and driver (phone 390 with Today, Trips and Account tabs). Dock and
   driver shells set `data-density="touch"`: 44-pixel minimum targets and larger type.
+  All five are built (ROO-15), each loading as its own chunk:
+
+  | Shell | File | Area | Chrome |
+  | --- | --- | --- | --- |
+  | Admin | `layouts/admin-layout.tsx` | `/admin/*` | A1's sidebar and header |
+  | Store | `layouts/store-shell.tsx` | `/store/*` | `DesktopShell`; New order, Orders, Deferrals, Receipts, Item catalog |
+  | Dispatcher | `layouts/dispatch-shell.tsx` | `/dispatch/*` | `DesktopShell` plus the depot switch and the demo-time badge |
+  | Dock | `layouts/dock-shell.tsx` | `/dock/*` | Top bar with the depot, the loader and Switch user; touch density |
+  | Driver | `layouts/driver-shell.tsx` | `/driver/*` | Top bar and the Today, Trips and Account tabs; touch density |
+
+  `RoleArea` keeps each role in its own area: a route elsewhere redirects to `ROLE_HOME[role]`.
+  The control heights come from `--compass-size-control*`, so touch density raises every Button,
+  Input and Select to 44 pixels without a second set of components.
 - Data and time: generated hooks from `@compass/api-client`, `useEventStream` in `src/realtime`,
   `outbox.enqueue` and `useLiveQuery` in `src/offline`, `useServerClock()` and `formatColombo()`.
 - Maps and charts: MapLibre GL with cached OpenStreetMap tiles for 19; Recharts for 22.
@@ -310,7 +328,24 @@ Screen-specific states and actions, from Step 8:
 - Route file layout (resolved in the kit, confirm): `src/app/routes/<role>.tsx` registers a role's
   routes and loaders; each frame is one file in `src/features/<module>/` carrying the `// Figma:`
   header, following Step 2's web layout.
+- Landing after sign-in: Step 8 says to call `GET /api/v1` and follow the role's landing link, but
+  that endpoint has no response DTO, so the generated client types it `void`, and its links are API
+  hrefs, not routes. Sign-in reads the role from `GET /me` and maps it in `ROLE_HOME`. Give the root
+  endpoint a DTO and the client can follow the links themselves.
+- The store sidebar label reads "STORE · FRESH KADAWATHA" in M1, but `/me` carries only `outletId`.
+  The shell shows "STORE" until master data publishes `GET /outlets/{id}` (or `/me` carries the
+  scope names).
+- M1's sidebar has a Receipts entry with no frame of its own; `/store/receipts` stands in for the
+  list until the receipt module says what belongs there (M5 is the per-order screen).
+- The dock phone frame (L2m-a) puts Switch user in the page header, the tablet (L2) in the top bar.
+  The shell keeps it in the top bar at both sizes; confirm at `/fidelity L2m-a`.
+- PWA icons are one SVG (`public/app-icon.svg`). iOS wants PNGs at 192 and 512; add them before the
+  demo if the app is installed on a phone.
 
 ## Changelog
 
+- 2026-10-02 ROO-15 the five shells, their routes and the role guard; the six composites
+  (Sheet, CapacityMeter, DeliveryWindow, StopSequenceRow, DriverStopCard, PinKeypad); touch density
+  on the control tokens; `useEventStream`; i18n in `src/i18n/en.json`; the service worker. Icons now
+  come from @material-symbols. The dock and driver areas are `/dock` and `/driver`, as Step 8 says.
 - 2026-09-30 created from the Build Spec

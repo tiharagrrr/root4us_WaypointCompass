@@ -1,6 +1,9 @@
-// Figma: A1 Users · 185:8751 (the admin chrome: sidebar, account card and header)
+// Figma: the desktop chrome behind the store frames (M1 185:10376) and the dispatcher frames
+// (03 185:12856): a 232 px sidebar with the wordmark, the nav and the account card, and a header
+// carrying the page title, the page's own actions, a status slot and the notification bell.
 import { useMeGet } from '@compass/api-client'
 import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
 import { initials, roleLabel } from '@/lib/roles'
@@ -12,28 +15,36 @@ import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
 import { HeaderSlotContext } from './header-slot'
 
-export type AdminSection = 'users' | 'outlets' | 'depots' | 'vehicles' | 'settings'
+export interface ShellNavItem {
+  to: string
+  label: string
+  icon: IconName
+  /** The count right of the label (214 orders, 7 deferrals), when the shell knows it. */
+  count?: number
+  /** Stay active on child routes too; the default is an exact match. */
+  deep?: boolean
+}
 
-const NAV: readonly { section: AdminSection; label: string; icon: IconName }[] = [
-  { section: 'users', label: 'Users', icon: 'users' },
-  { section: 'outlets', label: 'Outlets', icon: 'outlets' },
-  { section: 'depots', label: 'Depots', icon: 'depots' },
-  { section: 'vehicles', label: 'Vehicles', icon: 'vehicles' },
-  { section: 'settings', label: 'Settings', icon: 'settings' },
-]
-
-export interface AdminLayoutProps {
-  /** Header slot right of the page actions, for <DemoTimeBadge> once GET /clock is wired. */
+export interface DesktopShellProps {
+  /** Small capitals over the nav, and the nav's accessible name: "DISPATCH · PELIYAGODA". */
+  navLabel: string
+  nav: readonly ShellNavItem[]
+  /** Small capitals over the page title when the route sets none: "STORE · FRESH KADAWATHA". */
+  eyebrow: string
+  /** The page title when the route sets none. */
+  title: string
+  /** Right of the page actions: the demo-time badge. */
   headerStatus?: ReactNode
-  /** Counts beside the nav items (42 users, 120 outlets, ...), when known. */
-  navCounts?: Partial<Record<AdminSection, number>>
-  /** Unread notifications for the bell's badge. */
+  /** Left of the page actions: the dispatcher's depot switch. */
+  headerLead?: ReactNode
+  /** Unread notifications for the bell's badge (frame 02). */
   notificationCount?: number
 }
 
-export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }: AdminLayoutProps) {
+export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, headerLead, notificationCount }: DesktopShellProps) {
+  const { t } = useTranslation()
   useEventStream()
-  const { title } = useRouteHandle()
+  const handle = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
 
   return (
@@ -43,12 +54,13 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
           <div className="border-b border-border px-2 pb-[15px]">
             <Wordmark />
           </div>
-          <nav aria-label="Admin" className="flex flex-col gap-0.5">
-            <p className="m-0 px-2 pb-1.5 font-mono text-[10px] leading-auto tracking-[0.4px] text-slate-400">SUPER ADMIN</p>
-            {NAV.map((item) => (
+          <nav aria-label={navLabel} className="flex flex-col gap-0.5">
+            <p className="m-0 px-2 pb-1.5 font-mono text-[10px] leading-auto tracking-[0.4px] text-slate-400">{navLabel}</p>
+            {nav.map((item) => (
               <NavLink
-                key={item.section}
-                to={`/admin/${item.section}`}
+                key={item.to}
+                to={item.to}
+                end={!item.deep}
                 className={({ isActive }) =>
                   cn(
                     'group flex items-center gap-2.5 rounded-md p-2 no-underline transition-colors duration-100',
@@ -60,9 +72,9 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
                   <>
                     <Icon name={item.icon} size={17} className={isActive ? 'text-primary' : 'text-slate-500'} />
                     <span className={cn('flex-1 font-sans text-[13px] leading-auto', isActive ? 'font-bold' : 'font-medium')}>{item.label}</span>
-                    {navCounts[item.section] !== undefined ? (
+                    {item.count !== undefined ? (
                       <span className={cn('font-mono text-[11px] leading-auto', isActive ? 'font-semibold text-primary' : 'font-medium text-muted-foreground')}>
-                        {navCounts[item.section]}
+                        {item.count}
                       </span>
                     ) : null}
                   </>
@@ -77,18 +89,19 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 pb-[17px] pt-4">
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="type-label m-0 uppercase text-muted-foreground">Admin · Waypoint Lanka</p>
-              <h1 className="type-page-title m-0 truncate text-foreground">{title ?? 'Admin'}</h1>
+              <p className="type-label m-0 uppercase text-muted-foreground">{handle.eyebrow ?? eyebrow}</p>
+              <h1 className="type-page-title m-0 truncate text-foreground">{handle.title ?? title}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <div ref={setActionsSlot} data-slot="admin-header-actions" className="peer flex items-center gap-2" />
+              {headerLead}
+              <div ref={setActionsSlot} data-slot="header-actions" className="peer flex items-center gap-2" />
               <div className="px-1 peer-empty:hidden" aria-hidden="true">
                 <div className="h-6 w-px bg-slate-200" />
               </div>
               {headerStatus}
               <button
                 type="button"
-                aria-label={notificationCount ? `Notifications, ${notificationCount} unread` : 'Notifications'}
+                aria-label={notificationCount ? t('shell.notificationsUnread', { count: notificationCount }) : t('shell.notifications')}
                 className="relative flex size-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-background text-slate-700 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring/40"
               >
                 <Icon name="bell" size={18} />
@@ -105,8 +118,9 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
   )
 }
 
-/** The signed-in admin at the foot of the sidebar (GET /me). */
+/** The signed-in person at the foot of the sidebar (GET /me). */
 function AccountCard() {
+  const { t } = useTranslation()
   const me = useMeGet()
   return (
     <div className="flex items-center gap-2.5 border-t border-border px-2 pt-[13px]">
@@ -129,7 +143,7 @@ function AccountCard() {
           </div>
         </>
       ) : (
-        <span className="type-caption text-muted-foreground">Not signed in</span>
+        <span className="type-caption text-muted-foreground">{t('shell.notSignedIn')}</span>
       )}
     </div>
   )

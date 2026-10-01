@@ -16,15 +16,18 @@
     "@compass/api-client": "workspace:*",
     "@compass/ui-tokens": "workspace:*",
     "@hookform/resolvers": "^5.9.1",
+    "@material-symbols/svg-400": "^0.47.5",
     "@tanstack/react-query": "^5.87.1",
     "@waypoint/shared": "workspace:*",
     "better-auth": "1.7.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "i18next": "^26.4.2",
     "radix-ui": "^1.6.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.89.0",
+    "react-i18next": "^17.0.15",
     "react-router": "^7.8.2",
     "tailwind-merge": "^3.7.0"
   },
@@ -53,6 +56,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.69.0",
     "vite": "^8.3.0",
+    "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.1.11"
   },
   "msw": {

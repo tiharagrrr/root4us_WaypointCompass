@@ -13,7 +13,7 @@ export interface InputProps extends Omit<ComponentProps<'input'>, 'size'> {
 }
 
 export function Input({ className, size = 'default', leading, ...props }: InputProps) {
-  const height = size === 'sm' ? 'h-8' : 'h-9'
+  const height = size === 'sm' ? 'h-[var(--compass-size-control-sm)]' : 'h-[var(--compass-size-control)]'
   if (leading === undefined) {
     return <input data-slot="input" className={cn(base, height, className)} {...props} />
   }

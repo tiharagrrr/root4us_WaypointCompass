@@ -1,7 +1,9 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  // domain.ts is also its own entry: the web app imports the vocabulary (depots, statuses) from
+  // @waypoint/shared/domain and so leaves zod and better-auth out of its bundle.
+  entry: ['src/index.ts', 'src/domain.ts'],
   format: ['cjs', 'esm'],
   dts: true,
   clean: true,
