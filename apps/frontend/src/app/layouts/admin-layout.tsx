@@ -1,15 +1,14 @@
 // Figma: A1 Users · 185:8751 (the admin chrome: sidebar, account card and header)
-import { useMeGet } from '@compass/api-client'
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
-import { initials, roleLabel } from '@/lib/roles'
 import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
-import { Skeleton } from '@/ui/skeleton'
+import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
+import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
-import { AdminHeaderSlotContext } from './admin-header-slot'
+import { HeaderSlotContext } from './header-slot'
 
 export type AdminSection = 'users' | 'outlets' | 'depots' | 'vehicles' | 'settings'
 
@@ -31,11 +30,12 @@ export interface AdminLayoutProps {
 }
 
 export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }: AdminLayoutProps) {
+  useEventStream()
   const { title } = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
 
   return (
-    <AdminHeaderSlotContext.Provider value={actionsSlot}>
+    <HeaderSlotContext.Provider value={actionsSlot}>
       <div className="flex min-h-svh bg-background text-foreground">
         <aside className="sticky top-0 flex h-svh w-[232px] shrink-0 flex-col gap-[18px] border-r border-border bg-background py-[18px] pl-3 pr-[13px]">
           <div className="border-b border-border px-2 pb-[15px]">
@@ -69,7 +69,7 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
             ))}
           </nav>
           <div className="flex-1" />
-          <AccountCard />
+          <AccountMenu />
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -99,36 +99,6 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
           </main>
         </div>
       </div>
-    </AdminHeaderSlotContext.Provider>
-  )
-}
-
-/** The signed-in admin at the foot of the sidebar (GET /me). */
-function AccountCard() {
-  const me = useMeGet()
-  return (
-    <div className="flex items-center gap-2.5 border-t border-border px-2 pt-[13px]">
-      {me.data ? (
-        <>
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent font-sans text-[12px] font-bold text-primary">
-            {initials(me.data.data.name)}
-          </span>
-          <div className="flex min-w-0 flex-col gap-px leading-auto">
-            <span className="truncate font-sans text-[13px] font-bold text-foreground">{me.data.data.name}</span>
-            <span className="type-caption truncate text-muted-foreground">{roleLabel(me.data.data.role)}</span>
-          </div>
-        </>
-      ) : me.isPending ? (
-        <>
-          <Skeleton className="size-8 rounded-full" />
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-        </>
-      ) : (
-        <span className="type-caption text-muted-foreground">Not signed in</span>
-      )}
-    </div>
+    </HeaderSlotContext.Provider>
   )
 }

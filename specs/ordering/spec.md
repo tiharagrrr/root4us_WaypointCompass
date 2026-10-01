@@ -140,6 +140,16 @@ Order response (Step 4 example): `id`, `orderNo`, `status`, `tempClass`, `reques
 `submittedAt`, `editableUntil` (the cutoff instant), `version`, `_links`. Business dates are
 YYYY-MM-DD; instants are ISO 8601 with +05:30.
 
+The contract adds what M1's summary card shows and the client would otherwise have to derive:
+`brand`, `urgent`, `note`, `templateId`, `totals.lines` (distinct items, M1's "5 lines · 40 packs")
+and `totals.valueLkr`, and `deliveryWindow { openMin, open, closeMin, close }`, the outlet's
+receiving window on the delivery day (M1's "Wed 30 Sep · 07:00–09:00").
+
+`GET /orders/{id}/lines` answers `{ orderId, version, lines[] }`, and every write to a line answers
+with the order, whose totals and version have already moved on, so M1 redraws from one response.
+Each line carries `sku`, `name` and `packLabel` from the item, `qty`, the `unitWeightKg` and
+`unitVolumeM3` snapshot, the line's own `weightKg` and `volumeM3`, and `available`.
+
 Links (`policies/order.links.ts`, `OrderLinks`): always `self`, `lines`, `timeline`
 (`/api/v1/timelines/order/{id}`). Action links appear only when the state machine allows the move, the
 actor holds the permission, the row is in scope and the time rules allow it:
@@ -150,6 +160,13 @@ actor holds the permission, the row is in scope and the time rules allow it:
 | `edit` | PATCH `/orders/{id}` | If-Match | `OrderRules.canEdit` |
 | `cancel` | POST `/orders/{id}/cancel` | If-Match, reasonNote | `OrderRules.canCancel` |
 | `reorder` | POST `/orders/{id}/reorder` | | `OrderRules.canReorder` |
+| `addLine` | POST `/orders/{id}/lines` | If-Match | `OrderRules.canEdit`; M1's Add item and M1a |
+| `setLines` | PUT `/orders/{id}/lines` | If-Match | `OrderRules.canEdit`; M1's preset and its quantity fields |
+| `saveAsTemplate` | POST `/orders/{id}/save-as-template` | | `order:create` and the order has lines; M1's Save as preset |
+
+Each line of `GET /orders/{id}/lines` carries `edit` (PATCH) and `remove` (DELETE), both requiring
+If-Match, while the order is editable. M1 renders every button from these relations, so a sent
+order offers none (AC-ORD-03, AC-ORD-15).
 
 ## Services and helpers
 Module folder `apps/backend/src/modules/ordering/`:
@@ -616,7 +633,8 @@ Checklist (tick in the same PR as the passing test):
 - DELETE on a draft: a hard delete (Step 4, module tab) or a move to CANCELLED (Step 1's
   no-hard-delete convention)? (Harini)
 - Reorder and save-as-template create resources, so this spec answers 201 with Location (Step 4's
-  create rule). What do the line endpoints return: the order or the line? (Harini)
+  create rule). Decided 2026-10-01: the line endpoints answer with the order, so a screen gets the
+  new totals, version and `_links` from the same response (ROO-20).
 - `GET /orders/{id}/lines` needs `order:update`, so dispatchers, loaders and admins read lines only
   through `?include=lines`. Intended? (Harini)
 - Order resource: M3 sorts by `-requestedDate` and 03 groups by brand, but `ORDER_RESOURCE` has no
@@ -640,3 +658,7 @@ Checklist (tick in the same PR as the passing test):
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 AC-ORD-01..06 weekday labels corrected to the 2026 calendar; dates and behaviour unchanged
 - 2026-09-30 Model: `order_lines.available` (merged from the Supabase draft; meaning is an open question)
+- 2026-10-01 Contract first (ROO-20): the M1 slice's routes, DTOs and `_links` are in openapi.json
+  and answer 501; the store screens M1, M1a, M1b and M2 run on them through MSW. Adds `addLine`,
+  `setLines` and `saveAsTemplate` links, the line-level `edit` and `remove`, and the response fields
+  M1 shows (`totals.lines`, `deliveryWindow`, `brand`, `templateId`)

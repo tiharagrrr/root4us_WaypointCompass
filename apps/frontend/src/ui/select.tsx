@@ -19,7 +19,7 @@ export function SelectTrigger({ className, size = 'default', children, ...props 
       data-slot="select-trigger"
       className={cn(
         'type-body flex w-full cursor-pointer items-center justify-between gap-1 whitespace-nowrap rounded-md border border-input bg-background pl-[13px] pr-[11px] text-foreground outline-none transition-colors focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-60 aria-invalid:border-destructive-foreground data-[placeholder]:text-slate-400 [&>span]:truncate',
-        size === 'sm' ? 'h-8' : 'h-9',
+        size === 'sm' ? 'h-[var(--compass-size-control-sm)]' : 'h-[var(--compass-size-control)]',
         className,
       )}
       {...props}

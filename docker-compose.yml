@@ -23,11 +23,11 @@ x-api-env: &api-env
   APP_URL: ${APP_URL:-http://localhost:8080}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-change-me-to-a-long-random-string}
   SESSION_EXPIRES_IN_DAYS: ${SESSION_EXPIRES_IN_DAYS:-7}
-  S3_ENDPOINT: http://minio:9000
+  S3_ENDPOINT: http://s3:3900
   S3_REGION: ${S3_REGION:-us-east-1}
   S3_BUCKET: ${S3_BUCKET:-pod}
   S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-waypoint}
-  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-waypoint-dev-secret}
   S3_FORCE_PATH_STYLE: "true"
   DEMO_CLOCK: ${DEMO_CLOCK:-}
   DEMO_MODE: ${DEMO_MODE:-true}
@@ -72,41 +72,51 @@ services:
       timeout: 3s
       retries: 20
 
-  # S3-compatible storage for proof-of-delivery photos and signatures.
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+  # Garage: S3-compatible object storage for proof-of-delivery photos and
+  # signatures. One node, one replica; Supabase Storage replaces it in production.
+  s3:
+    image: dxflrs/garage:v2.4.1
     restart: unless-stopped
-    command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-waypoint}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      # Garage's own secrets; deploy/s3/garage.toml deliberately holds none.
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-waypoint-admin-token}
     volumes:
-      - miniodata:/data
+      - ./deploy/s3/garage.toml:/etc/garage.toml:ro
+      - s3meta:/var/lib/garage/meta
+      - s3data:/var/lib/garage/data
+    ports:
+      - "${S3_PORT:-9000}:3900"        # S3 API
+      - "${S3_ADMIN_PORT:-9001}:3903"  # admin API: /health, buckets, keys
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      # The image carries no shell, so the check is the garage binary itself:
+      # it exits 1 until the cluster can serve reads and writes.
+      test: ["CMD", "/garage", "health"]
+      # Unhealthy until s3-init applies the layout, a few seconds after start.
+      start_period: 30s
       interval: 5s
-      timeout: 3s
+      timeout: 5s
       retries: 20
 
-  # One-shot: creates the private POD bucket.
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - >
-        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" &&
-        mc mb --ignore-existing "local/$${S3_BUCKET}" &&
-        mc anonymous set none "local/$${S3_BUCKET}"
+  # One-shot: the single-node cluster layout, the private POD bucket, and the S3
+  # key the API signs URLs with (idempotent, see deploy/s3/garage-init.mjs).
+  # node:22-alpine is the base of the api image, so it costs no extra pull.
+  s3-init:
+    image: node:22-alpine
+    entrypoint: ["node", "/init/garage-init.mjs"]
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-waypoint}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-waypoint-secret}
+      GARAGE_ADMIN_URL: http://s3:3903
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-waypoint-admin-token}
+      S3_ENDPOINT: http://s3:3900
+      S3_REGION: ${S3_REGION:-us-east-1}
       S3_BUCKET: ${S3_BUCKET:-pod}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-waypoint}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-waypoint-dev-secret}
+    volumes:
+      - ./deploy/s3:/init:ro
+    depends_on:
+      s3:
+        condition: service_started
     restart: "no"
 
   # One-shot: applies migrations, then seeds the shared datasets (idempotent).
@@ -136,7 +146,7 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
-      minio-init:
+      s3-init:
         condition: service_completed_successfully
 
   # Background jobs (allocation runs, notifications, outbox relay).
@@ -215,6 +225,7 @@ services:
 volumes:
   pgdata:
   redisdata:
-  miniodata:
+  s3meta:
+  s3data:
   caddydata:
   grafanadata:

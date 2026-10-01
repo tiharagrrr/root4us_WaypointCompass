@@ -27,6 +27,7 @@ import type {
 import type {
   DemoList200Item,
   DemoReset200,
+  DemoUsers200,
   ProblemDto
 } from '../../model';
 
@@ -142,6 +143,106 @@ export function useDemoList<TData = Awaited<ReturnType<typeof demoList>>, TError
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDemoListQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getDemoUsersUrl = () => {
+
+
+
+
+  return `/api/v1/demo/users`
+}
+
+/**
+ * @summary Demo users to switch between (DEMO_MODE=true only)
+ */
+export const demoUsers = async ( options?: Parameters<typeof compassFetch>[1]): Promise<DemoUsers200> => {
+
+  return compassFetch<DemoUsers200>(getDemoUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDemoUsersQueryKey = () => {
+    return [
+    `/api/v1/demo/users`
+    ] as const;
+    }
+
+
+export const getDemoUsersQueryOptions = <TData = Awaited<ReturnType<typeof demoUsers>>, TError = ErrorType<ProblemDto>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDemoUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof demoUsers>>> = ({ signal }) => demoUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DemoUsersQueryResult = NonNullable<Awaited<ReturnType<typeof demoUsers>>>
+export type DemoUsersQueryError = ErrorType<ProblemDto>
+
+
+export function useDemoUsers<TData = Awaited<ReturnType<typeof demoUsers>>, TError = ErrorType<ProblemDto>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof demoUsers>>,
+          TError,
+          Awaited<ReturnType<typeof demoUsers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDemoUsers<TData = Awaited<ReturnType<typeof demoUsers>>, TError = ErrorType<ProblemDto>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof demoUsers>>,
+          TError,
+          Awaited<ReturnType<typeof demoUsers>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDemoUsers<TData = Awaited<ReturnType<typeof demoUsers>>, TError = ErrorType<ProblemDto>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Demo users to switch between (DEMO_MODE=true only)
+ */
+
+export function useDemoUsers<TData = Awaited<ReturnType<typeof demoUsers>>, TError = ErrorType<ProblemDto>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof demoUsers>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDemoUsersQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

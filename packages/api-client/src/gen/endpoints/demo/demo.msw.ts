@@ -18,13 +18,19 @@ import type {
   RequestHandlerOptions
 } from 'msw';
 
+import {
+  UserRole
+} from '../../model';
 import type {
   DemoList200Item,
-  DemoReset200
+  DemoReset200,
+  DemoUsers200
 } from '../../model';
 
 
 export const getDemoListResponseMock = (): DemoList200Item[] => (Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({})))
+
+export const getDemoUsersResponseMock = (overrideResponse: Partial<Extract<DemoUsers200, object>> = {}): DemoUsers200 => ({data: {users: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-000000000001", name: "Nimesha Periyapperuma", email: "nimesha.p@waypoint.lk", role: faker.helpers.arrayElement(Object.values(UserRole)), depotId: null, outletId: "OUT014", vehicleId: null, scopeNames: {depot: "Peliyagoda", outlet: "Fresh Kadawatha", vehicle: "REF-07 · WP CBA-1234"}}))}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getDemoResetResponseMock = (overrideResponse: Partial<Extract<DemoReset200, object>> = {}): DemoReset200 => ({data: {days: ["2026-10-01","2026-10-02","2026-10-03"], rebuilt: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({}))}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -36,6 +42,18 @@ export const getDemoListMockHandler = (overrideResponse?: DemoList200Item[] | ((
     return HttpResponse.json(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getDemoListResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getDemoUsersMockHandler = (overrideResponse?: DemoUsers200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DemoUsers200> | DemoUsers200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/demo/users', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDemoUsersResponseMock(),
       { status: 200
       })
   }, options)
@@ -54,5 +72,6 @@ export const getDemoResetMockHandler = (overrideResponse?: DemoReset200 | ((info
 }
 export const getDemoMock = () => [
   getDemoListMockHandler(),
+  getDemoUsersMockHandler(),
   getDemoResetMockHandler()
 ]

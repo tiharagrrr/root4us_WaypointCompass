@@ -17,17 +17,21 @@ export const page = (items: unknown[], links: Record<string, unknown> = {}) => (
   _links: { self: { href: '/x' }, ...links },
 })
 
+/** The request's headers as a plain object, so a test can assert If-Match and Idempotency-Key. */
+const headersOf = (headers: HeadersInit | undefined): Record<string, string> =>
+  headers ? Object.fromEntries(new Headers(headers).entries()) : {}
+
 /**
  * Stubs fetch with a route table keyed "METHOD /path" (path without query). Unknown routes answer
  * 404 problem+json, so a test fails loudly when a screen calls something unexpected.
  */
 export function stubApi(routes: Record<string, Handler>) {
-  const calls: { method: string; path: string; body: unknown }[] = []
+  const calls: { method: string; path: string; body: unknown; headers: Record<string, string> }[] = []
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, 'http://localhost')
     const method = (init?.method ?? 'GET').toUpperCase()
     const body = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined
-    calls.push({ method, path: url.pathname, body })
+    calls.push({ method, path: url.pathname, body, headers: headersOf(init?.headers) })
     const handler = routes[`${method} ${url.pathname}`]
     if (!handler)
       return new Response(JSON.stringify({ code: 'NOT_FOUND', status: 404, title: 'Not found' }), {

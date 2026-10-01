@@ -106,7 +106,7 @@ BetterAuth configuration:
 | Cookie | HttpOnly, Secure, SameSite=Lax, one origin (no CORS, no token in localStorage) |
 | phoneNumber | otpLength 6, expiresIn 300 s, allowedAttempts 5, `authMessages.enqueueOtp` (SMS provider) |
 | admin | `admin({ ac, roles, defaultRole: 'store_manager' })` |
-| Rate limits | global 100 per 60 s; /sign-in/email 10 per 60 s; /sign-in/pin 5 per 60 s; /phone-number/send-otp 3 per 300 s |
+| Rate limits | global 100 per 60 s; /sign-in/email 10 per 60 s; /sign-in/pin 5 per 60 s; /sign-in/demo 20 per 60 s; /phone-number/send-otp 3 per 300 s |
 | bearer | only when ENABLE_BEARER=true (Flutter, later) |
 | Additional user fields | depotId, outletId, defaultVehicleId (input: false), pinHash (input: false, returned: false), locale (default en) |
 
@@ -139,6 +139,7 @@ BetterAuth routes sit under `/api/auth/*`; every other path below is under `/api
 | POST | /api/auth/phone-number/send-otp | public | D0a; 6-digit code by SMS |
 | POST | /api/auth/phone-number/verify | public | D0b |
 | POST | /api/auth/sign-in/pin | public, dock device | L1, L1m; body `{ depotId, pin (4 digits), deviceId }` |
+| POST | /api/auth/sign-in/demo | session, demo mode only | The account menu's Switch user: signs the caller in **as** another seeded user, body `{ userId }`. The plugin is registered only when DEMO_MODE=true, so otherwise the route does not exist. Not impersonation: the session becomes that user's own, and BetterAuth's impersonate routes stay disabled |
 | POST | /api/auth/sign-out | session | D13, Switch user; D13 waits for an empty outbox |
 | GET | / | any | API root with the role's landing links |
 | GET, PATCH | /me | any | Profile, role, scope, permission list, locale (D12) |
@@ -163,6 +164,7 @@ BetterAuth routes sit under `/api/auth/*`; every other path below is under `/api
 | GET, PUT | /clock | any, settings:manage | Demo time travel, only when DEMO_MODE=true |
 | POST | /demo/reset | settings:manage | Rebuilds the demo day; demo mode only. 501 until the S1 seed registers a DemoDayBuilder (ROO-22) |
 | GET | /demo/inbox | public, demo mode only | The last 50 SMS and emails, so judges can read OTP codes |
+| GET | /demo/users | any, demo mode only | Who the account menu may switch to, ordered store manager, dispatcher, loader, driver, admin, each with its scope named. 404 outside demo mode, which is how the web app knows not to offer the switch |
 
 A1 example request: `GET /users?filter[role]=driver&q=aniqa&limit=10`. Tables use offset pages (limit
 default 10, max 100) with `meta.page { limit, offset, total }`.
@@ -892,3 +894,6 @@ AC-IDN-60  Routes match the permission matrix
   travel and reset), the invite landing and the header demo-time badge built on the generated client (ROO-27).
   Checked against the frames at 1440x960 on the real API; differences are logged in docs/departures.md. The badge
   part of AC-IDN-53 and 55 is checked by screenshot, not by an automated test
+- 2026-10-01 The desktop shells' account card became a menu: Sign out everywhere, plus Switch user
+  while DEMO_MODE=true, served by `GET /demo/users` and `POST /api/auth/sign-in/demo` (ROO-20
+  follow-up). Acceptance criteria for both are still to be written

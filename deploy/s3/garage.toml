@@ -1,0 +1,31 @@
+# Garage: S3-compatible object storage for proof-of-delivery photos and
+# signatures. One node, one replica — the local stand-in for Supabase Storage.
+#
+# Secrets are not in this file: Compose passes GARAGE_RPC_SECRET and
+# GARAGE_ADMIN_TOKEN as environment variables, which override the config.
+# The bucket, the key and the cluster layout are created by garage-init.mjs.
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+# One portable file per table. lmdb is faster but maps a sparse 1 TiB file,
+# which not every Docker volume driver handles.
+db_engine = "sqlite"
+
+# Single node: one copy of every block, no quorum to satisfy.
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+# A one-node cluster talks to itself; no other node dials in.
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+# Must match S3_REGION in .env — SigV4 signatures cover the region.
+s3_region = "us-east-1"
+api_bind_addr = "[::]:3900"
+# The API uses path-style addressing (S3_FORCE_PATH_STYLE=true); Garage still
+# wants a domain to recognise vhost-style requests by.
+root_domain = ".s3.waypoint.localhost"
+
+[admin]
+# Health check, bucket and key administration. Not published in production.
+api_bind_addr = "[::]:3903"

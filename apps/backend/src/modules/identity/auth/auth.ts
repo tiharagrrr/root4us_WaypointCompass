@@ -4,6 +4,7 @@
  * - Admin, dispatcher, store manager: email or username and password (A0).
  * - Driver: phone and a 6-digit SMS code (D0a, D0b).
  * - Loader: depot and 4-digit PIN on a dock device (L1, L1m; loader-pin.plugin.ts).
+ * - Demo mode only: switching to another seeded user from the account menu (demo-switch.plugin.ts).
  *
  * Sessions live in Postgres behind an HttpOnly, Secure, SameSite=Lax cookie on
  * one origin; bearer tokens only when ENABLE_BEARER=true (Flutter, later).
@@ -17,6 +18,7 @@ import { admin, bearer, phoneNumber, username } from 'better-auth/plugins';
 import { uuidv7 } from 'uuidv7';
 import type { Database } from '../../../db/client';
 import { accounts, sessions, users, verifications } from '../../../db/schema';
+import { demoSwitch } from './demo-switch.plugin';
 import { invitationSession } from './invitation-session.plugin';
 import { loaderPin } from './loader-pin.plugin';
 
@@ -30,6 +32,8 @@ export interface AuthDeps {
   appUrl: string;
   trustedOrigins?: string[];
   enableBearer?: boolean;
+  /** DEMO_MODE: adds /sign-in/demo, the account menu's user switch. */
+  demoMode?: boolean;
   sendOtp: (phoneNumber: string, code: string) => Promise<void>;
 }
 
@@ -84,6 +88,7 @@ export function createAuth(deps: AuthDeps) {
         '/sign-in/email': { window: 60, max: 10 },
         '/sign-in/username': { window: 60, max: 10 },
         '/sign-in/pin': { window: 60, max: 5 },
+        '/sign-in/demo': { window: 60, max: 20 },
         '/phone-number/send-otp': { window: 300, max: 3 },
       },
     },
@@ -109,6 +114,7 @@ export function createAuth(deps: AuthDeps) {
       }),
       loaderPin(deps.db),
       invitationSession(),
+      ...(deps.demoMode ? [demoSwitch(deps.db)] : []),
       ...(deps.enableBearer ? [bearer()] : []),
     ],
   });

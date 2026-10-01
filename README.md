@@ -30,9 +30,9 @@ Once the `seed` job has finished and `api` is healthy:
 | Web app (all four roles) | http://localhost:8080 |
 | API docs (Swagger) | http://localhost:3000/api/docs |
 | API health | http://localhost:8080/api/health |
-| MinIO console (POD files) | http://localhost:9001 |
+| Object storage health (Garage) | http://localhost:9001/health |
 
-`docker compose up` starts PostgreSQL, Redis and MinIO, then runs migrations and seeds the shared datasets plus a demo delivery day. After that it starts the API, the worker and the web app. Reset to a fresh install with `docker compose down -v`.
+`docker compose up` starts PostgreSQL, Redis and Garage (S3 storage for proof of delivery), then runs migrations and seeds the shared datasets plus a demo delivery day. After that it starts the API, the worker and the web app. Reset to a fresh install with `docker compose down -v`.
 
 ## Seeded accounts
 
@@ -70,7 +70,7 @@ Credentials come from the `SEED_*` variables in `.env`.
 ### Prerequisites
 
 - Node.js 22 (`nvm use`), pnpm 11 (`corepack enable` or `npm i -g pnpm@11`)
-- Docker (for PostgreSQL, Redis and MinIO)
+- Docker (for PostgreSQL, Redis and Garage object storage)
 
 ### First-time setup
 
@@ -78,7 +78,7 @@ Credentials come from the `SEED_*` variables in `.env`.
 pnpm install
 cp .env.example .env      # Compose + shared defaults; per-app overrides:
                           # apps/backend/.env.example, apps/frontend/.env.example
-pnpm infra:up             # postgres, redis, minio in Docker
+pnpm infra:up             # postgres, redis, Garage (S3) in Docker
 pnpm db:generate          # only after schema changes: writes apps/backend/drizzle/*.sql
 pnpm db:migrate
 pnpm db:seed

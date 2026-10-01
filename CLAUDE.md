@@ -21,7 +21,7 @@ pnpm test`) and report which.
 
 ## Commands
 - `pnpm i`: install (Node 22; pnpm version pinned in package.json)
-- `docker compose up -d postgres redis minio mailpit`: local services
+- `pnpm infra:up`: local services (postgres, redis, and Garage for S3 storage)
 - `pnpm dev`: api on 3000, worker, web on 5173 (MSW mocks every endpoint not listed in live.ts)
 - `pnpm --filter api db:generate --name=<module>_<change>` then `db:migrate`: after editing src/db/schema/<module>.ts
 - `pnpm --filter api db:seed`: idempotent seed; `pnpm db:reset-demo` rebuilds the demo day

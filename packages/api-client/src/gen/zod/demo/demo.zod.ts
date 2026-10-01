@@ -17,6 +17,37 @@ export const DemoListResponseItem = zod.looseObject({
 export const DemoListResponse = zod.array(DemoListResponseItem)
 
 /**
+ * @summary Demo users to switch between (DEMO_MODE=true only)
+ */
+export const DemoUsersResponse = zod.object({
+  "data": zod.object({
+  "users": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "role": zod.enum(['admin', 'dispatcher', 'loader', 'driver', 'store_manager']),
+  "depotId": zod.string().nullable(),
+  "outletId": zod.string().nullable(),
+  "vehicleId": zod.string().nullable(),
+  "scopeNames": zod.object({
+  "depot": zod.string().nullable(),
+  "outlet": zod.string().nullable(),
+  "vehicle": zod.string().nullable()
+})
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
  * @summary A6 Reset demo day; 404 unless DEMO_MODE=true.
  */
 export const DemoResetResponse = zod.object({
