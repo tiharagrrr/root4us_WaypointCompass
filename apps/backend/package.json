@@ -40,8 +40,12 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/terminus": "^11.0.0",
+    "@thallesp/nestjs-better-auth": "2.8.0",
     "@waypoint/shared": "workspace:*",
+    "better-auth": "1.7.6",
     "bullmq": "^5.58.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "csv-parse": "^6.1.0",
     "drizzle-orm": "^0.44.5",
     "ioredis": "^5.7.0",
@@ -83,18 +87,26 @@
   "jest": {
     "moduleFileExtensions": [
       "js",
+      "mjs",
       "json",
       "ts"
     ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.ts$": "ts-jest",
+      "^.+\\.m?js$": "<rootDir>/../test/esm-to-cjs.transform.cjs"
     },
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(\\.pnpm|better-auth|@better-auth|better-call|@thallesp|@noble|nanostores|jose|rou3|defu|kysely)[/@])"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/../test/setup-env.ts"
+    ]
   }
 }

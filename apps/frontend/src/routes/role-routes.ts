@@ -1,5 +1,4 @@
 import type { UserRole } from '@waypoint/shared'
-import { Link } from 'react-router'
 
 export interface RoleRoute {
   role: Exclude<UserRole, 'admin'>
@@ -35,16 +34,3 @@ export const ROLE_ROUTES: RoleRoute[] = [
     summary: 'Place orders before 4 PM, see ETAs and deferral notices, confirm receipt.',
   },
 ]
-
-export function RolePlaceholder({ route }: { route: RoleRoute }) {
-  return (
-    <main className="shell">
-      <p>
-        <Link to="/">← All roles</Link>
-      </p>
-      <h1>{route.label}</h1>
-      <p>{route.summary}</p>
-      <p className="muted">Screens from the Designathon submission go here.</p>
-    </main>
-  )
-}
