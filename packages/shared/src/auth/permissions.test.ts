@@ -48,7 +48,7 @@ const HOLDERS: Record<Permission, UserRole[]> = {
   'plan:publish': [D],
   'plan:revise': [D],
   'plan:close': [D],
-  'deferral:read': [D, S],
+  'deferral:read': [A, D, S],
   'deferral:decide': [D],
   'deferral:respond': [S],
   'trip:read': [A, D, L, V],

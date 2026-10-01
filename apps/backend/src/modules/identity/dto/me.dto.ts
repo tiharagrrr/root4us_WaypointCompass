@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiLinks } from '../../../core/http/decorators';
 import {
   PERMISSIONS,
   type Link,
@@ -61,6 +62,6 @@ export class MeDto {
   })
   permissions!: Permission[];
 
-  @ApiProperty({ type: Object })
+  @ApiLinks()
   _links!: Record<string, Link>;
 }

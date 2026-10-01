@@ -39,7 +39,17 @@ export const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
+  /** Starts the demo clock at this instant; honoured only when DEMO_MODE=true. */
   DEMO_CLOCK: z.string().optional(),
+  /** pino level; defaults to debug in development, error in tests, info otherwise. */
+  LOG_LEVEL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+      .optional(),
+  ),
+  /** Build version in every log line, e.g. 1.4.0+abc123. */
+  APP_VERSION: z.string().default('0.0.1'),
 });
 
 export type Env = z.infer<typeof envSchema>;

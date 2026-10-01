@@ -38,6 +38,6 @@ export const AUTH = Symbol('AUTH');
         }),
     },
   ],
-  exports: [AUTH],
+  exports: [AUTH, AuthMessages],
 })
 export class IdentityAuthModule {}

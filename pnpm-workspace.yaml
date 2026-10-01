@@ -7,4 +7,6 @@ allowBuilds:
   '@scarf/scarf': true
   esbuild: true
   msgpackr-extract: true
+  # msw's postinstall only copies the service worker; apps/frontend/public has it (msw init).
+  msw: false
   unrs-resolver: true

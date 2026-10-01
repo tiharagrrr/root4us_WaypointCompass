@@ -1,6 +1,14 @@
 import { randomBytes } from 'node:crypto';
 import type { Database } from '../src/db/client';
-import { depots, devices, districts, outlets } from '../src/db/schema';
+import {
+  depots,
+  devices,
+  districts,
+  outlets,
+  plans,
+  trips,
+  vehicles,
+} from '../src/db/schema';
 
 /** A random suffix, so fixtures never collide with earlier runs or the seed. */
 export const suffix = () => randomBytes(3).toString('hex');
@@ -69,4 +77,58 @@ export async function deviceFixture(
     depotId: dock?.depotId ?? null,
   });
   return id;
+}
+
+/** An ambient truck based at a depot. */
+export async function vehicleFixture(
+  db: Database,
+  id: string,
+  depotId: string,
+) {
+  await db.insert(vehicles).values({
+    id,
+    code: id,
+    registrationNo: `REG-${id}`,
+    type: 'TRUCK',
+    temp: 'AMBIENT',
+    weightCapKg: 3000,
+    volumeCapM3: 20,
+    fuelType: 'diesel',
+    kmPerL: 6,
+    weeklyFuelQuotaL: 400,
+    depotId,
+  });
+  return id;
+}
+
+/** A plan for a depot and business date with one trip for a driver (what "trips today" reads). */
+export async function tripFixture(
+  db: Database,
+  input: {
+    depotId: string;
+    districtId: string;
+    driverId: string;
+    date: string;
+    status?: (typeof trips.$inferInsert)['status'];
+  },
+) {
+  const vehicleId = await vehicleFixture(db, `DRY-${suffix()}`, input.depotId);
+  const [plan] = await db
+    .insert(plans)
+    .values({ depotId: input.depotId, date: input.date })
+    .returning({ id: plans.id });
+  const [trip] = await db
+    .insert(trips)
+    .values({
+      planId: plan.id,
+      depotId: input.depotId,
+      vehicleId,
+      driverId: input.driverId,
+      brand: 'FRESH',
+      districtId: input.districtId,
+      tempClass: 'AMBIENT',
+      status: input.status ?? 'PLANNED',
+    })
+    .returning({ id: trips.id });
+  return { planId: plan.id, tripId: trip.id };
 }

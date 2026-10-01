@@ -6,10 +6,14 @@ RUN npm install -g pnpm@11.1.2
 WORKDIR /repo
 COPY package.json pnpm-workspace.yaml pnpm-lock.yam[l] ./
 COPY packages/shared/package.json packages/shared/
+COPY packages/ui-tokens/package.json packages/ui-tokens/
+COPY packages/api-client/package.json packages/api-client/
 COPY apps/frontend/package.json apps/frontend/
 RUN if [ -f pnpm-lock.yaml ]; then FROZEN=--frozen-lockfile; else FROZEN=--no-frozen-lockfile; fi \
  && pnpm install $FROZEN --filter "@waypoint/frontend..."
 COPY packages/shared packages/shared
+COPY packages/ui-tokens packages/ui-tokens
+COPY packages/api-client packages/api-client
 COPY apps/frontend apps/frontend
 RUN pnpm --filter "@waypoint/frontend..." build
 

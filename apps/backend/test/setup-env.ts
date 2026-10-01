@@ -16,3 +16,6 @@ if (process.env.TEST_REDIS_URL) {
   process.env.REDIS_URL = process.env.TEST_REDIS_URL;
 }
 process.env.BETTER_AUTH_SECRET ??= 'test-only-secret-with-at-least-32-chars';
+// Demo mode is off in tests unless a suite imports test/demo-mode.ts first,
+// whatever a developer's .env says.
+process.env.DEMO_MODE ??= 'false';

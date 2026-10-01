@@ -14,6 +14,7 @@
     "typecheck": "pnpm -r typecheck",
     "check:boundaries": "pnpm --filter @waypoint/api check:boundaries",
     "check": "pnpm lint && pnpm typecheck && pnpm check:boundaries && pnpm test",
+    "api:gen": "pnpm --filter @waypoint/api openapi:write && pnpm --filter @compass/api-client generate",
     "db:generate": "pnpm --filter @waypoint/api db:generate",
     "db:migrate": "pnpm --filter @waypoint/api db:migrate",
     "db:seed": "pnpm --filter @waypoint/api db:seed",

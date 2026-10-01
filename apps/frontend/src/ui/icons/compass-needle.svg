@@ -1,0 +1,12 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Compass needle" clip-path="url(#clip0_0_91)">
+<path id="Vector" d="M6 11.15C8.84427 11.15 11.15 8.84427 11.15 6C11.15 3.15573 8.84427 0.85 6 0.85C3.15573 0.85 0.85 3.15573 0.85 6C0.85 8.84427 3.15573 11.15 6 11.15Z" stroke="#1D4ED8" stroke-width="1.6"/>
+<path id="Vector_2" d="M6 2.3L7.5 6H4.5L6 2.3Z" fill="#1D4ED8"/>
+<path id="Vector_3" d="M6 9.7L4.5 6H7.5L6 9.7Z" fill="#0F172A"/>
+</g>
+<defs>
+<clipPath id="clip0_0_91">
+<rect width="12" height="12" fill="white"/>
+</clipPath>
+</defs>
+</svg>
