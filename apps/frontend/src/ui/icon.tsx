@@ -4,21 +4,37 @@ import bell from './icons/bell.svg'
 import chevronDown from './icons/chevron-down.svg'
 import chevronDownSmall from './icons/chevron-down-small.svg'
 import close from './icons/close.svg'
+import deferrals from './icons/deferrals.svg'
 import depots from './icons/depots.svg'
+import itemCatalog from './icons/item-catalog.svg'
+import newOrder from './icons/new-order.svg'
+import orders from './icons/orders.svg'
 import outlets from './icons/outlets.svg'
+import plus from './icons/plus.svg'
+import receipts from './icons/receipts.svg'
 import search from './icons/search.svg'
 import settings from './icons/settings.svg'
 import users from './icons/users.svg'
 import vehicles from './icons/vehicles.svg'
 
-/** The single-colour icons exported from the Figma file, unchanged. */
+/**
+ * The single-colour icons exported from the Figma file, unchanged. The library is Material
+ * Symbols: take a new icon from the frame that needs it, or from Material Symbols Rounded at the
+ * size the frame uses, and never redraw one by hand.
+ */
 const icons = {
   bell,
   'chevron-down': chevronDown,
   'chevron-down-small': chevronDownSmall,
   close,
+  deferrals,
   depots,
+  'item-catalog': itemCatalog,
+  'new-order': newOrder,
+  orders,
   outlets,
+  plus,
+  receipts,
   search,
   settings,
   users,

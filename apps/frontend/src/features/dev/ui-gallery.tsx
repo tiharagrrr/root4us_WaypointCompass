@@ -11,6 +11,7 @@ import { Field } from '@/ui/field'
 import { Icon } from '@/ui/icon'
 import { Input } from '@/ui/input'
 import { Pagination } from '@/ui/pagination'
+import { QuantityStepper } from '@/ui/quantity-stepper'
 import { RadioCards } from '@/ui/radio-cards'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/select'
@@ -41,6 +42,7 @@ export function UiGallery() {
   const [channel, setChannel] = useState<'email' | 'sms'>('sms')
   const [offset, setOffset] = useState(0)
   const [limit, setLimit] = useState(10)
+  const [packs, setPacks] = useState(5)
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,6 +116,12 @@ export function UiGallery() {
           }}
         />
       </TableContainer>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <QuantityStepper label="Sugar 1 kg" value={packs} onValueChange={setPacks} />
+        <QuantityStepper label="Fresh milk 1 L" value={1} min={1} onValueChange={() => undefined} />
+        <QuantityStepper label="Ceylon tea 400 g" value={4} onValueChange={() => undefined} disabled />
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary">Publish plan</Button>
