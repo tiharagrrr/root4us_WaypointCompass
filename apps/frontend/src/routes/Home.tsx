@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { fetchHealth } from '../lib/api'
-import { ROLE_ROUTES } from './roles'
+import { ROLE_ROUTES } from './role-routes'
 
 export function Home() {
   const health = useQuery({

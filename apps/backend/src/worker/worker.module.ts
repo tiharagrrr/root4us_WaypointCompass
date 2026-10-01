@@ -3,7 +3,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { AppConfigModule } from '../config/config.module';
 import { DatabaseModule } from '../db/database.module';
 import { BullRootModule, QUEUES } from '../queues';
+import { DemoInbox } from '../core/demo/demo-inbox';
 import { AllocationProcessor } from './allocation.processor';
+import { NotificationsProcessor } from './notifications.processor';
 
 /** Background jobs: allocation runs, notifications, outbox relay, audit chain check. */
 @Module({
@@ -16,6 +18,6 @@ import { AllocationProcessor } from './allocation.processor';
       { name: QUEUES.notifications },
     ),
   ],
-  providers: [AllocationProcessor],
+  providers: [AllocationProcessor, NotificationsProcessor, DemoInbox],
 })
 export class WorkerModule {}

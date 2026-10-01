@@ -13,6 +13,7 @@ import type { PgTable } from 'drizzle-orm/pg-core';
 import { ENGINE_DEFERRAL_REASONS } from '@waypoint/shared';
 import { createDatabase, createPool, type Database } from './client';
 import { loadEnv, ownerUrl, REPO_ROOT } from './env';
+import { seedUsers } from './seed-users';
 import {
   brandEnum,
   calendarDays,
@@ -385,8 +386,13 @@ async function main() {
   try {
     const db = createDatabase(pool);
     await seedReferenceData(db, dir);
-    // TODO(ROO-22): items catalog, users (through BetterAuth so passwords hash
-    //   like real sign-ups), settings, 14 days of history from
+    const password = process.env.SEED_PASSWORD ?? '';
+    if (password.length >= 10) await seedUsers(db, password);
+    else
+      console.warn(
+        '[seed] SEED_PASSWORD needs 10+ characters; skipping persona accounts',
+      );
+    // TODO(ROO-22): items catalog, settings, 14 days of history from
     //   deliveries_train.csv, and the S1 demo day where demand exceeds capacity.
   } finally {
     await pool.end();
