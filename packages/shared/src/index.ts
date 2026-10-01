@@ -3,3 +3,5 @@ export * from './rules/trip-time';
 export * from './rules/allocation-validator';
 export * from './schemas/sync';
 export * from './machines';
+export * from './auth/actor';
+export * from './auth/permissions';
