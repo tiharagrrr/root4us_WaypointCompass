@@ -1,0 +1,47 @@
+{
+  "rule": "TECH_VALUE_LIMIT",
+  "description": "A Tech trip carries LKR 200,000 under the 250,000 limit",
+  "params": {
+    "techValueLimitLkr": 250000
+  },
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1"
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1",
+        "brand": "TECH",
+        "valueLkr": 100000
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-1",
+        "brand": "TECH",
+        "valueLkr": 100000
+      }
+    ]
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "TECH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1",
+          "fx-ord-2"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": []
+}

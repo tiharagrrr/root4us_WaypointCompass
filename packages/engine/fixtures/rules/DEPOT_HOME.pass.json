@@ -1,0 +1,36 @@
+{
+  "rule": "DEPOT_HOME",
+  "description": "A vehicle serves an outlet of its own depot",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1"
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1"
+      }
+    ]
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": []
+}

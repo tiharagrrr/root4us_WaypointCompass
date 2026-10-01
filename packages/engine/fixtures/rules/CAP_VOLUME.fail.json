@@ -1,0 +1,52 @@
+{
+  "rule": "CAP_VOLUME",
+  "description": "Two orders fill 1.25 m3 of 1.0 m3",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1",
+        "volumeCapM3": 1
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1",
+        "volumeM3": 0.5
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-1",
+        "volumeM3": 0.75
+      }
+    ]
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1",
+          "fx-ord-2"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": [
+    {
+      "rule": "CAP_VOLUME",
+      "severity": "HARD",
+      "tripKey": "FV1#1",
+      "actual": 1.25,
+      "limit": 1
+    }
+  ]
+}
