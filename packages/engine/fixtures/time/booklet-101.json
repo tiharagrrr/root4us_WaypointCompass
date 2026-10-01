@@ -1,0 +1,7 @@
+{
+  "district": { "id": "fx-gampaha", "depotToDistrictMin": 37, "interStopMin": 9 },
+  "brand": "FRESH",
+  "dockTypes": ["REAR_DOCK", "REAR_DOCK", "STREET"],
+  "allowances": { "FRESH:REAR_DOCK": 15, "FRESH:STREET": 16 },
+  "expect": { "minutes": 101 }
+}

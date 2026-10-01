@@ -624,7 +624,8 @@ Checklist (tick in the same PR as the passing test):
   `toOrderDto` returns them flat and omits `urgent`, `valueLkr`, `afterCutoff` and `editableUntil`.
   (Harini)
 - A late Style order: does it roll to the next operating day or to the outlet's next weekly delivery
-  day? (Harini)
+  day? Decided 2026-10-01: the next weekly delivery day. `deliveryDate` is set to it when the order is
+  placed, so a not-due Style order never reaches the planning queue (specs/engine/rules.md §9).
 - Which reason codes may a dispatcher use to cancel, and where are they stored? (Harini)
 - `close-cutoff` with `DEMO_MODE=false`: which status (403 or 404)? What does it return on success,
   and what are the day summary's field names? (Harini)

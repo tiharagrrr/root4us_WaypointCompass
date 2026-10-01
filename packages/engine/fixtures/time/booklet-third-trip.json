@@ -1,0 +1,6 @@
+{
+  "vehicleId": "fx-veh-1",
+  "existingFreshMinutes": 213,
+  "addTrip": { "brand": "FRESH", "minutes": 40 },
+  "expect": { "refusedBy": "TRIP_LIMIT" }
+}

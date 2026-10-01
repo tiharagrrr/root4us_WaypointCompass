@@ -1,0 +1,9 @@
+{
+  "vehicleId": "fx-veh-1",
+  "trips": [
+    { "tripNo": 1, "brand": "FRESH", "minutes": 101 },
+    { "tripNo": 2, "brand": "FRESH", "minutes": 112 }
+  ],
+  "params": { "freshBudgetMin": 270, "maxTripsPerVehicle": 2 },
+  "expect": { "freshMinutes": 213, "violations": [] }
+}
