@@ -1,6 +1,7 @@
 import { EngineInputError } from '../errors';
 import { tripKeyOf } from '../plan/measure';
 import { preparePlan } from '../plan/prepare';
+import { unplannedOrders } from '../plan/unplanned';
 import { priorityOf } from '../priority';
 import type { EngineInput, EngineOrder, Plan, Trip, Violation } from '../types';
 import { compareText, stableSort } from '../util/stable-sort';
@@ -43,7 +44,7 @@ const compareKeys = (a: SortKey, b: SortKey): number => {
 
 /**
  * Ranked ways to clear a hard violation: move an order to another vehicle (or another trip), swap
- * it for an unassigned order of at least its priority, or defer the lowest-priority order. Every
+ * it for an unplanned order of at least its priority, or defer the lowest-priority order. Every
  * suggestion is tried with validate(): it must clear the violation and cause no new hard one. Moves
  * come first, then swaps, then deferrals; within a kind the least disruptive wins (fewest edits,
  * lowest-priority and smallest order, the earliest trip number). A soft violation, or one with no
@@ -139,14 +140,10 @@ export function suggestFixes(input: EngineInput, plan: Plan, violation: Violatio
     }
   }
 
-  // SWAP: an unassigned order of at least the same priority takes its place.
-  const assigned = new Set(prepared.trips.flatMap((t) => t.orderIds));
-  const unassigned = stableSort(
-    input.orders.filter((o) => !assigned.has(o.id)),
-    (a, b) => prio(b) - prio(a) || compareText(a.id, b.id),
-  );
+  // SWAP: an unplanned order of at least the same priority takes its place.
+  const unplanned = stableSort(unplannedOrders(input, plan), (a, b) => prio(b) - prio(a) || compareText(a.id, b.id));
   for (const { order, trip } of candidates) {
-    for (const other of unassigned) {
+    for (const other of unplanned) {
       if (prio(other) < prio(order)) continue;
       add(
         'SWAP',

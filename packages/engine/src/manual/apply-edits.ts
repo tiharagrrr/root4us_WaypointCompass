@@ -1,6 +1,8 @@
 import { EngineInputError, type EngineInputErrorCode } from '../errors';
+import { resolveParams } from '../params';
 import { buildLookups, tripKeyOf } from '../plan/measure';
 import { preparePlan } from '../plan/prepare';
+import { manualUnplanned } from '../plan/unplanned';
 import type { EngineInput, Plan, TripDraft, Violation } from '../types';
 import { compareText, stableSort } from '../util/stable-sort';
 import { validate } from '../validate';
@@ -114,10 +116,21 @@ export function applyOps(input: EngineInput, plan: Plan, edits: readonly EditOp[
     }
   });
 
-  const assigned = new Set([...trips.values()].flatMap((t) => t.orderIds));
+  // An order that was on a trip and now is not is unplanned: it goes on the list, with no reason yet.
+  const onATrip = new Set([...trips.values()].flatMap((t) => t.orderIds));
+  const wasOnATrip = plan.trips.flatMap((t) => t.orderIds);
+  const listed = new Set(plan.unplanned.map((u) => u.orderId));
+  const params = resolveParams(input.params);
+  const added = wasOnATrip.flatMap((id) => {
+    const order = lookups.orderById.get(id);
+    return order && !onATrip.has(id) && !listed.has(id) ? [manualUnplanned(input, order, params)] : [];
+  });
   return {
     trips: stableSort([...trips.entries()], (a, b) => compareText(a[0], b[0])).map(([, t]) => t),
-    unplanned: plan.unplanned.filter((u) => !assigned.has(u.orderId)),
+    unplanned: stableSort(
+      [...plan.unplanned.filter((u) => !onATrip.has(u.orderId)), ...added],
+      (a, b) => compareText(a.orderId, b.orderId),
+    ),
   };
 }
 

@@ -25,3 +25,5 @@ export * from './manual/order-options';
 export * from './manual/vehicle-options';
 export * from './manual/violation-key';
 export * from './manual/suggest-fixes';
+export * from './plan/unplanned';
+export * from './plan/repeat-skip';

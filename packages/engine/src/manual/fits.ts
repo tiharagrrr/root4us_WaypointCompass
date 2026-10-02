@@ -59,7 +59,7 @@ export function evaluateEdits(
 
 /**
  * Whether one more order can join a trip. It runs the real rules over the trip with the order on it,
- * so the answer and the reason are the ones validate() would give. The order must be unassigned and
+ * so the answer and the reason are the ones validate() would give. The order must be on no trip and
  * the trip must be in the plan.
  */
 export function fits(input: EngineInput, plan: Plan, orderId: string, tripKey: string): FitsResult {

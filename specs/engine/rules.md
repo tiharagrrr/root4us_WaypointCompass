@@ -241,7 +241,7 @@ The pure functions the web plan editor and the Planning API call to build a plan
 | --- | --- | --- |
 | `applyEdits(input, plan, edits)` | `{ plan, violations, introduced }`: the new plan (trips sorted by key), every violation, and the ones the edits caused | 08, `POST /edits` |
 | `fits(input, plan, orderId, tripKey)` | `{ fits, blocking, warnings, result }`: the hard violations adding the order would cause, the soft ones, and the trip's totals with it | 07 |
-| `optionsForTrip(input, plan, { vehicleId, tripNo, selectedOrderIds? })` | Unassigned orders as `FITS`, `WARNING` or `BLOCKED` with the reason and totals; fits first, then higher priority, earlier window, ref | 07 |
+| `optionsForTrip(input, plan, { vehicleId, tripNo, selectedOrderIds? })` | Unplanned orders (on no trip) as `FITS`, `WARNING` or `BLOCKED` with the reason and totals; fits first, then higher priority, earlier window, ref | 07 |
 | `vehicleOptions(input, plan)` | Per vehicle: status (`AVAILABLE`, `NO_TRIPS_LEFT`, `WORKSHOP`, `BREAKDOWN`), trips used and left, next trip number, Fresh and Style-Tech minutes left, capacities, fuel left; sorted by code | 06 |
 | `suggestFixes(input, plan, violation, limit = 5)` | Ranked edit lists that clear a hard violation: `MOVE`, then `SWAP`, then `DEFER` | 10, 11 |
 
@@ -249,10 +249,11 @@ The pure functions the web plan editor and the Planning API call to build a plan
 
 Rules of the road:
 - Edits apply in order. A violation is returned, never thrown. An edit that cannot be applied throws `EngineInputError` naming the edit (`edits[2].tripKey`): `INVALID_EDIT`, `UNKNOWN_TRIP`, `TRIP_EXISTS`, `FIXED_TRIP` (a released or in-progress trip cannot be edited), `ORDER_ALREADY_ASSIGNED`, `ORDER_NOT_ASSIGNED`, `INVALID_RESEQUENCE` (says what is missing, extra or repeated), `INVALID_POSITION`.
-- "Unplanned" in an edit is just "not on any trip". Removing a trip or unassigning an order leaves its orders unassigned; the API derives the unplanned list and creates the proposed deferrals. An order that gets a trip leaves `plan.unplanned`.
+- **Unplanned means on no trip.** There is one list, `plan.unplanned`, and `unplannedOrders(input, plan)` is the one definition of it (not on a trip in the plan, nor on a fixed trip). Each entry is one flat `Unplanned` type, the same shape as the `deferrals` columns. An engine decision fills `reasonCode`, `bindingRule` and `choice`; a manual removal leaves all three `null`, meaning "not decided yet", because only the dispatcher knows why and she picks the reason when she confirms the deferral (which needs a reason and a note, AC-PLN-16). The engine does not enforce that she does: the API's publish check does (AC-PLN-04).
+- `applyEdits` keeps that list complete: an order that was on a trip and is not after the edits (`REMOVE_TRIP`, `UNASSIGN_ORDER`) is added with its priority and its repeat-skip flag, so `REPEAT_SKIP` fires in the editor and the browser needs no logic of its own. An order that is unassigned and put back in the same list is not added, a `MOVE_ORDER` never adds one, and an order that gets a trip leaves the list. Entries stay sorted by order id. The API turns each new entry into a `PROPOSED` deferral with source `PLANNING` (prefilling the reason `OTHER`), which publishing then needs decided.
 - `fits` and the option lists compare with what the plan already violated, so a problem that was already on the trip is not blamed on the new order. A violation whose numbers get worse counts as new.
 - With no trip yet and no order chosen, `optionsForTrip` tries each order as a trip of its own. Once an order is chosen the trip so far is the baseline, and its brand and district fix those of a new trip.
-- `suggestFixes` tries every suggestion with `validate()`: it must clear the violation and cause no new hard one. Within a kind the least disruptive wins: fewest edits, then the lowest-priority and smallest order, then the lowest trip number. A soft violation, or one with no trip or vehicle (`WHOLE_ORDER`, `OPERATING_DAY`), has no suggestions. At 25 trips, 30 vehicles and 125 unassigned orders it takes about 60 ms.
+- `suggestFixes` tries every suggestion with `validate()`: it must clear the violation and cause no new hard one. Within a kind the least disruptive wins: fewest edits, then the lowest-priority and smallest order, then the lowest trip number. A soft violation, or one with no trip or vehicle (`WHOLE_ORDER`, `OPERATING_DAY`), has no suggestions. At 25 trips, 30 vehicles and 125 unplanned orders it takes about 60 ms.
 
 ## 4. Rule details
 
@@ -538,6 +539,7 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## Changelog
 
+- 2026-10-02 ROO-75: one concept for "on no trip": `applyEdits` adds orders it takes off a trip to `plan.unplanned` (an `Unplanned` entry with no reason yet), `unplannedOrders()` and `isRepeatSkip()` are the shared definitions, and "unassigned" is no longer a separate term
 - 2026-10-02 ROO-75: the manual plan helpers (`applyEdits`, `fits`, `optionsForTrip`, `vehicleOptions`, `suggestFixes`), the `EditOp` union, `priorityOf()` with `params.priorityWeights`, and eight edit error codes; `ENGINE_VERSION` 0.3.0
 - 2026-10-02 `EngineInputError` carries `code`, `field`, `value` (`INVALID_DATE`, `UNKNOWN_ORDER`, `UNKNOWN_VEHICLE`, `UNKNOWN_DISTRICT`, `UNKNOWN_OUTLET`, `MISSING_ALLOWANCE`); `validate()` checks `input.date` before anything else; the purity test is an allowlist
 - 2026-10-02 the engine uses `@waypoint/shared/domain` and `@waypoint/shared/business-time` instead of its own copies; no output change, so `ENGINE_VERSION` stays 0.2.0

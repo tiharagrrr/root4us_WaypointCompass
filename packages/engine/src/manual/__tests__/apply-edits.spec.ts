@@ -3,7 +3,8 @@ import { EngineInputError } from '../../errors';
 import type { Plan, Trip } from '../../types';
 import { applyEdits } from '../apply-edits';
 import type { EditOp } from '../edit-ops';
-import { capacityScenario, deepFreeze, ordersByTrip, withOrder } from './scenarios';
+import { buildInput } from '../../rules/__tests__/fixture';
+import { capacityScenario, deepFreeze, ordersByTrip, trip, withOrder } from './scenarios';
 
 const FIXED: Trip = {
   key: 'REF-11#1',
@@ -59,10 +60,11 @@ describe('applyEdits builds and changes a plan', () => {
     expect(ordersByTrip(r.plan)['REF-07#1']).toEqual(['fx-ord-1']);
   });
 
-  it('apply-edits: REMOVE_TRIP removes the trip and its orders become unassigned', () => {
+  it('apply-edits: REMOVE_TRIP removes the trip, and its orders go on the unplanned list', () => {
     const { input, plan } = capacityScenario();
     const r = applyEdits(input, plan, [{ op: 'REMOVE_TRIP', tripKey: 'REF-03#1' }]);
     expect(Object.keys(ordersByTrip(r.plan))).toEqual(['REF-07#1']);
+    expect(r.plan.unplanned.map((u) => u.orderId)).toEqual(['fx-ord-3']);
   });
 
   it('apply-edits: MOVE_ORDER onto a full vehicle returns the CAP_VOLUME violation (AC-PLN-02)', () => {
@@ -118,6 +120,85 @@ describe('applyEdits builds and changes a plan', () => {
     const harmless = applyEdits(input, over.plan, [{ op: 'ADD_TRIP', vehicleId: 'fx-veh-3', tripNo: 1, brand: 'FRESH', districtId: 'fx-gampaha' }]);
     expect(harmless.violations).toHaveLength(1);
     expect(harmless.introduced).toEqual([]);
+  });
+});
+
+describe('an order taken off a trip is unplanned', () => {
+  // fx-ord-2 is at an outlet that was deferred on its last run: a repeat skip if left off again.
+  const repeatSkipWorld = () => {
+    const input = buildInput({
+      vehicles: [{ id: 'fx-veh-1' }],
+      outlets: { 'fx-out-1': {}, 'fx-out-2': {} },
+      orders: [
+        { id: 'fx-ord-1', outletId: 'fx-out-1' },
+        { id: 'fx-ord-2', outletId: 'fx-out-2' },
+        { id: 'fx-ord-3', outletId: 'fx-out-1' },
+      ],
+      history: { 'fx-out-2': { deferredOnLastRun: true, consecutiveDeferrals: 1, daysSinceLastServed: 2 } },
+    });
+    const plan: Plan = { trips: [trip('fx-veh-1', 1, ['fx-ord-1', 'fx-ord-2', 'fx-ord-3'])], unplanned: [] };
+    return { input, plan };
+  };
+
+  it('apply-edits: UNASSIGN_ORDER puts the order on plan.unplanned, with no reason yet', () => {
+    const { input, plan } = repeatSkipWorld();
+    const r = applyEdits(input, plan, [{ op: 'UNASSIGN_ORDER', orderId: 'fx-ord-1' }]);
+    // 15 for a Fresh order, nothing else: no history, a wide window.
+    expect(r.plan.unplanned).toEqual([
+      { orderId: 'fx-ord-1', reasonCode: null, bindingRule: null, choice: null, priority: 15, repeatSkip: false },
+    ]);
+  });
+
+  it('apply-edits: leaving a repeat-skip order off raises REPEAT_SKIP in the same edit', () => {
+    const { input, plan } = repeatSkipWorld();
+    const r = applyEdits(input, plan, [{ op: 'UNASSIGN_ORDER', orderId: 'fx-ord-2' }]);
+    expect(r.plan.unplanned).toEqual([
+      // 40 deferred on the last run, 10 for one deferral, 4 for two days, 15 for Fresh.
+      { orderId: 'fx-ord-2', reasonCode: null, bindingRule: null, choice: null, priority: 69, repeatSkip: true },
+    ]);
+    expect(r.introduced).toEqual([
+      {
+        rule: 'REPEAT_SKIP',
+        severity: 'SOFT',
+        scope: 'order',
+        orderId: 'fx-ord-2',
+        message: 'fx-out-2 was deferred on its last run; deferring it again needs a note',
+      },
+    ]);
+  });
+
+  it('apply-edits: REMOVE_TRIP puts every order of the trip on the unplanned list', () => {
+    const { input, plan } = repeatSkipWorld();
+    const r = applyEdits(input, plan, [{ op: 'REMOVE_TRIP', tripKey: 'FV1#1' }]);
+    expect(r.plan.unplanned.map((u) => u.orderId)).toEqual(['fx-ord-1', 'fx-ord-2', 'fx-ord-3']);
+    expect(r.plan.unplanned.find((u) => u.orderId === 'fx-ord-2')?.repeatSkip).toBe(true);
+  });
+
+  it('apply-edits: an order unassigned and put back in the same list is not unplanned', () => {
+    const { input, plan } = repeatSkipWorld();
+    const r = applyEdits(input, plan, [
+      { op: 'UNASSIGN_ORDER', orderId: 'fx-ord-2' },
+      { op: 'ASSIGN_ORDER', orderId: 'fx-ord-2', tripKey: 'FV1#1' },
+    ]);
+    expect(r.plan.unplanned).toEqual([]);
+    expect(r.introduced).toEqual([]);
+  });
+
+  it('apply-edits: MOVE_ORDER does not make an order unplanned', () => {
+    const { input, plan } = capacityScenario();
+    const r = applyEdits(input, plan, [{ op: 'MOVE_ORDER', orderId: 'fx-ord-3', tripKey: 'REF-07#1' }]);
+    expect(r.plan.unplanned).toEqual([]);
+  });
+
+  it('apply-edits: entries are kept in order-id order, and one already listed is not added twice', () => {
+    const { input, plan } = repeatSkipWorld();
+    const earlier = { orderId: 'fx-ord-9', reasonCode: 'OVER_CAPACITY', bindingRule: 'CAP_WEIGHT', choice: 'UNAVOIDABLE', priority: 20, repeatSkip: false } as const;
+    const r = applyEdits(input, { ...plan, unplanned: [earlier] }, [
+      { op: 'UNASSIGN_ORDER', orderId: 'fx-ord-3' },
+      { op: 'UNASSIGN_ORDER', orderId: 'fx-ord-1' },
+    ]);
+    expect(r.plan.unplanned.map((u) => u.orderId)).toEqual(['fx-ord-1', 'fx-ord-3', 'fx-ord-9']);
+    expect(r.plan.unplanned.at(-1)).toEqual(earlier);
   });
 });
 
@@ -179,7 +260,7 @@ describe('applyEdits says exactly what is wrong with an edit', () => {
     expect(e.code).toBe('ORDER_ALREADY_ASSIGNED');
   });
 
-  it('apply-edits: ORDER_NOT_ASSIGNED for an unassign or a move of an order with no trip', () => {
+  it('apply-edits: ORDER_NOT_ASSIGNED for an unassign or a move of an order that is on no trip', () => {
     expect(run([{ op: 'UNASSIGN_ORDER', orderId: 'fx-ord-4' }])).toMatchObject({ code: 'ORDER_NOT_ASSIGNED', field: 'edits[0].orderId', value: 'fx-ord-4' });
     expect(run([{ op: 'MOVE_ORDER', orderId: 'fx-ord-4', tripKey: 'REF-03#1' }]).code).toBe('ORDER_NOT_ASSIGNED');
   });

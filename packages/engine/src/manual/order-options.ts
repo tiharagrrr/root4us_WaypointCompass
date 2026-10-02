@@ -1,6 +1,7 @@
 import { EngineInputError } from '../errors';
 import { tripKeyOf } from '../plan/measure';
 import { preparePlan } from '../plan/prepare';
+import { unplannedOrders } from '../plan/unplanned';
 import { effectiveWindow } from '../plan/window';
 import { priorityOf } from '../priority';
 import type { EngineInput, EngineOrder, Plan, Violation } from '../types';
@@ -37,7 +38,7 @@ const RANK: Record<OptionStatus, number> = { FITS: 0, WARNING: 1, BLOCKED: 2 };
 /**
  * The orders that could go on this trip, best first: those that fit, then those that fit with a
  * warning, then the blocked ones with their reason. Within a group the higher priority comes first,
- * then the earlier window, then the ref. Only orders not yet on a trip are offered.
+ * then the earlier window, then the ref. Only unplanned orders (on no trip) are offered.
  *
  * With no trip yet and nothing chosen, each order is tried as a trip of its own, which is what
  * screen 07 shows before the first pick. With orders chosen, the trip so far is the baseline, so an
@@ -67,10 +68,7 @@ export function optionsForTrip(input: EngineInput, plan: Plan, target: TripTarge
     return order;
   });
 
-  const pool = stableSort(
-    input.orders.filter((o) => !assigned.has(o.id) && !selected.includes(o.id)),
-    (a, b) => compareText(a.id, b.id),
-  );
+  const pool = unplannedOrders(input, plan).filter((o) => !selected.includes(o.id));
   const exists = prepared.trips.some((t) => t.key === tripKey);
   const first = chosen[0];
   const assign = (orderId: string): EditOp => ({ op: 'ASSIGN_ORDER', orderId, tripKey });

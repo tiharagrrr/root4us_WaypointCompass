@@ -99,13 +99,22 @@ export interface TripDraft {
   departMin?: number;
 }
 
+/**
+ * An order on no trip, with what is known about why. "Unplanned" means on no trip; the reason fields
+ * are filled in when the allocator decided it and are null when a dispatcher took the order off by
+ * hand, until she picks a reason by confirming the deferral. Null means "not decided yet".
+ */
 export interface Unplanned {
   orderId: string;
-  reasonCode: string;
-  bindingRule: BindingRule | null;
-  choice: DeferralChoice;
   priority: number;
+  /** The outlet was deferred on its last run, so leaving it off again needs a note. */
   repeatSkip: boolean;
+  /** From the reason map. Null until the dispatcher picks one. */
+  reasonCode: string | null;
+  /** The rule that blocked the last candidate vehicle. Null for a manual removal. */
+  bindingRule: BindingRule | null;
+  /** UNAVOIDABLE or PRIORITY_CHOICE for an engine decision. Null for a manual removal. */
+  choice: DeferralChoice | null;
 }
 
 export interface Plan {

@@ -62,7 +62,7 @@ describe('fits', () => {
     expect(r.blocking).toEqual([]);
   });
 
-  it('fits: the order must be unassigned and the trip must exist', () => {
+  it('fits: the order must be on no trip yet, and the trip must exist', () => {
     const { input, plan } = capacityScenario();
     expect(() => fits(input, plan, 'fx-ord-1', 'REF-03#1')).toThrow(/ORDER_ALREADY_ASSIGNED/);
     expect(() => fits(input, plan, 'fx-ord-4', 'NOPE#1')).toThrow(/UNKNOWN_TRIP/);

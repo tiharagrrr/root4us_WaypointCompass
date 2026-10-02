@@ -77,7 +77,7 @@ describe('suggestFixes', () => {
     expect(next?.edits).toEqual([{ op: 'UNASSIGN_ORDER', orderId: 'fx-ord-2' }]);
   });
 
-  it('suggest-fixes: a swap takes an order off and puts an unassigned one of at least its priority on', () => {
+  it('suggest-fixes: a swap takes an order off and puts an unplanned one of at least its priority on', () => {
     const { input, plan, violation } = overfull();
     const swaps = suggestFixes(input, plan, violation, 50).filter((s) => s.kind === 'SWAP');
     expect(swaps.length).toBeGreaterThan(0);
