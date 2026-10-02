@@ -1,5 +1,23 @@
 import { z } from 'zod';
 
+const weight = z.number().min(0);
+
+/** What each reason adds to an order's priority score (specs/engine/rules.md, Priority). */
+export const priorityWeightsSchema = z.strictObject({
+  /** The outlet was deferred on its last run: a repeat skip. */
+  deferredOnLastRun: weight,
+  /** Per run in a row it was deferred, up to 3. */
+  consecutiveDeferrals: weight,
+  /** Per day since it was last served, up to 10. */
+  daysSinceLastServed: weight,
+  fresh: weight,
+  chilled: weight,
+  urgent: weight,
+  /** The effective delivery window is under 120 minutes. */
+  tightWindow: weight,
+});
+export type PriorityWeights = z.infer<typeof priorityWeightsSchema>;
+
 export const engineParamsSchema = z.strictObject({
   /** Fresh trips: minutes per vehicle per day (03:30 to 08:00). */
   freshBudgetMin: z.number().positive(),
@@ -23,6 +41,7 @@ export const engineParamsSchema = z.strictObject({
   lateRiskSlackMin: z.number().min(0),
   /** An outlet deferred this many runs in a row, ending on the last run, is a repeat skip. */
   repeatSkipLookbackRuns: z.number().int().positive(),
+  priorityWeights: priorityWeightsSchema,
 });
 
 export type EngineParams = z.infer<typeof engineParamsSchema>;
@@ -39,6 +58,15 @@ export const DEFAULT_PARAMS: EngineParams = {
   techValueLimitLkr: null,
   lateRiskSlackMin: 15,
   repeatSkipLookbackRuns: 1,
+  priorityWeights: {
+    deferredOnLastRun: 40,
+    consecutiveDeferrals: 10,
+    daysSinceLastServed: 2,
+    fresh: 15,
+    chilled: 10,
+    urgent: 8,
+    tightWindow: 6,
+  },
 };
 
 /** DEFAULT_PARAMS with the overrides applied, validated. Throws a ZodError on a bad value. */

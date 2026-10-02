@@ -29,7 +29,8 @@ It has no Nest, no database, no `Date.now`, no `Math.random` and no network. The
 | `validate.ts` | `validate(input, plan)`: measures every trip from its orders, runs every enabled rule over the plan and `input.fixedTrips`, and returns violations sorted by rule, trip, vehicle and order |
 | `src/plan/` | `measure.ts` (trip totals from orders), `stops.ts` (stops with effective windows), `trip-schedule.ts` (departure and arrivals for the window rules) |
 | `src/allocate/` | prescreen, priority, groups, pack, sequence, repair, index |
-| `src/manual/` | vehicle-options, order-options, suggest-fixes, edits |
+| `src/manual/` | `edit-ops.ts` (the `EditOp` union), `apply-edits.ts`, `fits.ts`, `order-options.ts` (`optionsForTrip`), `vehicle-options.ts`, `suggest-fixes.ts`; see "Manual plan helpers" below |
+| `src/priority.ts` | `priorityOf()`: the priority score, with weights from `params.priorityWeights` |
 | `src/explain.ts` | Violations and unplanned orders as sentences |
 | `src/export/task2b.ts` | The Datathon Task 2B CSV and policy draft |
 | `src/util/` | `lte`, `round`, `stableSort`, canonical hash. Day of week, the HH:MM label and the domain enums come from `@waypoint/shared/business-time` and `@waypoint/shared/domain`, not copies |
@@ -231,6 +232,27 @@ Each rule fixture is a small hand-built instance. Never copy dataset rows; use f
 ```
 
 `params` holds overrides of `DEFAULT_PARAMS` only. `expect` lists the violations `validate()` must return for this rule, as `{ "rule", "severity", "tripKey" | "vehicleId" | "orderId", "actual", "limit" }`. A pass fixture expects `[]`. A fail fixture expects at least one violation of its own rule and no other HARD violation, so it fails for one reason.
+
+## 3a. Manual plan helpers
+
+The pure functions the web plan editor and the Planning API call to build a plan by hand (`src/manual/`). They run the same rules as `validate()`, so a dimmed order on screen 07 shows exactly the violation the engine would give. None mutates its input, and the same input always gives the same output.
+
+| Function | Returns | Screen |
+| --- | --- | --- |
+| `applyEdits(input, plan, edits)` | `{ plan, violations, introduced }`: the new plan (trips sorted by key), every violation, and the ones the edits caused | 08, `POST /edits` |
+| `fits(input, plan, orderId, tripKey)` | `{ fits, blocking, warnings, result }`: the hard violations adding the order would cause, the soft ones, and the trip's totals with it | 07 |
+| `optionsForTrip(input, plan, { vehicleId, tripNo, selectedOrderIds? })` | Unassigned orders as `FITS`, `WARNING` or `BLOCKED` with the reason and totals; fits first, then higher priority, earlier window, ref | 07 |
+| `vehicleOptions(input, plan)` | Per vehicle: status (`AVAILABLE`, `NO_TRIPS_LEFT`, `WORKSHOP`, `BREAKDOWN`), trips used and left, next trip number, Fresh and Style-Tech minutes left, capacities, fuel left; sorted by code | 06 |
+| `suggestFixes(input, plan, violation, limit = 5)` | Ranked edit lists that clear a hard violation: `MOVE`, then `SWAP`, then `DEFER` | 10, 11 |
+
+`EditOp` is a zod union (`editOpSchema`; `parseEdits(raw)` checks a list from outside): `ADD_TRIP`, `REMOVE_TRIP`, `ASSIGN_ORDER`, `UNASSIGN_ORDER`, `MOVE_ORDER` and `RESEQUENCE`, with trips named by key ("REF-07#1") and an optional `position` on assign and move. `SET_DRIVER` and `SET_WAVE` are plan data the engine does not know; the API adds them.
+
+Rules of the road:
+- Edits apply in order. A violation is returned, never thrown. An edit that cannot be applied throws `EngineInputError` naming the edit (`edits[2].tripKey`): `INVALID_EDIT`, `UNKNOWN_TRIP`, `TRIP_EXISTS`, `FIXED_TRIP` (a released or in-progress trip cannot be edited), `ORDER_ALREADY_ASSIGNED`, `ORDER_NOT_ASSIGNED`, `INVALID_RESEQUENCE` (says what is missing, extra or repeated), `INVALID_POSITION`.
+- "Unplanned" in an edit is just "not on any trip". Removing a trip or unassigning an order leaves its orders unassigned; the API derives the unplanned list and creates the proposed deferrals. An order that gets a trip leaves `plan.unplanned`.
+- `fits` and the option lists compare with what the plan already violated, so a problem that was already on the trip is not blamed on the new order. A violation whose numbers get worse counts as new.
+- With no trip yet and no order chosen, `optionsForTrip` tries each order as a trip of its own. Once an order is chosen the trip so far is the baseline, and its brand and district fix those of a new trip.
+- `suggestFixes` tries every suggestion with `validate()`: it must clear the violation and cause no new hard one. Within a kind the least disruptive wins: fewest edits, then the lowest-priority and smallest order, then the lowest trip number. A soft violation, or one with no trip or vehicle (`WHOLE_ORDER`, `OPERATING_DAY`), has no suggestions. At 25 trips, 30 vehicles and 125 unassigned orders it takes about 60 ms.
 
 ## 4. Rule details
 
@@ -503,6 +525,8 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## 10. Differences from other sources
 
+- The planning spec puts the `EditOp` zod union in `packages/shared`. It is defined in the engine instead (`src/manual/edit-ops.ts`), because the engine cannot import the shared root and the web gets the full union, with `SET_DRIVER` and `SET_WAVE`, from the generated api-client.
+
 - The Build Spec's Step 3 text for the engine `CLAUDE.md` lists the allocator as group, rank, pack, sequence, repair and the sort key as priority then id. Step 5 ranks before grouping, adds a pre-screen and a validate step, and breaks ties on window close before ref. This file and `packages/engine/CLAUDE.md` follow Step 5.
 - The draft in `packages/shared/src/rules` (`trip-time.ts`, `allocation-validator.ts`) predates Step 5:
   - It has 9 lower-case rule ids. They map to `TRIP_BRAND_DISTRICT` (`brand_district`), `TEMP_REEFER` (`refrigeration`), `ACCESS_VAN_ONLY` (`vehicle_access`), `DEPOT_HOME` (`home_depot`), `CAP_WEIGHT` and `CAP_VOLUME` (`capacity_*`), `TRIP_LIMIT` (`max_trips`), `BUDGET_FRESH` and `BUDGET_STYLE_TECH` (`time_budget`), and `VEHICLE_AVAILABLE` (`vehicle_unavailable`).
@@ -514,6 +538,7 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## Changelog
 
+- 2026-10-02 ROO-75: the manual plan helpers (`applyEdits`, `fits`, `optionsForTrip`, `vehicleOptions`, `suggestFixes`), the `EditOp` union, `priorityOf()` with `params.priorityWeights`, and eight edit error codes; `ENGINE_VERSION` 0.3.0
 - 2026-10-02 `EngineInputError` carries `code`, `field`, `value` (`INVALID_DATE`, `UNKNOWN_ORDER`, `UNKNOWN_VEHICLE`, `UNKNOWN_DISTRICT`, `UNKNOWN_OUTLET`, `MISSING_ALLOWANCE`); `validate()` checks `input.date` before anything else; the purity test is an allowlist
 - 2026-10-02 the engine uses `@waypoint/shared/domain` and `@waypoint/shared/business-time` instead of its own copies; no output change, so `ENGINE_VERSION` stays 0.2.0
 - 2026-10-02 ROO-14: the 18 rules, `validate()`, the reason map and 36 fixtures; `ENGINE_VERSION` 0.2.0; params for windows, fuel, reefer, Tech value, late risk and repeat skip

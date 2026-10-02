@@ -1,6 +1,4 @@
-import { resolveParams } from './params';
-import { buildLookups, measureTrip } from './plan/measure';
-import { planDow } from './plan/plan-date';
+import { preparePlan } from './plan/prepare';
 import { RULES } from './rules/index';
 import type { EngineInput, Plan, RuleContext, Trip, Violation } from './types';
 import { compareText, stableSort } from './util/stable-sort';
@@ -11,12 +9,7 @@ import { compareText, stableSort } from './util/stable-sort';
  * The result is sorted by rule, then trip, vehicle and order, so the same plan always reads the same.
  */
 export function validate(input: EngineInput, plan: Plan): Violation[] {
-  // Refuse an impossible plan date first, whether or not the plan has trips on it.
-  const dow = planDow(input.date);
-  const params = resolveParams(input.params);
-  const lookups = buildLookups(input);
-  const measured = plan.trips.map((draft, i) => measureTrip(input, lookups, draft, `plan.trips[${i}]`));
-  const trips = stableSort([...input.fixedTrips, ...measured], (a, b) => compareText(a.key, b.key));
+  const { params, dow, lookups, trips } = preparePlan(input, plan);
   const unplanned = stableSort(plan.unplanned, (a, b) => compareText(a.orderId, b.orderId));
   const base: RuleContext = { input, params, trips, unplanned, orderById: lookups.orderById, planDow: dow };
 

@@ -145,9 +145,10 @@ Cross-module calls inside the transaction: `OrderLifecycleService` (`markPlanned
 `requeue`) from ordering; `FuelLedgerService` from fleet (planned entries on publish, reversals on
 revision, actuals at close).
 
-Settings read: `planning.reeferCarriesAmbient` (false), `planning.enforceWindows` (true),
+Settings read: `planning.reeferCarriesAmbient` (true), `planning.enforceWindows` (true),
 `planning.freshStartMin` (210), `planning.reloadMinutes` (30), `planning.repeatSkipLookbackRuns`
-(1), `planning.techValueLimitLkr` (250000), `planning.priorityWeights`, and `ordering.cutoffMin`
+(1), `planning.techValueLimitLkr` (none by default; the Tech value rule is off until it is set),
+`planning.priorityWeights`, and `ordering.cutoffMin`
 (960) for the opening time.
 
 Jobs: an engine run answers 202 and runs outside the request; the doc does not name its queue.
