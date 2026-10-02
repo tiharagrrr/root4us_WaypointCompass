@@ -11,6 +11,18 @@ export const engineParamsSchema = z.strictObject({
   reloadMin: z.number().min(0),
   /** Trips per vehicle per day, fixed and reserved trips included. */
   maxTripsPerVehicle: z.number().int().positive(),
+  /** Check delivery windows and late risk. */
+  enforceWindows: z.boolean(),
+  /** Check the weekly fuel quota. */
+  enforceFuel: z.boolean(),
+  /** A reefer may carry ambient orders; the allocator still prefers chilled orders on reefers. */
+  reeferCarriesAmbient: z.boolean(),
+  /** A Tech trip worth more than this needs a note; null means no limit. */
+  techValueLimitLkr: z.number().positive().nullable(),
+  /** A stop with less window slack than this is flagged. */
+  lateRiskSlackMin: z.number().min(0),
+  /** An outlet deferred this many runs in a row, ending on the last run, is a repeat skip. */
+  repeatSkipLookbackRuns: z.number().int().positive(),
 });
 
 export type EngineParams = z.infer<typeof engineParamsSchema>;
@@ -21,6 +33,12 @@ export const DEFAULT_PARAMS: EngineParams = {
   freshStartMin: 210,
   reloadMin: 30,
   maxTripsPerVehicle: 2,
+  enforceWindows: true,
+  enforceFuel: true,
+  reeferCarriesAmbient: true,
+  techValueLimitLkr: null,
+  lateRiskSlackMin: 15,
+  repeatSkipLookbackRuns: 1,
 };
 
 /** DEFAULT_PARAMS with the overrides applied, validated. Throws a ZodError on a bad value. */

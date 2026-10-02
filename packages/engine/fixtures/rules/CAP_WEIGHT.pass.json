@@ -1,0 +1,44 @@
+{
+  "rule": "CAP_WEIGHT",
+  "description": "Two orders weigh 90 kg on a 100 kg vehicle",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1",
+        "weightCapKg": 100
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1",
+        "weightKg": 40
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-1",
+        "weightKg": 50
+      }
+    ]
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1",
+          "fx-ord-2"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": []
+}

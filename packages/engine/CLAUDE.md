@@ -4,12 +4,12 @@ Pure TypeScript. No Nest, no database, no I/O, no Date.now, no Math.random.
 The same input gives the same output, byte for byte.
 
 ## Layout
-- time/      trip minutes (booklet formula) and the arrival schedule
+- time/      trip minutes (the time model) and the arrival schedule
 - rules/     one file per rule: export const CAP_WEIGHT: Rule = { code, severity, check(ctx) }
 - validate.ts runs every rule over a plan or a proposed edit
 - allocate/  pre-screen, rank, group, pack, sequence, repair, validate (specs/engine/rules.md section 5)
 - explain.ts turns violations and unplanned orders into sentences
-- fixtures/  small hand-built instances, including the booklet's 101, 112 and 213-minute examples
+- fixtures/  small hand-built instances, including the 101, 112 and 213-minute worked examples
 
 The rule reference, with codes, checks, messages and reasons, is specs/engine/rules.md.
 

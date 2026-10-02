@@ -25,8 +25,9 @@ It has no Nest, no database, no `Date.now`, no `Math.random` and no network. The
 | `src/index.ts` | `allocate()`, `validate()`, `explain()`, `optionsForTrip()`, `suggestFixes()`, `ENGINE_VERSION` |
 | `src/types.ts`, `src/params.ts` | Core shapes; `DEFAULT_PARAMS` and its zod schema |
 | `src/time/` | `trip-minutes.ts` (booklet formula), `schedule.ts` (departure, arrivals, waits, return, reload), `fuel.ts` (km and litres) |
-| `src/rules/` | One file per rule, `index.ts` (registry), `reason-map.ts` |
-| `validate()` | Runs every enabled rule over a plan or a proposed edit (the engine `CLAUDE.md` names it `validate.ts`) |
+| `src/rules/` | One file per rule, `index.ts` (registry), `meta.ts` (severity and scope), `codes.ts`, `reason-map.ts` |
+| `validate.ts` | `validate(input, plan)`: measures every trip from its orders, runs every enabled rule over the plan and `input.fixedTrips`, and returns violations sorted by rule, trip, vehicle and order |
+| `src/plan/` | `measure.ts` (trip totals from orders), `stops.ts` (stops with effective windows), `trip-schedule.ts` (departure and arrivals for the window rules) |
 | `src/allocate/` | prescreen, priority, groups, pack, sequence, repair, index |
 | `src/manual/` | vehicle-options, order-options, suggest-fixes, edits |
 | `src/explain.ts` | Violations and unplanned orders as sentences |
@@ -90,7 +91,7 @@ Budgets are per vehicle and per window. One Fresh and one Style trip is allowed,
 
 These live in `fixtures/time/` and run in `time.spec.ts`. Ids are fixture ids, not dataset ids.
 
-`fixtures/time/booklet-101.json`: Fresh to Gampaha, 3 stops (2 rear dock, 1 street).
+`fixtures/time/cases/fresh-gampaha-3-stops.json`: Fresh to Gampaha, 3 stops (2 rear dock, 1 street).
 
 ```json
 {
@@ -104,7 +105,7 @@ These live in `fixtures/time/` and run in `time.spec.ts`. Ids are fixture ids, n
 
 37 + 9 × 2 + 15 + 15 + 16 = 101.
 
-`fixtures/time/booklet-112.json`: Fresh to Colombo, 4 street stops.
+`fixtures/time/cases/fresh-colombo-4-stops.json`: Fresh to Colombo, 4 street stops.
 
 ```json
 {
@@ -118,7 +119,7 @@ These live in `fixtures/time/` and run in `time.spec.ts`. Ids are fixture ids, n
 
 24 + 8 × 3 + 16 × 4 = 112.
 
-`fixtures/time/booklet-213.json`: the same vehicle runs both trips.
+`fixtures/time/cases/two-trips-one-vehicle.json`: the same vehicle runs both trips.
 
 ```json
 {
@@ -134,7 +135,7 @@ These live in `fixtures/time/` and run in `time.spec.ts`. Ids are fixture ids, n
 
 101 + 112 = 213, within the 270-minute Fresh budget.
 
-`fixtures/time/booklet-third-trip.json`: a third trip on that vehicle.
+`fixtures/time/cases/third-trip-refused.json`: a third trip on that vehicle.
 
 ```json
 {
@@ -175,7 +176,7 @@ Message templates: `CAP_VOLUME` is fixed by the engine-rule skill. The others ar
 | --- | --- | --- | --- | --- | --- | --- |
 | `CAP_WEIGHT` | HARD | trip | `lte(trip.weightKg, vehicle.weightCapKg)`; `trip.weightKg` = Σ order `weightKg` | Over weight by {trip.weightKg − weightCapKg} kg | `OVER_CAPACITY` | `CAP_WEIGHT.pass.json`, `CAP_WEIGHT.fail.json` |
 | `CAP_VOLUME` | HARD | trip | `lte(trip.volumeM3, vehicle.volumeCapM3)`; `trip.volumeM3` = Σ order `volumeM3` | Over volume by {trip.volumeM3 − volumeCapM3} m³ | `OVER_CAPACITY` | `CAP_VOLUME.pass.json`, `CAP_VOLUME.fail.json` |
-| `TEMP_REEFER` | HARD | trip | Every `CHILLED` order rides in a `REEFER` vehicle; with `reeferCarriesAmbient` off, a reefer trip carries `CHILLED` orders only | {ref} is chilled but {code} is not a reefer / {code} is a reefer and carries chilled orders only | `NO_REEFER_CAPACITY` | `TEMP_REEFER.pass.json`, `TEMP_REEFER.fail.json` |
+| `TEMP_REEFER` | HARD | trip | Every `CHILLED` order rides in a `REEFER` vehicle; with `reeferCarriesAmbient` off (default on), a reefer trip carries `CHILLED` orders only | {ref} is chilled but {code} is not a reefer / {code} is a reefer and carries chilled orders only | `NO_REEFER_CAPACITY` | `TEMP_REEFER.pass.json`, `TEMP_REEFER.fail.json` |
 | `ACCESS_VAN_ONLY` | HARD | trip | Every order whose outlet has `parkingConstraint = VAN_ONLY` rides in a vehicle with `type = VAN` | {ref} needs a van; {code} is a truck | `VAN_SHORTAGE` | `ACCESS_VAN_ONLY.pass.json`, `ACCESS_VAN_ONLY.fail.json` |
 | `DEPOT_HOME` | HARD | trip | Every order's outlet `depotId` equals the vehicle's `depotId` | {ref} belongs to {outlet depot}; {code} is based at {vehicle depot} | Never a reason; filtered before packing | `DEPOT_HOME.pass.json`, `DEPOT_HOME.fail.json` |
 | `TRIP_BRAND_DISTRICT` | HARD | trip | Every order on the trip has `brand = trip.brand` and `districtId = trip.districtId` | A trip serves one brand and district ({brand}, {district}); {ref} is {brand}, {district} | Structural | `TRIP_BRAND_DISTRICT.pass.json`, `TRIP_BRAND_DISTRICT.fail.json` |
@@ -189,10 +190,10 @@ Message templates: `CAP_VOLUME` is fixed by the engine-rule skill. The others ar
 | `VEHICLE_AVAILABLE` | HARD | vehicle | A vehicle with trips is `available` (status `ACTIVE`, not `WORKSHOP` or `BREAKDOWN`) | {code} is not available ({unavailableReason}) | `VEHICLE_BREAKDOWN` (breakdown), else `OVER_CAPACITY` | `VEHICLE_AVAILABLE.pass.json`, `VEHICLE_AVAILABLE.fail.json` |
 | `OPERATING_DAY` | HARD | plan | The plan date is an operating day, and every STYLE order falls on its outlet's delivery day | {date} is not an operating day / {ref} is a Style order for {day}, not {plan day} | Structural | `OPERATING_DAY.pass.json`, `OPERATING_DAY.fail.json` |
 | `REPEAT_SKIP` | SOFT | order | An unplanned order whose outlet was deferred on its previous run needs an override note | {outlet} was deferred on its last run; deferring it again needs a note | — | `REPEAT_SKIP.pass.json`, `REPEAT_SKIP.fail.json` |
-| `TECH_VALUE_LIMIT` | SOFT | trip | A TECH trip with Σ `valueLkr` more than `techValueLimitLkr` (250,000) needs a note | Tech trip {tripKey} carries LKR {value}, over the LKR {limit} limit; add a note | — | `TECH_VALUE_LIMIT.pass.json`, `TECH_VALUE_LIMIT.fail.json` |
+| `TECH_VALUE_LIMIT` | SOFT | trip | Only when `techValueLimitLkr` is set (default `null`, no limit): a TECH trip with Σ `valueLkr` more than it needs a note | Tech trip {tripKey} carries LKR {value}, over the LKR {limit} limit; add a note | — | `TECH_VALUE_LIMIT.pass.json`, `TECH_VALUE_LIMIT.fail.json` |
 | `LATE_RISK` | SOFT | trip | Any stop with less than `lateRiskSlackMin` (15) minutes of window slack is flagged | {ref} has {slack} min of window slack, under {limit} | — | `LATE_RISK.pass.json`, `LATE_RISK.fail.json` |
 
-All fixture files live in `fixtures/rules/`. `rules.spec.ts` loads every pair.
+All fixture files live in `fixtures/rules/`. `rules.spec.ts` loads every pair. A fixture lists only what its case changes; the test loader fills in a default vehicle, outlet, order, district (`fx-gampaha`, 37/9 minutes) and 15-minute allowances, so the other rules stay quiet. Window rules run with the Fresh start at 03:30.
 
 Where the rules come from: booklet rule 1 is `TRIP_BRAND_DISTRICT`; 2 is `TEMP_REEFER`; 3 is `ACCESS_VAN_ONLY`; 4 is `DEPOT_HOME`; 5 is `WHOLE_ORDER`; 6 is `CAP_WEIGHT` and `CAP_VOLUME`; 7 is `TRIP_LIMIT`, `BUDGET_FRESH` and `BUDGET_STYLE_TECH`. The windows come from the outlets data, `FUEL_WEEKLY` from the vehicles data, `VEHICLE_AVAILABLE` from the Task 2B fleet and the product, `OPERATING_DAY` from the calendar, `REPEAT_SKIP` from the booklet's `deferred_yesterday`, `TECH_VALUE_LIMIT` from the design and `LATE_RISK` from the product.
 
@@ -238,11 +239,11 @@ Only rules whose check needs more than a table cell. The table's check column is
 ### TEMP_REEFER
 
 - Inputs: each order's `tempClass`, `vehicle.temp`, `params.reeferCarriesAmbient`.
-- `reeferCarriesAmbient` is `false` by default (Designathon rationale). The booklet allows reefers to carry ambient orders, so the Task 2B export sets it to `true`.
-- With it on, only the first half of the check applies.
-- Grouping keys trips by chilled or ambient class, so a default plan never mixes the two on one trip.
+- `reeferCarriesAmbient` is `true` by default: a reefer may carry ambient orders, so only the first half of the check applies. With it off, a reefer trip carries chilled orders only.
+- The rule only says what is allowed. Preference is the allocator's job (ROO-28): chilled orders ride reefers, and ambient orders prefer ambient vehicles. A reefer takes ambient orders only when (a) a high-priority ambient order has no ambient vehicle that can take it, or (b) every chilled order is planned and reefers are still spare.
+- Grouping keys trips by chilled or ambient class, so the allocator does not mix the two on one trip unless one of those two cases applies.
 - Pass: a reefer carries three chilled Fresh orders.
-- Fail: an ambient truck carries one chilled order; or, with the default params, a reefer carries one ambient order.
+- Fail: an ambient truck carries one chilled order; or, with `reeferCarriesAmbient` off, a reefer carries one ambient order.
 
 ### ACCESS_VAN_ONLY
 
@@ -300,7 +301,8 @@ Only rules whose check needs more than a table cell. The table's check column is
 
 - Enabled only when `params.enforceFuel` is on (default on; the Task 2B export turns it off).
 - Inputs: each trip's `km` and `litres` from `src/time/fuel.ts`, `vehicle.kmPerL`, `vehicle.weeklyFuelQuotaL`, `input.fuelUsedThisWeek[vehicleId]` (litres planned or used this ISO week).
-- The check is per vehicle, over all of its trips in the plan.
+- The check is per vehicle, over all of its trips in the plan, fixed trips included.
+- `fuelUsedThisWeek` must therefore exclude this plan's own trips, or they would be counted twice: the API sums the ledger for the ISO week without this plan's entries (other days and actuals only). A vehicle with no entry has used 0.
 - Pass: a vehicle with most of its quota left runs two short trips.
 - Fail: a vehicle close to its weekly quota gets a trip whose litres take it over.
 
@@ -329,7 +331,8 @@ Only rules whose check needs more than a table cell. The table's check column is
 
 ### TECH_VALUE_LIMIT
 
-- Inputs: `trip.brand`, each order's `valueLkr`, `params.techValueLimitLkr` (250,000).
+- Inputs: `trip.brand`, each order's `valueLkr`, `params.techValueLimitLkr`.
+- Disabled while `techValueLimitLkr` is `null`, which is the default; set it in the A6 settings to switch the rule on. A missing `valueLkr` counts as 0.
 - "More than" is strict: a trip at exactly the limit passes (`lte(value, limit)`).
 - Pass: a Tech trip carries goods worth less than the limit.
 - Fail: a Tech trip's orders add up to more than the limit.
@@ -450,7 +453,7 @@ pnpm engine:task2b \
 python check_allocation.py out/submission_task2b.csv
 ```
 
-- Runs with the booklet's seven rules only: `enforceWindows=false`, `enforceFuel=false`, `reeferCarriesAmbient=true`. Step 5 changes no other param.
+- Runs with the seven rules the datathon names only: `enforceWindows=false` and `enforceFuel=false`. `reeferCarriesAmbient` is already on by default. Step 5 changes no other param.
 - Allocates only vehicles marked available in the fleet file; `in_workshop` vehicles cannot be used (booklet).
 - Writes `out/submission_task2b.csv` with columns `scenario, order_ref, outlet_id, decision, vehicle_id, trip_id`, one row per order.
 - Keeps `scenario`, `order_ref` and `outlet_id` unchanged. `order_ref` is the allocation key, because an outlet can appear more than once.
@@ -479,16 +482,18 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## 9. Open questions
 
-- Scope per rule: Step 5 lists the scope values but assigns only `CAP_VOLUME`. Confirm the assignments in section 3.
-- Messages: Step 5 fixes only the `CAP_VOLUME` template. Confirm the proposed wording for the other 17.
-- `FUEL_WEEKLY` in repair mode: published trips already put planned fuel in the ledger. Does `fuelUsedThisWeek` exclude `fixedTrips` so they are not counted twice? What does a missing entry mean (0 assumed)?
-- `TECH_VALUE_LIMIT`: `valueLkr` is optional. Does a missing value count as 0?
-- `LATE_RISK`: does it run when `enforceWindows` is off (the Task 2B export)?
 - Soft overrides: the engine reports soft violations; which API field stores the override note? (`deferrals.overrideNote` for REPEAT_SKIP; Tech value and late risk notes are still open.)
-- Trip order on a vehicle: which trip goes first is not specified. For Fresh it decides whether trip 2 ends before 08:00 (see `BUDGET_FRESH`).
 - Fixtures: Step 5 names `fixtures/rules/*.json` but not the folder's place; this file assumes `packages/engine/fixtures/`.
+- Fixed trips whose orders are not in `input.orders` (released trips in repair mode) are measured from their stored totals and skipped by the order-level and window rules. Confirm that is what repair mode needs (ROO-56).
 
 ### Decided 2026-10-01
+
+- Rule scopes and message wording: the proposals in section 3 are accepted.
+- `reeferCarriesAmbient` defaults to `true`; the reefer preference lives in the allocator (see `TEMP_REEFER`).
+- `techValueLimitLkr` defaults to `null` (no limit); `TECH_VALUE_LIMIT` is dormant until it is set.
+- `LATE_RISK` runs only while `enforceWindows` is on.
+- `tripNo` (1 or 2) is the vehicle's slot in the day's plan, unique per plan and vehicle. Trip 1 is the earlier departure; trip 2 departs after trip 1 returns plus the reload.
+- Style and Tech clock times come from seeded data, not constants: outlet windows, the depot waves (`depot_waves`), operating days (`calendar_days`) and each Style outlet's delivery day. Budgets come from params and the A6 settings. `validate()` takes an optional `departMin` on a trip and otherwise arrives when the first window opens, clamped into the depot's wave once waves are in `EngineInput`.
 
 - `OPERATING_DAY` inputs: `EngineInput.isOperatingDay` (required boolean; the API reads `calendar_days.isOperating`, the Task 2B export passes `true`) and `styleDeliveryDow` on each outlet (null means no constraint). The weekday comes from `input.date` by integer arithmetic, 0 = Monday.
 - Normal path: Ordering sets a Style order's `deliveryDate` to the outlet's next weekly delivery day when it is placed (as a late order rolls to the next run), and the API queues only orders whose `deliveryDate` is the plan date. A not-due Style order therefore never reaches the engine.
@@ -498,17 +503,18 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## 10. Differences from other sources
 
-- The booklet lets reefers carry ambient orders. The engine defaults `reeferCarriesAmbient` to `false`; only the Task 2B export sets it to `true`.
 - The Build Spec's Step 3 text for the engine `CLAUDE.md` lists the allocator as group, rank, pack, sequence, repair and the sort key as priority then id. Step 5 ranks before grouping, adds a pre-screen and a validate step, and breaks ties on window close before ref. This file and `packages/engine/CLAUDE.md` follow Step 5.
 - The draft in `packages/shared/src/rules` (`trip-time.ts`, `allocation-validator.ts`) predates Step 5:
   - It has 9 lower-case rule ids. They map to `TRIP_BRAND_DISTRICT` (`brand_district`), `TEMP_REEFER` (`refrigeration`), `ACCESS_VAN_ONLY` (`vehicle_access`), `DEPOT_HOME` (`home_depot`), `CAP_WEIGHT` and `CAP_VOLUME` (`capacity_*`), `TRIP_LIMIT` (`max_trips`), `BUDGET_FRESH` and `BUDGET_STYLE_TECH` (`time_budget`), and `VEHICLE_AVAILABLE` (`vehicle_unavailable`).
   - It has no windows, fuel, whole-order, operating-day or soft rules, and no reason map.
-  - `refrigeration` allows a reefer to carry ambient orders (booklet behaviour, not the engine default).
+  - `refrigeration` allows a reefer to carry ambient orders, as the engine now does by default (with a preference order in the allocator).
   - It compares floats with `>` instead of `lte`.
   - It picks a trip's budget window from its first order's brand, and compares with `'Fresh'` while `domain.ts` now uses `'FRESH'`.
   - `tripMinutes` takes precomputed handling minutes; Step 5's takes the district, brand, dock types and allowances. The formula and the 101 and 112 results agree.
 
 ## Changelog
 
+- 2026-10-02 ROO-14: the 18 rules, `validate()`, the reason map and 36 fixtures; `ENGINE_VERSION` 0.2.0; params for windows, fuel, reefer, Tech value, late risk and repeat skip
 - 2026-09-30 created from the Build Spec
+- 2026-10-01 reefer-carries-ambient default on with an allocator preference; Tech value limit off by default; fuel ledger exclusion and trip numbering written down; fixtures renamed to descriptive cases
 - 2026-10-01 settled OPERATING_DAY inputs (not-due Style orders are a rare safety-net case); deferral choice and bindingRule columns; engine owns the code lists

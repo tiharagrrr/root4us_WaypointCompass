@@ -1,0 +1,63 @@
+{
+  "rule": "REPEAT_SKIP",
+  "description": "An outlet deferred on its last run is unplanned again",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1"
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {},
+      "fx-out-2": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1"
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-2"
+      }
+    ],
+    "history": {
+      "fx-out-2": {
+        "deferredOnLastRun": true,
+        "consecutiveDeferrals": 1,
+        "daysSinceLastServed": 2
+      }
+    }
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1"
+        ]
+      }
+    ],
+    "unplanned": [
+      {
+        "orderId": "fx-ord-2",
+        "reasonCode": "OVER_CAPACITY",
+        "bindingRule": "CAP_WEIGHT",
+        "choice": "UNAVOIDABLE",
+        "priority": 40,
+        "repeatSkip": true
+      }
+    ]
+  },
+  "expect": [
+    {
+      "rule": "REPEAT_SKIP",
+      "severity": "SOFT",
+      "orderId": "fx-ord-2"
+    }
+  ]
+}

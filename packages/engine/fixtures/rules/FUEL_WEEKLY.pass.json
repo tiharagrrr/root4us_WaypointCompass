@@ -1,0 +1,55 @@
+{
+  "rule": "FUEL_WEEKLY",
+  "description": "Two short trips use 17.6 L with 10 L already used, under a 100 L quota",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1",
+        "kmPerL": 5,
+        "weeklyFuelQuotaL": 100
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1"
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-1",
+        "brand": "STYLE"
+      }
+    ],
+    "fuelUsedThisWeek": {
+      "fx-veh-1": 10
+    }
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-1"
+        ]
+      },
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 2,
+        "brand": "STYLE",
+        "districtId": "fx-gampaha",
+        "orderIds": [
+          "fx-ord-2"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": []
+}

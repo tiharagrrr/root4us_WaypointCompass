@@ -1,0 +1,92 @@
+{
+  "rule": "BUDGET_FRESH",
+  "description": "Two Fresh trips of 140 minutes each use 280 of 270",
+  "params": {},
+  "input": {
+    "vehicles": [
+      {
+        "id": "fx-veh-1"
+      }
+    ],
+    "outlets": {
+      "fx-out-1": {}
+    },
+    "orders": [
+      {
+        "id": "fx-ord-1",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      },
+      {
+        "id": "fx-ord-2",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      },
+      {
+        "id": "fx-ord-3",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      },
+      {
+        "id": "fx-ord-4",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      },
+      {
+        "id": "fx-ord-5",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      },
+      {
+        "id": "fx-ord-6",
+        "outletId": "fx-out-1",
+        "districtId": "fx-far"
+      }
+    ],
+    "districts": {
+      "fx-far": {
+        "depotToDistrictMin": 60,
+        "interStopMin": 10
+      }
+    },
+    "allowances": {
+      "FRESH:REAR_DOCK": 20
+    }
+  },
+  "plan": {
+    "trips": [
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 1,
+        "brand": "FRESH",
+        "districtId": "fx-far",
+        "orderIds": [
+          "fx-ord-1",
+          "fx-ord-2",
+          "fx-ord-3"
+        ]
+      },
+      {
+        "vehicleId": "fx-veh-1",
+        "tripNo": 2,
+        "brand": "FRESH",
+        "districtId": "fx-far",
+        "orderIds": [
+          "fx-ord-4",
+          "fx-ord-5",
+          "fx-ord-6"
+        ]
+      }
+    ],
+    "unplanned": []
+  },
+  "expect": [
+    {
+      "rule": "BUDGET_FRESH",
+      "severity": "HARD",
+      "vehicleId": "fx-veh-1",
+      "actual": 280,
+      "limit": 270
+    }
+  ]
+}

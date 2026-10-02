@@ -30,3 +30,26 @@ describe('params', () => {
     expect(() => engineParamsSchema.parse({ ...DEFAULT_PARAMS, freshBudget: 1 })).toThrow();
   });
 });
+
+describe('params for the rules', () => {
+  it('params: windows, fuel and reefer-carries-ambient are on by default, the Tech value limit is off', () => {
+    expect(DEFAULT_PARAMS).toMatchObject({
+      enforceWindows: true,
+      enforceFuel: true,
+      reeferCarriesAmbient: true,
+      techValueLimitLkr: null,
+      lateRiskSlackMin: 15,
+      repeatSkipLookbackRuns: 1,
+    });
+  });
+
+  it('params: the Tech value limit can be set, and must be positive when it is', () => {
+    expect(resolveParams({ techValueLimitLkr: 250000 }).techValueLimitLkr).toBe(250000);
+    expect(() => resolveParams({ techValueLimitLkr: 0 })).toThrow();
+  });
+
+  it('params: the slack and look-back values are validated', () => {
+    expect(() => resolveParams({ lateRiskSlackMin: -1 })).toThrow();
+    expect(() => resolveParams({ repeatSkipLookbackRuns: 0 })).toThrow();
+  });
+});
