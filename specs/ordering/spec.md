@@ -218,8 +218,15 @@ stays a pure mapping that never reads the database.
   service and `OrderLinks` call the same function, so a link never promises what the server refuses.
 - `OrderLifecycleService` (exported): `markConfirmed`, `markPlanned`, `markDeferred`, `requeue`,
   `markLoaded`, `markInTransit`, `markDelivered`, `markPartial`, `markFailed`, `markReceived`,
-  `markIssueReported`. Each checks the state machine and audits. Planning, loading, execution and
-  receipt call it; planning's publish calls `markPlanned` inside its own transaction.
+  `markIssueReported`, plus `statusesOf(ids)` and `createBackorder` (ROO-33). Each move checks the
+  state machine and audits. Planning, loading, execution and receipt call it; planning's publish
+  calls `markPlanned` inside its own transaction.
+  `createBackorder({ parentOrderId, lines, deliveryDate, note })` is what a dock removal leaves
+  behind (AC-LOD-12): one CONFIRMED order with `source` backorder and `parentOrderId` set, holding
+  only the quantity that stayed behind, with the parent's item weights and values copied onto its
+  lines so the engine plans it on the same numbers after a catalog change. CONFIRMED, not DRAFT:
+  nobody has to place it — the store already ordered these goods and the next plan should carry
+  them. It writes `ordering.order.backordered` and emits `order.backordered`.
 - Helpers (pure, `domain/`): `computeTotals(lines)` (units, kg, m³, value), `snapshotLine(item, qty)`,
   `effectiveWindow(outlet)` (the outlet window intersected with the mall window),
   `orderNoFor(brand, n)`.
@@ -715,3 +722,7 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   the cutoff close and the 15:30 reminder), `cancelledAt` and `cancelReason` on the order response,
   and the business-time helpers `cutoffFor`, `nextOperatingDay`, `nextWeekdayAfter` and
   `minuteLabel` in packages/shared
+- 2026-10-02 ROO-33 (Nimesha) added `OrderLifecycleService.createBackorder` and the
+  `ordering.order.backordered` audit action and `order.backordered` event, because only ordering
+  may write `orders`: a dispatcher's REMOVE at the dock owes the store the goods that stayed
+  behind. Harini owns them from here; covered by AC-LOD-12, with no ordering test of its own yet

@@ -2,6 +2,7 @@ export * from './domain';
 export * from './rules/trip-time';
 export * from './rules/business-time';
 export * from './rules/allocation-validator';
+export * from './rules/release-checks';
 export * from './schemas/sync';
 export * from './machines';
 export * from './auth/actor';

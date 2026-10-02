@@ -52,9 +52,10 @@ const stopShape = (s: StopRow) => ({
  * transaction rolls back. `@Transactional()` joins the caller's transaction
  * rather than opening one of its own.
  *
- * Planning's own use cases — `markLoading`, `markReleased`, `cancel`,
- * reassign and resequence — land with the planning API; what is here is what
- * execution's driver events need (specs/planning/spec.md, Services).
+ * What is here is what the dock (`markLoading`, `markReleased`,
+ * `markReloading`) and the driver's events need. `cancel`, reassign and
+ * resequence are planning's own use cases and land with the planning API
+ * (specs/planning/spec.md, Services).
  */
 @Injectable()
 export class TripLifecycleService {
@@ -65,6 +66,53 @@ export class TripLifecycleService {
     private readonly log: PinoLogger,
   ) {
     this.log.setContext(TripLifecycleService.name);
+  }
+
+  /**
+   * The dock started loading this trip (AC-LOD-04): PLANNED → LOADING, on
+   * the first line a loader checks. Loading calls it inside its own
+   * transaction, so the check and the status move commit together.
+   */
+  @Transactional()
+  async markLoading(id: string): Promise<TripRow> {
+    return this.moveTrip(id, 'START_LOADING', {});
+  }
+
+  /**
+   * The dock released the trip (AC-LOD-16): LOADING → RELEASED. The release
+   * columns live on the trip; the typed Checked-by name and the release's
+   * `clientUuid` stay with loading, which owns that record.
+   */
+  @Transactional()
+  async markReleased(
+    id: string,
+    input: {
+      at: Date;
+      releasedById?: string | null;
+      reeferTempC?: number | null;
+    },
+  ): Promise<TripRow> {
+    return this.moveTrip(id, 'RELEASE', {
+      releasedAt: input.at,
+      releasedById: input.releasedById ?? null,
+      ...(input.reeferTempC != null && { releaseTempC: input.reeferTempC }),
+    });
+  }
+
+  /**
+   * A released trip moved to another vehicle has to be loaded again
+   * (AC-LOD-19): RELEASED → LOADING, clearing the release columns so the
+   * trip does not look released while it is being re-picked. The move itself
+   * belongs to reassign; until that endpoint lands, loading asks for it when
+   * `trip.reassigned` reaches LoadListBuilder for a RELEASED trip.
+   */
+  @Transactional()
+  async markReloading(id: string): Promise<TripRow> {
+    return this.moveTrip(id, 'REASSIGN_VEHICLE', {
+      releasedAt: null,
+      releasedById: null,
+      releaseTempC: null,
+    });
   }
 
   /**
@@ -166,7 +214,8 @@ export class TripLifecycleService {
 
   private async moveTrip(
     id: string,
-    event: 'START' | 'COMPLETE',
+    event:
+      'START_LOADING' | 'RELEASE' | 'START' | 'COMPLETE' | 'REASSIGN_VEHICLE',
     changes: Partial<typeof trips.$inferInsert>,
   ): Promise<TripRow> {
     const before = await this.loadTrip(id);

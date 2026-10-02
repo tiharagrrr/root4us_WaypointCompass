@@ -7505,6 +7505,1419 @@
         ]
       }
     },
+    "/api/v1/depots/{depotId}/loading/runs": {
+      "get": {
+        "operationId": "loadingBoardRuns",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "The business date, Asia/Colombo; today by default",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          },
+          {
+            "name": "wave",
+            "required": false,
+            "in": "query",
+            "description": "One wave of the day",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LoadRunDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The dock's runs for a day, by wave",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/depots/{depotId}/loading/trips": {
+      "get": {
+        "operationId": "loadingBoardTrips",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "The business date, Asia/Colombo; today by default",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          },
+          {
+            "name": "wave",
+            "required": false,
+            "in": "query",
+            "description": "One wave of the day",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LoadTripSummaryDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A wave's trips to load",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/load-list": {
+      "get": {
+        "operationId": "tripLoadingLoadList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadListDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A trip's load list, last stop first",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/load-list/checks": {
+      "post": {
+        "operationId": "tripLoadingCheck",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoadCheckBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BatchResultsDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Check lines off the list",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/load-flags": {
+      "post": {
+        "operationId": "tripLoadingRaise",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RaiseFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadFlagDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Flag an item on the list",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/release-checks": {
+      "get": {
+        "operationId": "tripLoadingReleaseChecks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reeferTempC",
+            "required": false,
+            "in": "query",
+            "description": "The reading typed so far, so the list shows live",
+            "schema": {
+              "minimum": -40,
+              "maximum": 60,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReleaseChecksDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A trip's release preconditions",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/release": {
+      "post": {
+        "operationId": "tripLoadingReleaseTrip",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReleaseTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadListDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Release the trip (online only)",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-flags": {
+      "get": {
+        "operationId": "loadFlagsList",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Tables: rows to skip",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Feeds: meta.page.nextCursor of the previous page",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated fields, \"-\" for descending",
+            "schema": {
+              "maxLength": 200,
+              "example": "-submittedAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated related resources",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[status]",
+            "required": false,
+            "in": "query",
+            "description": "one of OPEN, AWAITING_RECHECK, RESOLVED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[reason]",
+            "required": false,
+            "in": "query",
+            "description": "one of MISSING, DAMAGED, WRONG_TEMP, OVER_CAPACITY; comma-separated for any of. Also filter[reason][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[decision]",
+            "required": false,
+            "in": "query",
+            "description": "one of REPLACE, REMOVE; comma-separated for any of. Also filter[decision][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[tripId]",
+            "required": false,
+            "in": "query",
+            "description": "a UUID; comma-separated for any of. Also filter[tripId][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[loadLineId]",
+            "required": false,
+            "in": "query",
+            "description": "a UUID; comma-separated for any of. Also filter[loadLineId][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LoadFlagDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The depot's load flags, unanswered first",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-flags/{id}": {
+      "get": {
+        "operationId": "loadFlagsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadFlagDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One flag, with what can be done about it",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-flags/{id}/undo": {
+      "post": {
+        "operationId": "loadFlagsUndo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadFlagDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Undo the flag before it is decided",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-flags/{id}/decision": {
+      "post": {
+        "operationId": "loadFlagsDecide",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadFlagDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Decide the flag: replace or remove",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-flags/{id}/recheck": {
+      "post": {
+        "operationId": "loadFlagsRecheck",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecheckFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadFlagDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Re-check the item after a replacement",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-lines/{id}": {
+      "get": {
+        "operationId": "loadLinesGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadLineDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One line of a load list",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
+    "/api/v1/load-lines/{id}/undo": {
+      "post": {
+        "operationId": "loadLinesUndo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UndoCheckDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/LoadLineDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Undo the check on a line",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
     "/api/v1/me/trips": {
       "get": {
         "description": "One business date with ?date=, or the last 7 days without it. An empty list is what D14 shows.",
@@ -12426,6 +13839,865 @@
             "type": "number",
             "minimum": 0,
             "maximum": 1000
+          }
+        }
+      },
+      "LoadProgressDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "number"
+          },
+          "checked": {
+            "type": "number",
+            "description": "OK, replaced or removed"
+          },
+          "outstanding": {
+            "type": "number",
+            "description": "Still PENDING or FLAGGED"
+          },
+          "openFlags": {
+            "type": "number",
+            "description": "OPEN or AWAITING_RECHECK"
+          }
+        },
+        "required": [
+          "lines",
+          "checked",
+          "outstanding",
+          "openFlags"
+        ]
+      },
+      "LoadTripSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "string"
+          },
+          "depotId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "description": "The business date, Asia/Colombo"
+          },
+          "vehicleId": {
+            "type": "string"
+          },
+          "driverId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "tempClass": {
+            "enum": [
+              "AMBIENT",
+              "CHILLED"
+            ],
+            "type": "string"
+          },
+          "waveId": {
+            "type": "string",
+            "nullable": true
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseTempC": {
+            "type": "number",
+            "nullable": true
+          },
+          "planRevision": {
+            "type": "number",
+            "description": "The plan's current revision"
+          },
+          "outletCount": {
+            "type": "number"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/LoadProgressDto"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "planId",
+          "depotId",
+          "date",
+          "vehicleId",
+          "status",
+          "tempClass",
+          "planRevision",
+          "outletCount",
+          "progress",
+          "_links"
+        ]
+      },
+      "LoadRunDto": {
+        "type": "object",
+        "properties": {
+          "waveId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for the trips that belong to no wave"
+          },
+          "label": {
+            "type": "string"
+          },
+          "departFromMin": {
+            "type": "number",
+            "nullable": true
+          },
+          "departToMin": {
+            "type": "number",
+            "nullable": true
+          },
+          "progress": {
+            "$ref": "#/components/schemas/LoadProgressDto"
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadTripSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "label",
+          "progress",
+          "trips"
+        ]
+      },
+      "LoadFlagDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tripId": {
+            "type": "string"
+          },
+          "loadLineId": {
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "MISSING",
+              "DAMAGED",
+              "WRONG_TEMP",
+              "OVER_CAPACITY"
+            ],
+            "type": "string"
+          },
+          "qtyAffected": {
+            "type": "number"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "enum": [
+              "OPEN",
+              "AWAITING_RECHECK",
+              "RESOLVED"
+            ],
+            "type": "string"
+          },
+          "decision": {
+            "nullable": true,
+            "enum": [
+              "REPLACE",
+              "REMOVE"
+            ],
+            "type": "string"
+          },
+          "decisionNote": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedById": {
+            "type": "string",
+            "nullable": true
+          },
+          "decidedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "raisedByName": {
+            "type": "string",
+            "description": "The name typed on the dock tablet, which is who actually saw it."
+          },
+          "raisedByUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "raisedAt": {
+            "type": "string"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripId",
+          "loadLineId",
+          "reason",
+          "qtyAffected",
+          "status",
+          "raisedByName",
+          "raisedAt",
+          "_links"
+        ]
+      },
+      "LoadLineDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "tripId": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderLineId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for an order with no lines, whose units are the line"
+          },
+          "stopSeq": {
+            "type": "number",
+            "description": "The stop's seq; the list reads highest first"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "OK",
+              "FLAGGED",
+              "REPLACED",
+              "REMOVED"
+            ],
+            "type": "string"
+          },
+          "qtyExpected": {
+            "type": "number"
+          },
+          "qtyLoaded": {
+            "type": "number",
+            "nullable": true
+          },
+          "planRevision": {
+            "type": "number",
+            "description": "The plan revision this line belongs to"
+          },
+          "orderNo": {
+            "type": "string"
+          },
+          "outletId": {
+            "type": "string"
+          },
+          "outletName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "itemName": {
+            "type": "string",
+            "nullable": true
+          },
+          "packLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "checkedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who checked it, as typed on the shared tablet (AC-LOD-04)."
+          },
+          "checkedByUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "checkedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadFlagDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripId",
+          "orderId",
+          "stopSeq",
+          "status",
+          "qtyExpected",
+          "planRevision",
+          "orderNo",
+          "outletId",
+          "outletName",
+          "flags",
+          "_links"
+        ]
+      },
+      "LoadTripDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "planId": {
+            "type": "string"
+          },
+          "depotId": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "description": "The business date, Asia/Colombo"
+          },
+          "vehicleId": {
+            "type": "string"
+          },
+          "driverId": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "tempClass": {
+            "enum": [
+              "AMBIENT",
+              "CHILLED"
+            ],
+            "type": "string"
+          },
+          "waveId": {
+            "type": "string",
+            "nullable": true
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "releasedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "releaseTempC": {
+            "type": "number",
+            "nullable": true
+          },
+          "planRevision": {
+            "type": "number",
+            "description": "The plan's current revision"
+          }
+        },
+        "required": [
+          "id",
+          "planId",
+          "depotId",
+          "date",
+          "vehicleId",
+          "status",
+          "tempClass",
+          "planRevision"
+        ]
+      },
+      "LoadStopDto": {
+        "type": "object",
+        "properties": {
+          "stopSeq": {
+            "type": "number"
+          },
+          "orderId": {
+            "type": "string"
+          },
+          "orderNo": {
+            "type": "string"
+          },
+          "outletId": {
+            "type": "string"
+          },
+          "outletName": {
+            "type": "string"
+          },
+          "outstanding": {
+            "type": "number",
+            "description": "Lines still PENDING or FLAGGED"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadLineDto"
+            }
+          }
+        },
+        "required": [
+          "stopSeq",
+          "orderId",
+          "orderNo",
+          "outletId",
+          "outletName",
+          "outstanding",
+          "lines"
+        ]
+      },
+      "ReleaseCheckDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "enum": [
+              "TRIP_STATUS",
+              "LINES_RESOLVED",
+              "NO_OPEN_FLAG",
+              "LATEST_REVISION",
+              "DRIVER_ASSIGNED",
+              "REEFER_TEMP"
+            ],
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "pass": {
+            "type": "boolean"
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "pass",
+          "detail"
+        ]
+      },
+      "LoadListDto": {
+        "type": "object",
+        "properties": {
+          "trip": {
+            "$ref": "#/components/schemas/LoadTripDto"
+          },
+          "stops": {
+            "description": "Last stop first: the first stop’s goods go in last",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadStopDto"
+            }
+          },
+          "progress": {
+            "$ref": "#/components/schemas/LoadProgressDto"
+          },
+          "listRevision": {
+            "type": "number",
+            "description": "The revision the lines carry; behind the plan after a revision"
+          },
+          "upToDate": {
+            "type": "boolean",
+            "description": "False after a revision, until the dock reloads the list"
+          },
+          "releasedByName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Who released it and against which revision; null until it is released."
+          },
+          "releaseChecks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReleaseCheckDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "trip",
+          "stops",
+          "progress",
+          "listRevision",
+          "upToDate",
+          "releaseChecks",
+          "_links"
+        ]
+      },
+      "BatchResultDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "applied",
+              "duplicate",
+              "conflict",
+              "rejected"
+            ],
+            "type": "string",
+            "description": "applied: it landed. duplicate: it had already landed. conflict: the server moved on. rejected: it cannot land."
+          },
+          "code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Why, for conflict and rejected, e.g. SHORT_WITHOUT_FLAG"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "What the loader should do about it"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The row it touched, so the tablet can reconcile its cache"
+          }
+        },
+        "required": [
+          "clientUuid",
+          "status"
+        ]
+      },
+      "BatchResultsDto": {
+        "type": "object",
+        "properties": {
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BatchResultDto"
+            }
+          },
+          "applied": {
+            "type": "number",
+            "description": "How many items changed something"
+          },
+          "list": {
+            "description": "The list as it now stands, so the tablet needs no second call",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoadListDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "results",
+          "applied",
+          "list"
+        ]
+      },
+      "LoadCheckItemDto": {
+        "type": "object",
+        "properties": {
+          "lineId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The load line being checked"
+          },
+          "qtyLoaded": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999,
+            "description": "What is on the pallet; must equal qtyExpected"
+          },
+          "checkedByName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The name typed on the shared tablet, e.g. \"Harini De Mel\""
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the tablet; a replay is a duplicate"
+          },
+          "checkedAt": {
+            "type": "string",
+            "description": "The device clock, ISO 8601 with an offset",
+            "example": "2026-10-02T02:45:10+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device; a batch applies in this order"
+          },
+          "deviceId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The tablet this came from"
+          }
+        },
+        "required": [
+          "lineId",
+          "qtyLoaded",
+          "checkedByName",
+          "clientUuid",
+          "checkedAt"
+        ]
+      },
+      "LoadCheckBatchDto": {
+        "type": "object",
+        "properties": {
+          "checks": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadCheckItemDto"
+            }
+          }
+        },
+        "required": [
+          "checks"
+        ]
+      },
+      "RaiseFlagDto": {
+        "type": "object",
+        "properties": {
+          "loadLineId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The line the problem is on"
+          },
+          "reason": {
+            "enum": [
+              "MISSING",
+              "DAMAGED",
+              "WRONG_TEMP",
+              "OVER_CAPACITY"
+            ],
+            "type": "string",
+            "description": "Why: missing, damaged, wrong temperature or over capacity"
+          },
+          "qtyAffected": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 9999,
+            "description": "How much is affected"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "What the loader saw"
+          },
+          "raisedByName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The name typed on the shared tablet"
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the tablet; a replay is a duplicate"
+          },
+          "photoClientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A photo queued with the flag, by its own clientUuid"
+          },
+          "deviceId": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "The tablet this came from"
+          }
+        },
+        "required": [
+          "loadLineId",
+          "reason",
+          "qtyAffected",
+          "raisedByName",
+          "clientUuid"
+        ]
+      },
+      "ReleaseChecksDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "canRelease": {
+            "type": "boolean",
+            "description": "True when every check passes"
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReleaseCheckDto"
+            }
+          },
+          "maxReleaseTempC": {
+            "type": "number",
+            "description": "Warmest reefer temperature this trip may leave at, °C"
+          },
+          "planRevision": {
+            "type": "number",
+            "description": "The plan's revision the release must match"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "canRelease",
+          "checks",
+          "maxReleaseTempC",
+          "planRevision",
+          "_links"
+        ]
+      },
+      "ReleaseTripDto": {
+        "type": "object",
+        "properties": {
+          "reeferTempC": {
+            "type": "number",
+            "minimum": -40,
+            "maximum": 60,
+            "description": "The reefer reading in °C; required on a chilled trip, at or below loading.maxReleaseTempC",
+            "example": 3.4
+          },
+          "checkedByName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The name typed on the shared tablet"
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the tablet; the same one twice is one release"
+          },
+          "planRevision": {
+            "type": "number",
+            "minimum": 0,
+            "description": "The revision the tablet is showing; a stale one fails the revision check"
+          }
+        },
+        "required": [
+          "checkedByName",
+          "clientUuid"
+        ]
+      },
+      "DecideFlagDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "enum": [
+              "REPLACE",
+              "REMOVE"
+            ],
+            "type": "string"
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 64,
+            "description": "A code from /deferral-reasons; required on REMOVE"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "What the loader should do about it"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "RecheckFlagDto": {
+        "type": "object",
+        "properties": {
+          "qtyLoaded": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 9999,
+            "description": "What is on the pallet now"
+          },
+          "checkedByName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The name typed on the shared tablet"
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the tablet; a replay is a duplicate"
+          }
+        },
+        "required": [
+          "qtyLoaded",
+          "checkedByName",
+          "clientUuid"
+        ]
+      },
+      "UndoCheckDto": {
+        "type": "object",
+        "properties": {
+          "checkedByName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The name typed on the shared tablet"
           }
         }
       },
