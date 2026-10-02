@@ -21,21 +21,50 @@ export function tripKeyOf(vehicleCode: string, tripNo: number): string {
 
 /**
  * Totals for a proposed trip, from its orders and the input tables. validate() always measures, so a
- * plan edited in the UI cannot carry stale numbers.
+ * plan edited in the UI cannot carry stale numbers. `where` names the trip in error messages, for
+ * example "plan.trips[2]".
  */
-export function measureTrip(input: EngineInput, lookups: Lookups, draft: TripDraft): Trip {
+export function measureTrip(input: EngineInput, lookups: Lookups, draft: TripDraft, where = 'trip'): Trip {
   const vehicle = lookups.vehicleById.get(draft.vehicleId);
-  if (!vehicle) throw new EngineInputError(`Unknown vehicle ${draft.vehicleId}`);
+  if (!vehicle) {
+    throw new EngineInputError({
+      code: 'UNKNOWN_VEHICLE',
+      field: `${where}.vehicleId`,
+      value: draft.vehicleId,
+      reason: 'is not in input.vehicles',
+    });
+  }
   const district = input.districts[draft.districtId];
-  if (!district) throw new EngineInputError(`Unknown district ${draft.districtId}`);
+  if (!district) {
+    throw new EngineInputError({
+      code: 'UNKNOWN_DISTRICT',
+      field: `${where}.districtId`,
+      value: draft.districtId,
+      reason: 'is not in input.districts',
+    });
+  }
 
   let weightKg = 0;
   let volumeM3 = 0;
-  const dockTypes = draft.orderIds.map((id) => {
+  const dockTypes = draft.orderIds.map((id, position) => {
     const order = lookups.orderById.get(id);
-    if (!order) throw new EngineInputError(`Unknown order ${id}`);
+    if (!order) {
+      throw new EngineInputError({
+        code: 'UNKNOWN_ORDER',
+        field: `${where}.orderIds[${position}]`,
+        value: id,
+        reason: 'is not in input.orders',
+      });
+    }
     const outlet = input.outlets[order.outletId];
-    if (!outlet) throw new EngineInputError(`Unknown outlet ${order.outletId}`);
+    if (!outlet) {
+      throw new EngineInputError({
+        code: 'UNKNOWN_OUTLET',
+        field: `input.orders[${JSON.stringify(order.id)}].outletId`,
+        value: order.outletId,
+        reason: 'is not in input.outlets',
+      });
+    }
     weightKg += order.weightKg;
     volumeM3 += order.volumeM3;
     return outlet.dockType;

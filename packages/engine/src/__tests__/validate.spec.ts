@@ -92,4 +92,16 @@ describe('validate', () => {
     const plan = { trips: [{ vehicleId: 'fx-veh-1', tripNo: 1, brand: 'STYLE' as const, districtId: 'fx-gampaha', orderIds: ['fx-ord-1'] }], unplanned: [] };
     expect(validate(input, plan).filter((v) => v.rule === 'WINDOW_OUTLET')).toEqual([]);
   });
+
+  it('validate: a window message prints the times as HH:MM', () => {
+    const { input, plan } = load('WINDOW_OUTLET.fail.json');
+    const v = validate(input, plan).filter((x) => x.rule === 'WINDOW_OUTLET');
+    expect(v[0]?.message).toBe('FO-4 is served 05:19 to 05:34, outside its window 00:00 to 05:20');
+  });
+
+  it('validate: a date that does not exist is an input error, not a rolled-over weekday', () => {
+    const f = readFixture('OPERATING_DAY.pass.json');
+    const input = buildInput({ ...f.input, date: '2026-02-30' }, f.params);
+    expect(() => validate(input, f.plan)).toThrow(EngineInputError);
+  });
 });

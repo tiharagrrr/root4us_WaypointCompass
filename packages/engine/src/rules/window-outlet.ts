@@ -1,5 +1,5 @@
 import { scheduleOf } from '../plan/trip-schedule';
-import { formatMinutes } from '../util/time-format';
+import { minuteLabel } from '@waypoint/shared/business-time';
 import { lte } from '../util/lte';
 import type { Violation } from '../types';
 import { defineRule, violation } from './types';
@@ -22,7 +22,7 @@ export const WINDOW_OUTLET = defineRule('WINDOW_OUTLET', {
           orderId: stop.order.id,
           actual: s.finishMin,
           limit: close,
-          message: `${stop.order.ref} is served ${formatMinutes(s.startMin)} to ${formatMinutes(s.finishMin)}, outside its window ${formatMinutes(open)} to ${formatMinutes(close)}`,
+          message: `${stop.order.ref} is served ${minuteLabel(s.startMin)} to ${minuteLabel(s.finishMin)}, outside its window ${minuteLabel(open)} to ${minuteLabel(close)}`,
         }),
       );
     });

@@ -1,4 +1,4 @@
-import type { Brand, DockType } from '../domain';
+import type { Brand, DockType } from '@waypoint/shared/domain';
 import { EngineInputError } from '../errors';
 import type { AllowanceTable, EngineDistrict } from '../types';
 
@@ -21,7 +21,14 @@ export function allowanceMinutes(
 ): number {
   const key = allowanceKey(brand, dockType);
   const minutes = allowances[key];
-  if (minutes === undefined) throw new EngineInputError(`No service allowance for ${key}`);
+  if (minutes === undefined) {
+    throw new EngineInputError({
+      code: 'MISSING_ALLOWANCE',
+      field: 'input.allowances',
+      value: key,
+      reason: 'has no service allowance for this brand and dock type',
+    });
+  }
   return minutes;
 }
 
