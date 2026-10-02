@@ -220,8 +220,16 @@ describeWithDb('ordering cutoff job, day summary and lifecycle', () => {
       sent26.map((r) => (r.payload as { outletId: string }).outletId),
     ).not.toContain(mondayStyle);
 
-    // A second sweep in the same minute reminds nobody twice.
-    expect(await sweepReminders(w, AT_1530)).toBe(0);
+    // A second sweep in the same minute reminds nobody twice. The sweep's
+    // own count is global, and suites run in parallel against one database,
+    // so an outlet another suite created since the first sweep would make it
+    // non-zero without saying anything about this criterion: what is checked
+    // is that this world gained no second reminder.
+    await sweepReminders(w, AT_1530);
+    const afterSecondSweep = (
+      await outboxRows(w, ORDER_EVENTS.cutoffReminder)
+    ).filter((r) => mine.has((r.payload as { outletId: string }).outletId));
+    expect(afterSecondSweep).toHaveLength(sent26.length);
     await tick(w, 'reminder', AT_1530);
     const again = (await outboxRows(w, ORDER_EVENTS.cutoffReminder)).filter(
       (r) =>

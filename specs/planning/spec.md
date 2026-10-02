@@ -124,9 +124,13 @@ Engine wrappers: `PlanContextBuilder` (the `/context` payload, via `toEngineInpu
 deferral inserts.
 
 Lifecycle service (exported in `index.ts`): `TripLifecycleService` with `markLoading`,
-`markReleased`, `markStarted`, `markArrived`, `markStopOutcome`, `markCompleted`, `cancel`. Loading
+`markReleased`, `markStarted`, `markArrived`, `markStopOutcome`, `markCompleted`, `cancel`, plus
+`markDownloaded` and `markCantRun` (columns the driver's events set that move no status). Loading
 and execution move trip and stop status only through it, with the same state-machine check and
-audit as a command.
+audit as a command. Built so far (ROO-31): `markDownloaded`, `markStarted`, `markArrived`,
+`markStopOutcome`, `markCompleted`, `markCantRun`; `markLoading`, `markReleased` and `cancel` land
+with planning's own API. Each writes one audit row, `planning.trip.status_changed` or
+`planning.stop.status_changed`, and the caller emits the domain event.
 
 Engine functions used (`packages/engine`, also run in the browser from `/context`):
 `allocate()`, `validate()`, `vehicleOptions()`, `optionsForTrip()`, `applyEdits()`,
@@ -574,6 +578,9 @@ Checklist (tick in the PR that adds the passing test):
   the plan is published) or at publish? Decides: Tihara with Harini.
 
 ## Changelog
+- 2026-10-02 `TripLifecycleService` added for execution's driver events (ROO-31), with
+  `markDownloaded` and `markCantRun` beyond the methods listed above; planning's own moves
+  (`markLoading`, `markReleased`, `cancel`) are still to come
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `plans.createdById`, `trips.cantRunReason`, stop travel, predicted service, arrival position and units delivered, with range checks (merged from the Supabase draft)
 - 2026-10-01 GET, POST /deferral-reasons and GET, PATCH /deferral-reasons/{code} added by ROO-27 (Nimesha) in this module,
