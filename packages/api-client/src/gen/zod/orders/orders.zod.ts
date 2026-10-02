@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary List orders
  */
 export const ordersListQueryLimitMax = 1000;
@@ -35,12 +34,14 @@ export const OrdersListQueryParams = zod.object({
   "include": zod.string().max(ordersListQueryIncludeMax).optional().describe('Comma-separated related resources'),
   "filter[status]": zod.string().optional().describe('one of DRAFT, SUBMITTED, CONFIRMED, PLANNED, DEFERRED, LOADED, IN_TRANSIT, DELIVERED, PARTIAL, FAILED, RECEIVED, ISSUE_REPORTED, CANCELLED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.'),
   "filter[tempClass]": zod.string().optional().describe('one of AMBIENT, CHILLED; comma-separated for any of. Also filter[tempClass][op] with op in eq, ne, null.'),
+  "filter[brand]": zod.string().optional().describe('one of FRESH, STYLE, TECH; comma-separated for any of. Also filter[brand][op] with op in eq, ne, null.'),
   "filter[depotId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.'),
   "filter[outletId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[outletId][op] with op in eq, ne, contains, null.'),
   "filter[districtId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[districtId][op] with op in eq, ne, contains, null.'),
   "filter[deliveryDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[deliveryDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
   "filter[requestedDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[requestedDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
-  "filter[urgent]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[urgent][op] with op in eq, null.')
+  "filter[urgent]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[urgent][op] with op in eq, null.'),
+  "filter[afterCutoff]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[afterCutoff][op] with op in eq, null.')
 })
 
 export const OrdersListResponse = zod.object({
@@ -74,6 +75,8 @@ export const OrdersListResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -108,7 +111,6 @@ export const OrdersListResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Start a draft order
  */
 export const OrdersCreateHeader = zod.object({
@@ -164,6 +166,8 @@ export const OrdersCreateResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -186,7 +190,6 @@ export const OrdersCreateResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary One order
  */
 export const OrdersGetParams = zod.object({
@@ -232,6 +235,8 @@ export const OrdersGetResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -254,7 +259,93 @@ export const OrdersGetResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
+ * @summary Edit an order
+ */
+export const OrdersUpdateParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrdersUpdateHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded')
+})
+
+export const ordersUpdateBodyNoteMax = 500;
+
+
+
+export const OrdersUpdateBody = zod.object({
+  "requestedDate": zod.string().optional(),
+  "note": zod.string().min(1).max(ordersUpdateBodyNoteMax).nullish()
+})
+
+export const OrdersUpdateResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "orderNo": zod.string(),
+  "status": zod.enum(['DRAFT', 'SUBMITTED', 'CONFIRMED', 'PLANNED', 'DEFERRED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'PARTIAL', 'FAILED', 'RECEIVED', 'ISSUE_REPORTED', 'CANCELLED']),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "brand": zod.enum(['FRESH', 'STYLE', 'TECH']),
+  "requestedDate": zod.string().describe('The day the store asked for'),
+  "deliveryDate": zod.string().describe('The run it is on now'),
+  "afterCutoff": zod.boolean().describe('Sent after the cutoff, so it moved to the next run (M2)'),
+  "urgent": zod.boolean().describe('The dispatcher marked it urgent'),
+  "totals": zod.object({
+  "lines": zod.number().describe('Distinct items on the order'),
+  "units": zod.number().describe('Packs across all lines'),
+  "weightKg": zod.number(),
+  "volumeM3": zod.number(),
+  "valueLkr": zod.number().nullable().describe('Tech orders only; null for Fresh and Style')
+}),
+  "outlet": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}),
+  "deliveryWindow": zod.object({
+  "openMin": zod.number().describe('Minutes after midnight'),
+  "open": zod.string(),
+  "closeMin": zod.number(),
+  "close": zod.string()
+}),
+  "note": zod.string().nullable(),
+  "templateId": zod.string().nullable().describe('The preset this order was started from'),
+  "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
+  "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
+  "version": zod.number(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Delete a draft order
+ */
+export const OrdersRemoveParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrdersRemoveHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded')
+})
+
+export const OrdersRemoveResponse = zod.void()
+
+/**
  * @summary Send the order
  */
 export const OrdersSubmitParams = zod.object({
@@ -297,6 +388,8 @@ export const OrdersSubmitResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -319,7 +412,150 @@ export const OrdersSubmitResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
+ * @summary Cancel the order
+ */
+export const OrdersCancelParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrdersCancelHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded'),
+  "Idempotency-Key": zod.string().optional().describe('One per button press; a repeat replays the first response')
+})
+
+export const ordersCancelBodyReasonNoteMax = 500;
+
+export const ordersCancelBodyReasonCodeMax = 60;
+
+
+export const ordersCancelBodyReasonCodeRegExp = new RegExp('^[A-Z][A-Z0-9_]*$');
+
+
+export const OrdersCancelBody = zod.object({
+  "reasonNote": zod.string().min(1).max(ordersCancelBodyReasonNoteMax).optional().describe('Required when a store manager cancels'),
+  "reasonCode": zod.string().min(1).max(ordersCancelBodyReasonCodeMax).regex(ordersCancelBodyReasonCodeRegExp).optional().describe('Required when a dispatcher cancels')
+})
+
+export const OrdersCancelResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "orderNo": zod.string(),
+  "status": zod.enum(['DRAFT', 'SUBMITTED', 'CONFIRMED', 'PLANNED', 'DEFERRED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'PARTIAL', 'FAILED', 'RECEIVED', 'ISSUE_REPORTED', 'CANCELLED']),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "brand": zod.enum(['FRESH', 'STYLE', 'TECH']),
+  "requestedDate": zod.string().describe('The day the store asked for'),
+  "deliveryDate": zod.string().describe('The run it is on now'),
+  "afterCutoff": zod.boolean().describe('Sent after the cutoff, so it moved to the next run (M2)'),
+  "urgent": zod.boolean().describe('The dispatcher marked it urgent'),
+  "totals": zod.object({
+  "lines": zod.number().describe('Distinct items on the order'),
+  "units": zod.number().describe('Packs across all lines'),
+  "weightKg": zod.number(),
+  "volumeM3": zod.number(),
+  "valueLkr": zod.number().nullable().describe('Tech orders only; null for Fresh and Style')
+}),
+  "outlet": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}),
+  "deliveryWindow": zod.object({
+  "openMin": zod.number().describe('Minutes after midnight'),
+  "open": zod.string(),
+  "closeMin": zod.number(),
+  "close": zod.string()
+}),
+  "note": zod.string().nullable(),
+  "templateId": zod.string().nullable().describe('The preset this order was started from'),
+  "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
+  "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
+  "version": zod.number(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Order the same again
+ */
+export const OrdersReorderParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrdersReorderHeader = zod.object({
+  "Idempotency-Key": zod.string().optional().describe('One per button press; a repeat replays the first response')
+})
+
+export const OrdersReorderResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "orderNo": zod.string(),
+  "status": zod.enum(['DRAFT', 'SUBMITTED', 'CONFIRMED', 'PLANNED', 'DEFERRED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'PARTIAL', 'FAILED', 'RECEIVED', 'ISSUE_REPORTED', 'CANCELLED']),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "brand": zod.enum(['FRESH', 'STYLE', 'TECH']),
+  "requestedDate": zod.string().describe('The day the store asked for'),
+  "deliveryDate": zod.string().describe('The run it is on now'),
+  "afterCutoff": zod.boolean().describe('Sent after the cutoff, so it moved to the next run (M2)'),
+  "urgent": zod.boolean().describe('The dispatcher marked it urgent'),
+  "totals": zod.object({
+  "lines": zod.number().describe('Distinct items on the order'),
+  "units": zod.number().describe('Packs across all lines'),
+  "weightKg": zod.number(),
+  "volumeM3": zod.number(),
+  "valueLkr": zod.number().nullable().describe('Tech orders only; null for Fresh and Style')
+}),
+  "outlet": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}),
+  "deliveryWindow": zod.object({
+  "openMin": zod.number().describe('Minutes after midnight'),
+  "open": zod.string(),
+  "closeMin": zod.number(),
+  "close": zod.string()
+}),
+  "note": zod.string().nullable(),
+  "templateId": zod.string().nullable().describe('The preset this order was started from'),
+  "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
+  "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
+  "version": zod.number(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
  * @summary Save the lines as a preset
  */
 export const OrdersSaveAsTemplateParams = zod.object({
@@ -351,6 +587,75 @@ export const OrdersSaveAsTemplateResponse = zod.object({
   "qty": zod.number().describe('Packs')
 })),
   "createdAt": zod.string(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Mark an order urgent
+ */
+export const OrdersSetPriorityParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrdersSetPriorityHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded')
+})
+
+export const OrdersSetPriorityBody = zod.object({
+  "urgent": zod.boolean()
+})
+
+export const OrdersSetPriorityResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "orderNo": zod.string(),
+  "status": zod.enum(['DRAFT', 'SUBMITTED', 'CONFIRMED', 'PLANNED', 'DEFERRED', 'LOADED', 'IN_TRANSIT', 'DELIVERED', 'PARTIAL', 'FAILED', 'RECEIVED', 'ISSUE_REPORTED', 'CANCELLED']),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "brand": zod.enum(['FRESH', 'STYLE', 'TECH']),
+  "requestedDate": zod.string().describe('The day the store asked for'),
+  "deliveryDate": zod.string().describe('The run it is on now'),
+  "afterCutoff": zod.boolean().describe('Sent after the cutoff, so it moved to the next run (M2)'),
+  "urgent": zod.boolean().describe('The dispatcher marked it urgent'),
+  "totals": zod.object({
+  "lines": zod.number().describe('Distinct items on the order'),
+  "units": zod.number().describe('Packs across all lines'),
+  "weightKg": zod.number(),
+  "volumeM3": zod.number(),
+  "valueLkr": zod.number().nullable().describe('Tech orders only; null for Fresh and Style')
+}),
+  "outlet": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}),
+  "deliveryWindow": zod.object({
+  "openMin": zod.number().describe('Minutes after midnight'),
+  "open": zod.string(),
+  "closeMin": zod.number(),
+  "close": zod.string()
+}),
+  "note": zod.string().nullable(),
+  "templateId": zod.string().nullable().describe('The preset this order was started from'),
+  "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
+  "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
+  "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
   "href": zod.string(),
   "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),

@@ -66,7 +66,6 @@ export const getItemsListUrl = (params?: ItemsListParams,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary List catalog items
  */
 export const itemsList = async (params?: ItemsListParams, options?: Parameters<typeof compassFetch>[1]): Promise<ItemsList200> => {
@@ -167,7 +166,6 @@ export const getItemsGetUrl = (id: string,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary One catalog item
  */
 export const itemsGet = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<ItemsGet200> => {

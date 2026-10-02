@@ -39,6 +39,13 @@ export interface OrderDto {
   templateId: string | null;
   /** @nullable */
   submittedAt: string | null;
+  /** @nullable */
+  cancelledAt: string | null;
+  /**
+     * A store's note or a dispatcher's reason code
+     * @nullable
+     */
+  cancelReason: string | null;
   /** The cutoff instant: edits and cancels close here */
   editableUntil: string;
   version: number;

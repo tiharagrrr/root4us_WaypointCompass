@@ -1,7 +1,7 @@
 ---
 module: master-data
 owner: Harini
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [A3, A4, M9, D9]
 depends-on: [core, audit]
 ---
@@ -280,19 +280,19 @@ AC-MD-14  The seed is repeatable and checks rows
 ```
 
 Checklist (tick in the same PR as the passing test):
-- [ ] AC-MD-01 Close before open is refused
-- [ ] AC-MD-02 Outlet edits are audited and announced
-- [ ] AC-MD-03 Outlet times carry minutes and labels
-- [ ] AC-MD-04 A3 outlet list filters and pages
+- [x] AC-MD-01 Close before open is refused
+- [x] AC-MD-02 Outlet edits are audited and announced
+- [x] AC-MD-03 Outlet times carry minutes and labels
+- [x] AC-MD-04 A3 outlet list filters and pages
 - [ ] AC-MD-05 Outlets without a manager are flagged
-- [ ] AC-MD-06 Depot settings are audited (A4)
+- [x] AC-MD-06 Depot settings are audited (A4)
 - [ ] AC-MD-07 Depot waves have unique labels
-- [ ] AC-MD-08 Item picker filters the catalog (M1a)
+- [x] AC-MD-08 Item picker filters the catalog (M1a)
 - [ ] AC-MD-09 Only admins change the catalog
-- [ ] AC-MD-10 Operating days and the fallback
-- [ ] AC-MD-11 Reference data for every role
-- [ ] AC-MD-12 A missing permission is 403
-- [ ] AC-MD-13 Effective window meets the mall window
+- [x] AC-MD-10 Operating days and the fallback
+- [x] AC-MD-11 Reference data for every role
+- [x] AC-MD-12 A missing permission is 403
+- [x] AC-MD-13 Effective window meets the mall window
 - [ ] AC-MD-14 The seed is repeatable and checks rows
 
 ## Non-functional
@@ -305,22 +305,47 @@ Checklist (tick in the same PR as the passing test):
 - Datasets stay out of agent sessions and tests: fixtures are hand-built; the real files are read only
   by the seed from `SEED_DATA_DIR`.
 
+## Decided while building (ROO-19)
+Ordering needed the reads, so this much of the module landed with it. What is left is noted against
+each criterion in the checklist above.
+
+- **Scope.** `OutletScope` and `DepotScope` give every Waypoint role every row: a driver's offline
+  bundle, a dispatcher's map and a store's catalog all read the same facts, and `PermissionGuard`
+  decides who may read or change them. An account with no Waypoint role sees nothing. These tables
+  carry no row-level security policy.
+- **`effectiveWindow` lives in master-data** (`domain/windows.ts`) and is exported from the module's
+  index, because the outlet's own columns decide it. Ordering reads it for an order's
+  `deliveryWindow`, and planning will snapshot it onto a stop.
+- **`CalendarService`** is exported too: `range`, `isOperating`, `nextOperating`,
+  `previousOperating`, `cutoffAt` and the lookups a batch needs. The maths is
+  `packages/shared/src/rules/business-time.ts`, which falls back to Monday to Saturday for a date
+  with no row (AC-MD-10), so one calendar decides both the day an order rolls to and the instant its
+  cutoff falls on.
+- **Audit and events.** Outlet edits audit `master_data.outlet.updated` and emit `outlet.updated`
+  `{ v: 1, id }`; depot edits audit `master_data.depot.updated` and emit `depot.updated`. Log lines
+  carry the outlet or depot id and the names of the fields that changed, never a contact's name or
+  phone number.
+- **Still to come.** The catalog's writes (AC-MD-09), depot waves (AC-MD-07), the has-manager filter
+  (AC-MD-05) and the CSV seed (AC-MD-14) are not built yet, so `/depots/{id}/waves`,
+  `POST /items` and `PATCH /items/{id}` are not mounted.
+
 ## Open questions
-- Events: `SimpleCrudCommands` names audit actions and events `<entityType>.created` and
-  `<entityType>.updated`. The module tab lists `outlet.updated` and `catalog.updated`, and Step 2's
-  boundaries table only `outlet.updated`. What do depot, wave and item changes emit and audit, and is
-  the item entity type "catalog"? Only `master_data.outlet.updated` is named as a log event. (Harini)
-- Scope: no ScopePolicy is given for master data. Which outlets and depots may each role read? (Harini)
+- Item changes have no audit action or event yet, because the catalog's writes are not built. Is the
+  item entity type "catalog", as the module tab's `catalog.updated` suggests? (Harini)
 - The has-manager filter needs identity's users, but master-data may import only core and audit
   (Step 2). Where does the flag come from, and what is the filter called (this spec uses
-  `hasManager`)? (Harini, Nimesha)
-- `effectiveWindow(outlet)` is listed with the ordering helpers and planning snapshots the effective
-  window on stops. Which module owns it (master-data, ordering or packages/shared)? (Harini, Tihara)
+  `hasManager`)? `ResourceSpec` filters are column-based, so it needs a home of its own either way.
+  (Harini, Nimesha)
 - Waves need `masterData:manage` even for GET, so dispatchers can't read them there. Intended? May a
   wave that trips reference be deleted? (Harini)
-- Limits the Build Spec does not give: the range of `cutoffMin` and window minutes, `departFromMin`
-  before `departToMin`, which item fields `q` searches, and whether `/items` pages. (Harini)
+- Limits: window minutes and `cutoffMin` are checked as 0 to 1439, `chilledDocks` may not exceed
+  `dockCount`, `/items` pages with a maximum of 200 and `q` searches an item's name and SKU. Still
+  open: `departFromMin` before `departToMin`, when the waves land. (Harini)
 
 ## Changelog
+- 2026-10-02 ROO-19: the reads ordering needs are built — `/depots`, `/districts`, `/outlets`,
+  `/items`, `/calendar`, `/service-allowances`, `/traffic-speeds` and `/road-conditions`, plus the
+  A3 outlet edit and the A4 depot edit, with `CalendarService` and `effectiveWindow` exported for
+  ordering. AC-MD-01 to 04, 06, 08 and 10 to 13 pass
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `depots.kind`, `districts.province`, allowance and weekday checks (merged from the Supabase draft)

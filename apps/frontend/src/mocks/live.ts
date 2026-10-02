@@ -34,6 +34,24 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: 'all', path: '/api/v1/demo/*' },
   { method: 'all', path: '/api/v1/deferral-reasons' },
   { method: 'all', path: '/api/v1/deferral-reasons/*' },
+  // Master data reads and the A3/A4 edits (ROO-19).
+  { method: 'all', path: '/api/v1/depots' },
+  { method: 'all', path: '/api/v1/depots/*' },
+  { method: 'all', path: '/api/v1/districts' },
+  { method: 'all', path: '/api/v1/outlets' },
+  { method: 'all', path: '/api/v1/outlets/*' },
+  { method: 'all', path: '/api/v1/items' },
+  { method: 'all', path: '/api/v1/items/*' },
+  { method: 'all', path: '/api/v1/calendar' },
+  { method: 'all', path: '/api/v1/service-allowances' },
+  { method: 'all', path: '/api/v1/traffic-speeds' },
+  { method: 'all', path: '/api/v1/road-conditions' },
+  // Ordering: drafts, lines, submit, cancel, reorder, presets, the receiving
+  // roster and the depot day summary (ROO-19).
+  { method: 'all', path: '/api/v1/orders' },
+  { method: 'all', path: '/api/v1/orders/*' },
+  { method: 'all', path: '/api/v1/order-templates' },
+  { method: 'all', path: '/api/v1/order-templates/*' },
 ]
 
 /** Pass-through handlers; they go before the mocks so they win. */

@@ -181,6 +181,8 @@ function orderDto(order: DemoOrder, now: Date): OrderDto {
     note: null,
     templateId: order.templateId,
     submittedAt: order.submittedAt,
+    cancelledAt: null,
+    cancelReason: null,
     editableUntil,
     version: order.version,
     _links: {

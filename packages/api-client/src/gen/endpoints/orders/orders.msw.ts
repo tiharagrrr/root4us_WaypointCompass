@@ -19,33 +19,53 @@ import type {
 } from 'msw';
 
 import type {
+  OrdersCancel200,
   OrdersCreate201,
   OrdersGet200,
   OrdersList200,
+  OrdersReorder201,
   OrdersSaveAsTemplate201,
-  OrdersSubmit200
+  OrdersSetPriority200,
+  OrdersSubmit200,
+  OrdersUpdate200
 } from '../../model';
 
 
-export const getOrdersListResponseMock = (overrideResponse: Partial<Extract<OrdersList200, object>> = {}): OrdersList200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+export const getOrdersListResponseMock = (overrideResponse: Partial<Extract<OrdersList200, object>> = {}): OrdersList200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }, ...overrideResponse})
 
-export const getOrdersCreateResponseMock = (overrideResponse: Partial<Extract<OrdersCreate201, object>> = {}): OrdersCreate201 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+export const getOrdersCreateResponseMock = (overrideResponse: Partial<Extract<OrdersCreate201, object>> = {}): OrdersCreate201 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
-export const getOrdersGetResponseMock = (overrideResponse: Partial<Extract<OrdersGet200, object>> = {}): OrdersGet200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+export const getOrdersGetResponseMock = (overrideResponse: Partial<Extract<OrdersGet200, object>> = {}): OrdersGet200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
-export const getOrdersSubmitResponseMock = (overrideResponse: Partial<Extract<OrdersSubmit200, object>> = {}): OrdersSubmit200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+export const getOrdersUpdateResponseMock = (overrideResponse: Partial<Extract<OrdersUpdate200, object>> = {}): OrdersUpdate200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrdersSubmitResponseMock = (overrideResponse: Partial<Extract<OrdersSubmit200, object>> = {}): OrdersSubmit200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrdersCancelResponseMock = (overrideResponse: Partial<Extract<OrdersCancel200, object>> = {}): OrdersCancel200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrdersReorderResponseMock = (overrideResponse: Partial<Extract<OrdersReorder201, object>> = {}): OrdersReorder201 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getOrdersSaveAsTemplateResponseMock = (overrideResponse: Partial<Extract<OrdersSaveAsTemplate201, object>> = {}): OrdersSaveAsTemplate201 => ({data: {id: "0192a3f4-0000-7000-8000-00000000c001", name: "Weekday top-up", tempClass: "AMBIENT", lines: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({itemId: "0192a3f4-0000-7000-8000-00000000b001", sku: "FR-1102", name: "Basmati rice 5 kg", packLabel: "Bag ×4", qty: 12})), createdAt: "2026-09-28T09:12:00+05:30", _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrdersSetPriorityResponseMock = (overrideResponse: Partial<Extract<OrdersSetPriority200, object>> = {}): OrdersSetPriority200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0231", status: "DRAFT", tempClass: "AMBIENT", brand: "FRESH", requestedDate: "2026-10-02", deliveryDate: "2026-10-02", afterCutoff: false, urgent: false, totals: {lines: 5, units: 40, weightKg: 544, volumeM3: 1.08, valueLkr: null}, outlet: {id: "OUT014", name: "Fresh Kadawatha"}, deliveryWindow: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, note: null, templateId: null, submittedAt: null, cancelledAt: null, cancelReason: null, editableUntil: "2026-10-01T16:00:00+05:30", version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -86,6 +106,28 @@ export const getOrdersGetMockHandler = (overrideResponse?: OrdersGet200 | ((info
   }, options)
 }
 
+export const getOrdersUpdateMockHandler = (overrideResponse?: OrdersUpdate200 | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<OrdersUpdate200> | OrdersUpdate200), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/v1/orders/:id', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrdersUpdateResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getOrdersRemoveMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/api/v1/orders/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {await delay(300);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
+
 export const getOrdersSubmitMockHandler = (overrideResponse?: OrdersSubmit200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OrdersSubmit200> | OrdersSubmit200), options?: RequestHandlerOptions) => {
   return http.post('*/api/v1/orders/:id/submit', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
 
@@ -94,6 +136,30 @@ export const getOrdersSubmitMockHandler = (overrideResponse?: OrdersSubmit200 | 
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getOrdersSubmitResponseMock(),
       { status: 200
+      })
+  }, options)
+}
+
+export const getOrdersCancelMockHandler = (overrideResponse?: OrdersCancel200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OrdersCancel200> | OrdersCancel200), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/orders/:id/cancel', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrdersCancelResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getOrdersReorderMockHandler = (overrideResponse?: OrdersReorder201 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OrdersReorder201> | OrdersReorder201), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/orders/:id/reorder', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrdersReorderResponseMock(),
+      { status: 201
       })
   }, options)
 }
@@ -109,10 +175,27 @@ export const getOrdersSaveAsTemplateMockHandler = (overrideResponse?: OrdersSave
       })
   }, options)
 }
+
+export const getOrdersSetPriorityMockHandler = (overrideResponse?: OrdersSetPriority200 | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<OrdersSetPriority200> | OrdersSetPriority200), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/v1/orders/:id/priority', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrdersSetPriorityResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getOrdersMock = () => [
   getOrdersListMockHandler(),
   getOrdersCreateMockHandler(),
   getOrdersGetMockHandler(),
+  getOrdersUpdateMockHandler(),
+  getOrdersRemoveMockHandler(),
   getOrdersSubmitMockHandler(),
-  getOrdersSaveAsTemplateMockHandler()
+  getOrdersCancelMockHandler(),
+  getOrdersReorderMockHandler(),
+  getOrdersSaveAsTemplateMockHandler(),
+  getOrdersSetPriorityMockHandler()
 ]
