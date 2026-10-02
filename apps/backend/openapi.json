@@ -12249,21 +12249,21 @@
             "example": 79.9507
           },
           "dockType": {
-            "type": "string",
             "enum": [
               "REAR_DOCK",
               "STREET",
               "MALL_BAY"
             ],
+            "type": "string",
             "example": "REAR_DOCK"
           },
           "parkingConstraint": {
-            "type": "string",
             "enum": [
               "NORMAL",
               "VAN_ONLY",
               "MALL_DOCK"
             ],
+            "type": "string",
             "example": "NORMAL"
           },
           "accessNotes": {
@@ -12345,11 +12345,11 @@
             "example": "WF-0171"
           },
           "tempClass": {
-            "type": "string",
             "enum": [
               "AMBIENT",
               "CHILLED"
             ],
+            "type": "string",
             "example": "CHILLED"
           },
           "units": {
@@ -12384,7 +12384,6 @@
             "example": 1
           },
           "status": {
-            "type": "string",
             "enum": [
               "PENDING",
               "ARRIVED",
@@ -12393,6 +12392,7 @@
               "FAILED",
               "CANCELLED"
             ],
+            "type": "string",
             "example": "PENDING"
           },
           "plannedArrivalAt": {
