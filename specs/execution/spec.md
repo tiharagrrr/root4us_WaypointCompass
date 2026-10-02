@@ -1,7 +1,7 @@
 ---
 module: execution
 owner: Aniqa
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [D1, D2, D3, D4, D5, D6, D7, D8, D9, D10, D11, D14, "19", "19a", "19b", "20", "21"]
 depends-on: [audit, planning, ordering, master-data]
 ---
@@ -220,22 +220,22 @@ Scope (`ScopePolicy`; out of scope is 404, a missing permission is 403):
   the map.
 
 ## Acceptance criteria
-- [ ] AC-EXE-01 A driver lists only her trips
-- [ ] AC-EXE-02 Other drivers' and old trips are not found
-- [ ] AC-EXE-03 Field writes need stop:record
-- [ ] AC-EXE-04 The offline bundle is versioned and hashed
+- [x] AC-EXE-01 A driver lists only her trips
+- [x] AC-EXE-02 Other drivers' and old trips are not found
+- [x] AC-EXE-03 Field writes need stop:record
+- [x] AC-EXE-04 The offline bundle is versioned and hashed
 - [ ] AC-EXE-05 A failed download shows D2
-- [ ] AC-EXE-06 Start a released trip
-- [ ] AC-EXE-07 A trip starts only when released
-- [ ] AC-EXE-08 Arrive out of sequence
-- [ ] AC-EXE-09 Deliver in full
-- [ ] AC-EXE-10 Proof and notes are required
-- [ ] AC-EXE-11 Partial delivery
-- [ ] AC-EXE-12 Failed delivery
-- [ ] AC-EXE-13 A recorded outcome is never changed
-- [ ] AC-EXE-14 Can't run this trip
-- [ ] AC-EXE-15 Complete the trip
-- [ ] AC-EXE-16 Proof of delivery by presigned URL
+- [x] AC-EXE-06 Start a released trip
+- [x] AC-EXE-07 A trip starts only when released
+- [x] AC-EXE-08 Arrive out of sequence
+- [x] AC-EXE-09 Deliver in full
+- [x] AC-EXE-10 Proof and notes are required
+- [x] AC-EXE-11 Partial delivery
+- [x] AC-EXE-12 Failed delivery
+- [x] AC-EXE-13 A recorded outcome is never changed
+- [x] AC-EXE-14 Can't run this trip
+- [x] AC-EXE-15 Complete the trip
+- [x] AC-EXE-16 Proof of delivery by presigned URL
 - [ ] AC-EXE-17 Pings are counted and deduplicated
 - [ ] AC-EXE-18 Invalid pings are rejected
 - [ ] AC-EXE-19 Silence raises VEHICLE_OFFLINE until the next ping
@@ -368,7 +368,7 @@ AC-EXE-16  Proof of delivery by presigned URL
   Then the response carries an upload URL that expires at 04:31:00 and an attachment with uploadedAt null
     And a second presign with the same clientUuid returns the same attachment and adds no row
     And after the upload, POST /attachments/{id}/complete sets uploadedAt
-    And GET /attachments/{id} redirects store manager Nimesha Periyapperuma (Fresh Kadawatha) to a download URL that expires 5 minutes later
+    And GET /attachments/{id} answers 200 to store manager Nimesha Periyapperuma (Fresh Kadawatha) with a download URL that expires 5 minutes later (it was a 302; see Open questions)
     And GET /attachments/{id} answers 404 NOT_FOUND to a store manager of another outlet
 
 AC-EXE-17  Pings are counted and deduplicated
@@ -478,35 +478,78 @@ AC-EXE-26  End of day waits for every trip
 - Every state change writes its audit row and outbox event in the same transaction as the change.
 - 19's map uses MapLibre with cached OpenStreetMap tiles (cache-first, 7 days, 500 entries).
 
+## Decisions (ROO-31)
+The questions below that ROO-31 had to answer to build, answered. Each is in code and has a test;
+say so in the spec if you change one.
+
+- **CANT_RUN leaves the trip's status alone.** `tripMachine` has no CANT_RUN transition and AC-EXE-14
+  says the trip keeps its vehicle and driver, so the event appends and projects `trips.cantRunReason`
+  only. Allowed from RELEASED and IN_PROGRESS; anything else is 409. No change to packages/shared.
+- **PARTIAL emits `stop.completed`** with `outcome: 'PARTIAL'`, and audits `execution.stop.partial`.
+- **The bundle's version is the trip's version; its hash is sha256 over the canonical bundle JSON.**
+  The phone compares the hash, because planning bumps the trip's version on a resequence or reassign
+  but an edit to an outlet's access note or an order's lines does not touch the trip row at all. This
+  is also why execution needs no handler for `plan.revised`, `trip.reassigned`, `trip.resequenced` or
+  `stop.deferred`: the hash is derived on every read, so a revision shows up by itself.
+- **TRIP_COMPLETED is refused with 409 while any stop is PENDING or ARRIVED**, naming how many; the
+  dispatcher defers the stop from 19a instead. This is the decision most likely to want changing.
+- **Scope and the list are separate.** Scope is `driverId = actor.id` over the last 7 business days
+  and tomorrow, so a LOADING trip is found and answers 409 (AC-EXE-07) rather than 404; `/me/trips`
+  lists RELEASED, IN_PROGRESS, COMPLETED and CANCELLED.
+- **A store manager holds the stop scope for her own outlet**, which is how M5 opens a delivery's
+  proof; every other outlet's stop is 404.
+- **Attachments: 5 MB** (`ATTACHMENT_MAX_BYTES`), over it 413 PAYLOAD_TOO_LARGE; `/complete` with no
+  object in the store is 409 and leaves `uploadedAt` null; an unreachable store is 503, never 409.
+- **An out-of-sequence arrival logs `execution.stop.out_of_sequence`** (ids and seq only) and is
+  otherwise a normal ARRIVED.
+- **`reeferTempC`** is TRIP_STARTED's field, required on a CHILLED trip, and it lands in
+  `trips.releaseTempC`.
+- **Audit rows come in pairs.** Execution writes `execution.*` for the use case and planning's
+  `TripLifecycleService` writes `planning.trip.status_changed` or `planning.stop.status_changed` for
+  its own table, exactly as ordering already does for an order's status.
+
 ## Open questions
 - The Build Spec's examples call 1 Oct 2026 a Wednesday and 2 Oct a Thursday; the calendar says Thursday
   and Friday. This spec writes dates without weekdays. (Nimesha)
 - Audit action names: this spec uses `execution.` plus the event name (execution.stop.completed,
   execution.trip.cant_run) and planning.trip.resequenced, per `<module>.<entity>.<verb>`. Step 2's
   reason list names stop.failed and trip.cant_run. Confirm. (Nimesha)
-- Which status does a trip hold after CANT_RUN while it waits for a reassign, and may CANT_RUN follow
-  TRIP_STARTED? (Aniqa, with Tihara)
-- This spec assumes TRIP_STARTED moves the trip's orders LOADED → IN_TRANSIT (DEPART). Confirm. (Aniqa,
+- ~~Which status does a trip hold after CANT_RUN, and may CANT_RUN follow TRIP_STARTED?~~ Decided
+  above: the status does not move, and CANT_RUN is allowed from RELEASED and IN_PROGRESS.
+- TRIP_STARTED moves the trip's orders LOADED → IN_TRANSIT (DEPART); built that way. Confirm. (Aniqa,
   with Harini)
-- Which outbox event does PARTIAL emit (stop.completed with outcome PARTIAL is assumed)? Is
-  TRIP_COMPLETED allowed while stops are still PENDING? (Aniqa)
-- How does execution write planning's columns (stops.etaAt, etaUpdatedAt, lateRiskProb, trips.downloadedAt)
-  and platform's attachments rows? `TripLifecycleService` names no method for them. (Tihara, Nimesha)
-- What is the bundle version: the trip version, the plan revision or its own counter? Step 4's mapper
-  table names `GET /drivers/me/trips/today` for `toOfflineBundle`; this spec uses
-  `/trips/{id}/offline-bundle`. (Aniqa)
+- ~~Which outbox event does PARTIAL emit? Is TRIP_COMPLETED allowed while stops are still PENDING?~~
+  Both decided above.
+- How execution writes planning's columns and platform's attachments rows, answered for ROO-31:
+  `TripLifecycleService` gained `markDownloaded` and `markCantRun` beside the methods
+  specs/planning/spec.md already lists, and core gained an `AttachmentsService` that owns
+  `platform.attachments` plus a storage port. The tracking columns (stops.etaAt, etaUpdatedAt,
+  lateRiskProb) still need methods of their own. (Tihara, Nimesha)
+- ~~What is the bundle version?~~ Decided above. The path stays `/trips/{id}/offline-bundle`, not
+  Step 4's `GET /drivers/me/trips/today`.
 - Is a LATE_RISK alert raised at exactly 0.5 (10 minutes of slack)? What are the neutral values of the
   speed and disruption indexes in `etaFor`? (Aniqa)
 - Store managers hold tracking:read; this spec answers 404 on depot and trip tracking by scope. Confirm
-  404 rather than 403. (Aniqa)
-- Codes the doc does not give: an event naming a stop on another trip of the same driver; `/complete`
-  when the object is missing; the upload size limit; `/close` with an unfinished trip, and which resource
-  carries 21's close link. (Aniqa; Tihara for close)
-- The CANT_RUN reason code values, the TRIP_STARTED reefer temperature field, and where an
-  out-of-sequence visit is logged. (Aniqa)
+  404 rather than 403. (Aniqa) — settled for attachments: 404.
+- Codes the doc does not give: `/complete` when the object is missing (409) and the upload size limit
+  (5 MB) are decided above; an event naming a stop on another trip of the same driver is 404. Still
+  open: `/close` with an unfinished trip, and which resource carries 21's close link. (Tihara)
+- ~~The CANT_RUN reason codes, the TRIP_STARTED reefer field, and where an out-of-sequence visit is
+  logged.~~ `cantRunReasonEnum` (BREAKDOWN, COOLING, UNWELL, OTHER), `reeferTempC`, and a log line;
+  all decided above.
+- **New:** AC-EXE-16 asked for a 302 from `GET /attachments/{id}`, but AC-IDN-60 requires every route
+  a role may call to answer 2xx, and a route that writes its own response never answers at all under
+  that criterion's harness. It is a 200 with the link instead; the file still comes from the store and
+  the link still expires. Confirm the wording change. (Aniqa, with Nimesha for AC-IDN-60)
+- **New:** nothing consumes a domain event yet — the outbox relay is ROO-24 — so `trip.released` and
+  the revision events reach nobody. Execution needs no handler for the bundle (the hash is derived),
+  but the driver's push does. (Nimesha)
 - Does `/me/trips` list trips before release? D14 shows "the next planned trip, if any". (Aniqa)
 - Does ISSUE_REPORTED from D5 create a receipt issue row, and through which call? (Harini)
 
 ## Changelog
+- 2026-10-02 AC-EXE-01 to AC-EXE-04 and AC-EXE-06 to AC-EXE-16 built and passing (ROO-31): my trips,
+  the offline bundle, `StopEventService`, the online shortcuts and proof of delivery. Ten decisions
+  recorded above; AC-EXE-16 answers 200 with a link rather than 302
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: delivery lines keep `qtyExpected` and a `note`; the ARRIVED position, units delivered and the can't-run reason are projected onto stops and trips (merged from the Supabase draft)

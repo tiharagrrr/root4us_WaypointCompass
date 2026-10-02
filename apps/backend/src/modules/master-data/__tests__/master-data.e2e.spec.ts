@@ -308,7 +308,11 @@ describeWithDb('master data', () => {
       active: true,
     });
 
-    const byName = await call('store', 'get', `/items?q=${'DRY RICE'}`);
+    // The search is a substring of the name, so the suffix goes in it: a
+    // database that has run this suite before holds a "Dry rice ..." item
+    // from every earlier run, and the first page of a bare "DRY RICE" fills
+    // with those instead of this world's.
+    const byName = await call('store', 'get', `/items?q=${`RICE ${sfx}`}`);
     expect(
       (byName.body as { data: { id: string }[] }).data.map((i) => i.id),
     ).toContain(itemIds.dry);

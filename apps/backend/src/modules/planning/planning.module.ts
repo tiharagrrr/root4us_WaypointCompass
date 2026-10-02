@@ -6,11 +6,18 @@ import { AuditModule } from '../audit';
 import { DeferralReasonsController } from './controllers/deferral-reasons.controller';
 import { DeferralReasonLinks } from './policies/deferral-reason.links';
 import { DeferralReasonsService } from './services/deferral-reasons.service';
+import { TripLifecycleService } from './services/trip-lifecycle.service';
 
 @Module({
   imports: [AuditModule],
   controllers: [DeferralReasonsController],
-  providers: [DeferralReasonsService, DeferralReasonLinks],
-  exports: [],
+  providers: [
+    DeferralReasonsService,
+    DeferralReasonLinks,
+    TripLifecycleService,
+  ],
+  // Loading and execution move trip and stop status only through this
+  // service (architecture rule 2, AC-PLN-34).
+  exports: [TripLifecycleService],
 })
 export class PlanningModule {}

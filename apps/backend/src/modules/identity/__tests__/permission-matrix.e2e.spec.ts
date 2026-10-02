@@ -126,6 +126,11 @@ describeWithDb('permission matrix on the routes', () => {
     app = await createTestApp({
       providers: [{ provide: APP_INTERCEPTOR, useClass: StopBeforeHandler }],
     });
+    // One listening server for the whole sweep. Supertest otherwise opens a
+    // fresh listener for every request, and this criterion makes one per
+    // route per role: past a couple of hundred the machine runs out of
+    // ephemeral ports and the next connect times out.
+    await app.listen(0);
     const owner = ownerDatabase();
     close = owner.close;
     for (const role of USER_ROLES) {

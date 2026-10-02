@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import { AttachmentsModule } from './attachments/attachments.module';
 import { ActorGuard } from './auth/actor.guard';
 import { PermissionGuard } from './auth/permission.guard';
 import { EnvelopeInterceptor } from './http/envelope.interceptor';
@@ -12,6 +13,7 @@ import { KernelModule } from './kernel.module';
 import { OutboxService } from './outbox/outbox.service';
 import { SettingsService } from './settings/settings.service';
 import { ActorTransactionInterceptor } from './persistence/actor-transaction.interceptor';
+import { StorageModule } from './storage/storage.module';
 
 /**
  * The request pipeline every module shares (specs/api-conventions.md,
@@ -23,7 +25,7 @@ import { ActorTransactionInterceptor } from './persistence/actor-transaction.int
  */
 @Global()
 @Module({
-  imports: [KernelModule],
+  imports: [KernelModule, StorageModule, AttachmentsModule],
   providers: [
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ActorGuard },
@@ -39,6 +41,8 @@ import { ActorTransactionInterceptor } from './persistence/actor-transaction.int
   ],
   exports: [
     KernelModule,
+    StorageModule,
+    AttachmentsModule,
     IdempotencyInterceptor,
     OutboxService,
     SettingsService,

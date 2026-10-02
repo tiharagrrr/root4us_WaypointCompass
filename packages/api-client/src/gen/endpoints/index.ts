@@ -6,6 +6,7 @@ export * from './depot-days/depot-days.ts';
 export * from './depots/depots.ts';
 export * from './devices/devices.ts';
 export * from './districts/districts.ts';
+export * from './execution/execution.ts';
 export * from './health/health.ts';
 export * from './invitations/invitations.ts';
 export * from './items/items.ts';

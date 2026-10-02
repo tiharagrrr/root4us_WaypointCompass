@@ -7504,6 +7504,1335 @@
           "deferral-reasons"
         ]
       }
+    },
+    "/api/v1/me/trips": {
+      "get": {
+        "description": "One business date with ?date=, or the last 7 days without it. An empty list is what D14 shows.",
+        "operationId": "myTripsList",
+        "parameters": [
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "One business date; omitted, the last 7 days (D10)",
+            "schema": {
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TripSummaryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "My trips",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}": {
+      "get": {
+        "operationId": "tripsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One trip",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/offline-bundle": {
+      "get": {
+        "description": "About 50 KB. `version` is the trip version; `hash` changes whenever anything in the bundle does.",
+        "operationId": "tripsBundle",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OfflineBundleDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The offline bundle",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/downloaded": {
+      "post": {
+        "operationId": "tripsDownloaded",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TripDownloadedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm the download",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/start": {
+      "post": {
+        "operationId": "tripsStart",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start the trip",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/complete": {
+      "post": {
+        "operationId": "tripsComplete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Finish the trip",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/cant-run": {
+      "post": {
+        "operationId": "tripsCantRun",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CantRunDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripSummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Can't run this trip",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/stops/{id}": {
+      "get": {
+        "operationId": "stopsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/StopDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One stop",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/stops/{id}/arrive": {
+      "post": {
+        "operationId": "stopsArrive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArriveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/StopDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "I am here",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/stops/{id}/complete": {
+      "post": {
+        "operationId": "stopsComplete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteStopDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/StopDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delivered",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/stops/{id}/fail": {
+      "post": {
+        "operationId": "stopsFail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FailStopDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/StopDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Could not deliver",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/attachments/presign": {
+      "post": {
+        "description": "The upload URL lasts 10 minutes. The same clientUuid returns the same attachment.",
+        "operationId": "attachmentsPresign",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AttachmentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ask for somewhere to put a signature or photo",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/attachments/{id}/complete": {
+      "post": {
+        "operationId": "attachmentsComplete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AttachmentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm the file is in the store",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
+    "/api/v1/attachments/{id}": {
+      "get": {
+        "description": "The link lasts 5 minutes.",
+        "operationId": "attachmentsDownload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AttachmentLinkDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A link to an attachment",
+        "tags": [
+          "execution"
+        ]
+      }
     }
   },
   "info": {
@@ -10627,6 +11956,1300 @@
             "maximum": 1000
           }
         }
+      },
+      "TripVehicleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "code": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "temp": {
+            "enum": [
+              "AMBIENT",
+              "REEFER"
+            ],
+            "type": "string",
+            "example": "REEFER"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "temp"
+        ]
+      },
+      "TripSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "tripNo": {
+            "type": "number",
+            "nullable": true,
+            "description": "The first or second run of the day for this vehicle",
+            "example": 1
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "type": "string",
+            "example": "RELEASED"
+          },
+          "date": {
+            "type": "string",
+            "description": "Business date, Asia/Colombo",
+            "example": "2026-10-02"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "brand": {
+            "enum": [
+              "FRESH",
+              "STYLE",
+              "TECH"
+            ],
+            "type": "string",
+            "example": "FRESH"
+          },
+          "tempClass": {
+            "enum": [
+              "AMBIENT",
+              "CHILLED"
+            ],
+            "type": "string",
+            "example": "CHILLED"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/TripVehicleDto"
+          },
+          "stops": {
+            "type": "number",
+            "description": "Stops still on the trip",
+            "example": 6
+          },
+          "openStops": {
+            "type": "number",
+            "description": "Stops with nothing recorded yet",
+            "example": 6
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T03:30:00+05:30"
+          },
+          "releasedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T02:30:00+05:30"
+          },
+          "downloadedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the phone last saved the offline bundle",
+            "example": null
+          },
+          "startedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "cantRunReason": {
+            "nullable": true,
+            "enum": [
+              "BREAKDOWN",
+              "COOLING",
+              "UNWELL",
+              "OTHER"
+            ],
+            "type": "string",
+            "description": "Set once the driver said she can't run it (D8)",
+            "example": null
+          },
+          "version": {
+            "type": "number",
+            "example": 1
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripNo",
+          "status",
+          "date",
+          "depotId",
+          "brand",
+          "tempClass",
+          "vehicle",
+          "stops",
+          "openStops",
+          "plannedDepartAt",
+          "releasedAt",
+          "downloadedAt",
+          "startedAt",
+          "completedAt",
+          "cantRunReason",
+          "version",
+          "_links"
+        ]
+      },
+      "BundleTripDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "tripNo": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "date": {
+            "type": "string",
+            "description": "Business date, Asia/Colombo",
+            "example": "2026-10-02"
+          },
+          "status": {
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED",
+              "CANCELLED"
+            ],
+            "type": "string",
+            "example": "RELEASED"
+          },
+          "brand": {
+            "enum": [
+              "FRESH",
+              "STYLE",
+              "TECH"
+            ],
+            "type": "string",
+            "example": "FRESH"
+          },
+          "tempClass": {
+            "enum": [
+              "AMBIENT",
+              "CHILLED"
+            ],
+            "type": "string",
+            "example": "CHILLED"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "districtId": {
+            "type": "string",
+            "example": "gampaha"
+          },
+          "vehicle": {
+            "$ref": "#/components/schemas/TripVehicleDto"
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T03:30:00+05:30"
+          }
+        },
+        "required": [
+          "id",
+          "tripNo",
+          "date",
+          "status",
+          "brand",
+          "tempClass",
+          "depotId",
+          "districtId",
+          "vehicle",
+          "plannedDepartAt"
+        ]
+      },
+      "StopWindowDto": {
+        "type": "object",
+        "properties": {
+          "openMin": {
+            "type": "number",
+            "example": 420
+          },
+          "open": {
+            "type": "string",
+            "example": "07:00"
+          },
+          "closeMin": {
+            "type": "number",
+            "example": 540
+          },
+          "close": {
+            "type": "string",
+            "example": "09:00"
+          }
+        },
+        "required": [
+          "openMin",
+          "open",
+          "closeMin",
+          "close"
+        ]
+      },
+      "BundleOutletDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fresh Kadawatha"
+          },
+          "address": {
+            "type": "string",
+            "nullable": true,
+            "example": "Kandy Road, Kadawatha"
+          },
+          "lat": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.0014
+          },
+          "lng": {
+            "type": "number",
+            "nullable": true,
+            "example": 79.9507
+          },
+          "dockType": {
+            "type": "string",
+            "enum": [
+              "REAR_DOCK",
+              "STREET",
+              "MALL_BAY"
+            ],
+            "example": "REAR_DOCK"
+          },
+          "parkingConstraint": {
+            "type": "string",
+            "enum": [
+              "NORMAL",
+              "VAN_ONLY",
+              "MALL_DOCK"
+            ],
+            "example": "NORMAL"
+          },
+          "accessNotes": {
+            "type": "string",
+            "nullable": true,
+            "example": "Gate 2 after 06:00; reverse in from the lane"
+          },
+          "contactName": {
+            "type": "string",
+            "nullable": true,
+            "example": "K. Fernando"
+          },
+          "contactPhone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+94 71 234 5678"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "address",
+          "lat",
+          "lng",
+          "dockType",
+          "parkingConstraint",
+          "accessNotes",
+          "contactName",
+          "contactPhone"
+        ]
+      },
+      "BundleLineDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000f001"
+          },
+          "itemId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "sku": {
+            "type": "string",
+            "example": "FR-A001"
+          },
+          "name": {
+            "type": "string",
+            "example": "Rice 5 kg"
+          },
+          "packLabel": {
+            "type": "string",
+            "example": "Case of 6"
+          },
+          "qty": {
+            "type": "number",
+            "description": "Packs to hand over",
+            "example": 10
+          }
+        },
+        "required": [
+          "id",
+          "itemId",
+          "sku",
+          "name",
+          "packLabel",
+          "qty"
+        ]
+      },
+      "BundleOrderDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000e001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "tempClass": {
+            "type": "string",
+            "enum": [
+              "AMBIENT",
+              "CHILLED"
+            ],
+            "example": "CHILLED"
+          },
+          "units": {
+            "type": "number",
+            "example": 10
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleLineDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "orderNo",
+          "tempClass",
+          "units",
+          "lines"
+        ]
+      },
+      "BundleStopDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ARRIVED",
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:00:00+05:30"
+          },
+          "plannedServiceMin": {
+            "type": "number",
+            "description": "Minutes allowed at the dock",
+            "example": 12
+          },
+          "window": {
+            "$ref": "#/components/schemas/StopWindowDto"
+          },
+          "outlet": {
+            "$ref": "#/components/schemas/BundleOutletDto"
+          },
+          "order": {
+            "$ref": "#/components/schemas/BundleOrderDto"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "status",
+          "plannedArrivalAt",
+          "plannedServiceMin",
+          "window",
+          "outlet",
+          "order"
+        ]
+      },
+      "OfflineBundleDto": {
+        "type": "object",
+        "properties": {
+          "trip": {
+            "$ref": "#/components/schemas/BundleTripDto"
+          },
+          "stops": {
+            "description": "In planned order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BundleStopDto"
+            }
+          },
+          "version": {
+            "type": "number",
+            "description": "The trip version, which is what POST /downloaded records",
+            "example": 3
+          },
+          "hash": {
+            "type": "string",
+            "description": "sha256 of the bundle; it changes whenever anything in it does",
+            "example": "9f2b1c4e…"
+          },
+          "generatedAt": {
+            "type": "string",
+            "example": "2026-10-02T03:05:00+05:30"
+          }
+        },
+        "required": [
+          "trip",
+          "stops",
+          "version",
+          "hash",
+          "generatedAt"
+        ]
+      },
+      "TripDownloadedDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          },
+          "bundleVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Which version of the bundle the phone holds",
+            "example": 3
+          },
+          "bundleHash": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128,
+            "description": "The bundle hash, so a stale download is visible",
+            "example": "9f2b1c…"
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt",
+          "bundleVersion",
+          "bundleHash"
+        ]
+      },
+      "StartTripDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          },
+          "reeferTempC": {
+            "type": "number",
+            "minimum": -30,
+            "maximum": 30,
+            "description": "Required on a CHILLED trip (°C)",
+            "example": 3.4
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt"
+        ]
+      },
+      "CantRunDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          },
+          "reasonCode": {
+            "enum": [
+              "BREAKDOWN",
+              "COOLING",
+              "UNWELL",
+              "OTHER"
+            ],
+            "type": "string",
+            "example": "BREAKDOWN"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "Compressor stopped at Peliyagoda"
+          },
+          "attachmentUuids": {
+            "description": "Photo attachments by their own clientUuid",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt",
+          "reasonCode",
+          "note"
+        ]
+      },
+      "StopDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "tripId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000e001"
+          },
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "outletName": {
+            "type": "string",
+            "example": "Fresh Kadawatha"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ARRIVED",
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "type": "string",
+            "example": "ARRIVED"
+          },
+          "window": {
+            "$ref": "#/components/schemas/StopWindowDto"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:00:00+05:30"
+          },
+          "arrivedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "outcome": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "REFUSED",
+              "DAMAGED",
+              "OUTLET_CLOSED"
+            ],
+            "type": "string",
+            "example": null
+          },
+          "receiverName": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "exceptionNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "unitsDelivered": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "version": {
+            "type": "number",
+            "example": 1
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripId",
+          "orderId",
+          "outletId",
+          "outletName",
+          "seq",
+          "status",
+          "window",
+          "plannedArrivalAt",
+          "arrivedAt",
+          "completedAt",
+          "outcome",
+          "receiverName",
+          "exceptionNote",
+          "unitsDelivered",
+          "version",
+          "_links"
+        ]
+      },
+      "ArriveDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt"
+        ]
+      },
+      "DeliveryLineDto": {
+        "type": "object",
+        "properties": {
+          "orderLineId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192a3f4-0000-7000-8000-00000000f001"
+          },
+          "qtyDelivered": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Packs handed over",
+            "example": 8
+          },
+          "condition": {
+            "enum": [
+              "ok",
+              "damaged",
+              "refused"
+            ],
+            "type": "string",
+            "example": "damaged"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "2 trays crushed"
+          }
+        },
+        "required": [
+          "orderLineId",
+          "qtyDelivered",
+          "condition"
+        ]
+      },
+      "CompleteStopDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          },
+          "outcome": {
+            "enum": [
+              "DELIVERED",
+              "PARTIAL"
+            ],
+            "type": "string",
+            "example": "DELIVERED"
+          },
+          "receiverName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Who took the delivery",
+            "example": "K. Fernando"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "2 trays crushed"
+          },
+          "lines": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveryLineDto"
+            }
+          },
+          "attachmentUuids": {
+            "maxItems": 10,
+            "description": "The signature or photo, by the clientUuid the phone made",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt",
+          "outcome",
+          "receiverName",
+          "attachmentUuids"
+        ]
+      },
+      "FailStopDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the phone; a replay with the same value changes nothing",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "The device clock, aligned to the server clock",
+            "example": "2026-10-02T03:40:00+05:30"
+          },
+          "deviceSeq": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Creation order on the device",
+            "example": 11
+          },
+          "deviceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "pwa-aniqa-pixel-7"
+          },
+          "baseVersion": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The stop or trip version the phone saw when it recorded this",
+            "example": 3
+          },
+          "lat": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90,
+            "example": 6.9271
+          },
+          "lng": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180,
+            "example": 79.8612
+          },
+          "outcome": {
+            "enum": [
+              "REFUSED",
+              "DAMAGED",
+              "OUTLET_CLOSED"
+            ],
+            "type": "string",
+            "example": "OUTLET_CLOSED"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+            "example": "Shutter down"
+          },
+          "attachmentUuids": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "clientUuid",
+          "occurredAt",
+          "outcome",
+          "note"
+        ]
+      },
+      "AttachmentOwnerDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "enum": [
+              "stop",
+              "trip"
+            ],
+            "type": "string",
+            "example": "stop"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "AttachmentUploadDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "PUT the file here, once",
+            "example": "http://localhost:9000/pod/…"
+          },
+          "method": {
+            "type": "string",
+            "example": "PUT"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Ten minutes from now",
+            "example": "2026-10-02T04:31:00+05:30"
+          }
+        },
+        "required": [
+          "url",
+          "method",
+          "expiresAt"
+        ]
+      },
+      "AttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c003"
+          },
+          "kind": {
+            "enum": [
+              "POD_PHOTO",
+              "SIGNATURE",
+              "EXCEPTION_PHOTO",
+              "FLAG_PHOTO",
+              "ISSUE_PHOTO",
+              "CANT_RUN_PHOTO"
+            ],
+            "type": "string",
+            "example": "SIGNATURE"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/AttachmentOwnerDto"
+          },
+          "contentType": {
+            "type": "string",
+            "example": "image/png"
+          },
+          "bytes": {
+            "type": "number",
+            "nullable": true,
+            "example": 48120
+          },
+          "sha256": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "uploadedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null until the file is in the store",
+            "example": null
+          },
+          "capturedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:20:10+05:30"
+          },
+          "upload": {
+            "description": "Only on presign, while the upload is still expected",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttachmentUploadDto"
+              }
+            ]
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "owner",
+          "contentType",
+          "bytes",
+          "sha256",
+          "uploadedAt",
+          "capturedAt",
+          "_links"
+        ]
+      },
+      "PresignAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "POD_PHOTO",
+              "SIGNATURE",
+              "EXCEPTION_PHOTO",
+              "FLAG_PHOTO",
+              "ISSUE_PHOTO",
+              "CANT_RUN_PHOTO"
+            ],
+            "type": "string",
+            "example": "SIGNATURE"
+          },
+          "contentType": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100,
+            "example": "image/png"
+          },
+          "bytes": {
+            "type": "number",
+            "minimum": 1,
+            "description": "The file size, checked against the limit",
+            "example": 48120
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "Hex sha256 of the file, so a swapped upload is visible",
+            "example": "c1f4…"
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The clientUuid the phone put on the delivery event",
+            "example": "0192a3f4-0000-7000-8000-00000000c002"
+          },
+          "owner": {
+            "$ref": "#/components/schemas/AttachmentOwnerDto"
+          },
+          "capturedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:20:10+05:30"
+          }
+        },
+        "required": [
+          "kind",
+          "contentType",
+          "bytes",
+          "clientUuid",
+          "owner"
+        ]
+      },
+      "AttachmentLinkDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c003"
+          },
+          "kind": {
+            "enum": [
+              "POD_PHOTO",
+              "SIGNATURE",
+              "EXCEPTION_PHOTO",
+              "FLAG_PHOTO",
+              "ISSUE_PHOTO",
+              "CANT_RUN_PHOTO"
+            ],
+            "type": "string",
+            "example": "SIGNATURE"
+          },
+          "contentType": {
+            "type": "string",
+            "example": "image/png"
+          },
+          "url": {
+            "type": "string",
+            "description": "Read the file here",
+            "example": "http://localhost:9000/pod/…"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Five minutes from now",
+            "example": "2026-10-02T04:26:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "contentType",
+          "url",
+          "expiresAt",
+          "_links"
+        ]
       }
     }
   }
