@@ -5,7 +5,7 @@ import type {
   TempClass,
   VehicleTemp,
   VehicleType,
-} from './domain';
+} from '@waypoint/shared/domain';
 import type { EngineParams } from './params';
 import type { BindingRule, DeferralChoice, RuleCode, RuleScope, Severity } from './rules/codes';
 
@@ -152,6 +152,8 @@ export interface RuleContext {
   readonly trips: readonly Trip[];
   readonly unplanned: readonly Unplanned[];
   readonly orderById: ReadonlyMap<string, EngineOrder>;
+  /** Day of the week of the plan date, 0 = Monday. Checked once, up front, by validate(). */
+  readonly planDow: number;
   readonly trip?: Trip;
   readonly vehicle?: EngineVehicle;
   readonly vehicleTrips?: readonly Trip[];

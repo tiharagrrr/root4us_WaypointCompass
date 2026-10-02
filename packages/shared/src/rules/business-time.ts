@@ -35,7 +35,13 @@ export type OperatingLookup = (date: string) => boolean | undefined;
 export const OPERATING_DAY_SEARCH_LIMIT = 28;
 
 function assertBusinessDate(date: string): string {
-  if (!BUSINESS_DATE.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00Z`)))
+  const at = Date.parse(`${date}T00:00:00Z`);
+  // Date rolls 2026-02-30 over to 2 March, so the date must survive a round trip.
+  if (
+    !BUSINESS_DATE.test(date) ||
+    Number.isNaN(at) ||
+    new Date(at).toISOString().slice(0, 10) !== date
+  )
     throw new Error(`Not a business date (YYYY-MM-DD): ${date}`);
   return date;
 }

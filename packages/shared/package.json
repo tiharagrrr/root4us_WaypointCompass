@@ -27,6 +27,16 @@
         "types": "./dist/domain.d.ts",
         "default": "./dist/domain.js"
       }
+    },
+    "./business-time": {
+      "import": {
+        "types": "./dist/business-time.d.mts",
+        "default": "./dist/business-time.mjs"
+      },
+      "require": {
+        "types": "./dist/business-time.d.ts",
+        "default": "./dist/business-time.js"
+      }
     }
   },
   "files": [

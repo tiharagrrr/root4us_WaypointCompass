@@ -3,6 +3,24 @@
 Pure TypeScript. No Nest, no database, no I/O, no Date.now, no Math.random.
 The same input gives the same output, byte for byte.
 
+It imports only two pure entry points of @waypoint/shared, never its root: @waypoint/shared/domain
+(brands, dock types, ...) and @waypoint/shared/business-time (day of week, HH:MM labels). Do not
+copy that code here. Build shared first (`pnpm --filter @waypoint/shared build`); CI and `pnpm dev`
+already do.
+
+## Purity is an allowlist
+src/__tests__/purity-check.ts lists the only bare imports (zod and those two entry points) and the
+only globals (Error, JSON, Map, Math without random, Object, String) the engine may use. Anything
+else fails purity.spec.ts with file:line:col and the name, and so does a name the checker cannot
+resolve. To use something new, add it to the list with a reason; do not work around the test.
+
+## Input errors
+A problem with the input throws EngineInputError, which carries `code`, `field`, `value` and a
+message naming all three ("plan.trips[1].orderIds[0] \"ord-9\" is not in input.orders
+[UNKNOWN_ORDER]"). A rule violation is returned, never thrown. validate() checks input.date first,
+whatever the plan holds; the engine relies on shared's dowOf refusing impossible dates, and
+errors.spec.ts pins that so a weaker shared fails an engine test.
+
 ## Layout
 - time/      trip minutes (the time model) and the arrival schedule
 - rules/     one file per rule: export const CAP_WEIGHT: Rule = { code, severity, check(ctx) }

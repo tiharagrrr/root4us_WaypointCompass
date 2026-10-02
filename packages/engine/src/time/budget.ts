@@ -1,4 +1,4 @@
-import type { Brand } from '../domain';
+import type { Brand } from '@waypoint/shared/domain';
 import type { EngineParams } from '../params';
 
 export interface VehicleTrip {

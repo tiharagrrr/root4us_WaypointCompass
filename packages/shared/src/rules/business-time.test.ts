@@ -56,6 +56,13 @@ describe("business dates", () => {
     expect(() => addDays("01-10-2026", 1)).toThrow(/business date/);
     expect(() => instantAt("2026-13-45", 0)).toThrow(/business date/);
   });
+
+  it("rejects a date that does not exist instead of rolling it over", () => {
+    expect(() => dowOf("2026-02-30")).toThrow(/business date/);
+    expect(() => addDays("2026-04-31", 1)).toThrow(/business date/);
+    expect(() => dowOf("2025-02-29")).toThrow(/business date/);
+    expect(dowOf("2024-02-29")).toBe(3);
+  });
 });
 
 describe("operating days", () => {

@@ -4,7 +4,7 @@ import freshColombo from '../../../fixtures/time/cases/fresh-colombo-4-stops.jso
 import twoTrips from '../../../fixtures/time/cases/two-trips-one-vehicle.json';
 import thirdTrip from '../../../fixtures/time/cases/third-trip-refused.json';
 import { DEFAULT_PARAMS } from '../../params';
-import type { Brand, DockType } from '../../domain';
+import type { Brand, DockType } from '@waypoint/shared/domain';
 import { lte } from '../../util/lte';
 import { canAddTrip, budgetUse } from '../budget';
 import { tripMinutes } from '../trip-minutes';

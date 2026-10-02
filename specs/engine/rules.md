@@ -32,7 +32,7 @@ It has no Nest, no database, no `Date.now`, no `Math.random` and no network. The
 | `src/manual/` | vehicle-options, order-options, suggest-fixes, edits |
 | `src/explain.ts` | Violations and unplanned orders as sentences |
 | `src/export/task2b.ts` | The Datathon Task 2B CSV and policy draft |
-| `src/util/` | `lte`, `round`, `stableSort`, canonical hash |
+| `src/util/` | `lte`, `round`, `stableSort`, canonical hash. Day of week, the HH:MM label and the domain enums come from `@waypoint/shared/business-time` and `@waypoint/shared/domain`, not copies |
 | `fixtures/` | Small hand-built instances, including the booklet's 101, 112 and 213-minute examples |
 
 ### ENGINE_VERSION
@@ -514,6 +514,8 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## Changelog
 
+- 2026-10-02 `EngineInputError` carries `code`, `field`, `value` (`INVALID_DATE`, `UNKNOWN_ORDER`, `UNKNOWN_VEHICLE`, `UNKNOWN_DISTRICT`, `UNKNOWN_OUTLET`, `MISSING_ALLOWANCE`); `validate()` checks `input.date` before anything else; the purity test is an allowlist
+- 2026-10-02 the engine uses `@waypoint/shared/domain` and `@waypoint/shared/business-time` instead of its own copies; no output change, so `ENGINE_VERSION` stays 0.2.0
 - 2026-10-02 ROO-14: the 18 rules, `validate()`, the reason map and 36 fixtures; `ENGINE_VERSION` 0.2.0; params for windows, fuel, reefer, Tech value, late risk and repeat skip
 - 2026-09-30 created from the Build Spec
 - 2026-10-01 reefer-carries-ambient default on with an allocator preference; Tech value limit off by default; fuel ledger exclusion and trip numbering written down; fixtures renamed to descriptive cases

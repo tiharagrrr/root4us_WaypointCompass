@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { weekdayOf } from '../date';
 import { lte, round } from '../lte';
-import { formatMinutes } from '../time-format';
 import { compareByPriorityThenId, stableSort } from '../stable-sort';
 
 describe('lte', () => {
@@ -43,27 +41,5 @@ describe('stableSort', () => {
     ];
     const sorted = stableSort(items, (a, b) => a.k - b.k);
     expect(sorted.map((x) => x.tag)).toEqual(['third', 'first', 'second']);
-  });
-});
-
-describe('weekdayOf', () => {
-  it('util: weekdayOf gives 0 for Monday from the date string alone', () => {
-    expect(weekdayOf('2026-09-28')).toBe(0);
-    expect(weekdayOf('2026-10-02')).toBe(4);
-    expect(weekdayOf('2026-10-04')).toBe(6);
-    expect(weekdayOf('2024-02-29')).toBe(3);
-  });
-
-  it('util: weekdayOf rejects a date that does not exist', () => {
-    expect(() => weekdayOf('2026-02-30')).toThrow('2026-02-30');
-    expect(() => weekdayOf('02/10/2026')).toThrow();
-  });
-});
-
-describe('formatMinutes', () => {
-  it('util: formatMinutes prints minutes after midnight as HH:MM', () => {
-    expect(formatMinutes(210)).toBe('03:30');
-    expect(formatMinutes(490)).toBe('08:10');
-    expect(formatMinutes(0)).toBe('00:00');
   });
 });

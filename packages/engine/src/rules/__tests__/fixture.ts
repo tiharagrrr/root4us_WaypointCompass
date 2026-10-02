@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BRANDS, DOCK_TYPES } from '../../domain';
+import { BRANDS, DOCK_TYPES } from '@waypoint/shared/domain';
 import type { EngineInput, EngineOrder, EngineOutlet, EngineVehicle, Plan, Violation } from '../../types';
 import type { EngineParams } from '../../params';
 

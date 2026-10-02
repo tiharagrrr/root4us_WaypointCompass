@@ -1,5 +1,6 @@
 import { resolveParams } from './params';
 import { buildLookups, measureTrip } from './plan/measure';
+import { planDow } from './plan/plan-date';
 import { RULES } from './rules/index';
 import type { EngineInput, Plan, RuleContext, Trip, Violation } from './types';
 import { compareText, stableSort } from './util/stable-sort';
@@ -10,12 +11,14 @@ import { compareText, stableSort } from './util/stable-sort';
  * The result is sorted by rule, then trip, vehicle and order, so the same plan always reads the same.
  */
 export function validate(input: EngineInput, plan: Plan): Violation[] {
+  // Refuse an impossible plan date first, whether or not the plan has trips on it.
+  const dow = planDow(input.date);
   const params = resolveParams(input.params);
   const lookups = buildLookups(input);
-  const measured = plan.trips.map((draft) => measureTrip(input, lookups, draft));
+  const measured = plan.trips.map((draft, i) => measureTrip(input, lookups, draft, `plan.trips[${i}]`));
   const trips = stableSort([...input.fixedTrips, ...measured], (a, b) => compareText(a.key, b.key));
   const unplanned = stableSort(plan.unplanned, (a, b) => compareText(a.orderId, b.orderId));
-  const base: RuleContext = { input, params, trips, unplanned, orderById: lookups.orderById };
+  const base: RuleContext = { input, params, trips, unplanned, orderById: lookups.orderById, planDow: dow };
 
   const tripsByVehicle = new Map<string, Trip[]>();
   for (const trip of trips) tripsByVehicle.set(trip.vehicleId, [...(tripsByVehicle.get(trip.vehicleId) ?? []), trip]);
