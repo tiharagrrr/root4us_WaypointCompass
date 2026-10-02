@@ -1,4 +1,5 @@
 import { allowanceMinutes } from '../time/trip-minutes';
+import { effectiveWindow } from './window';
 import type { EngineOrder, EngineOutlet, RuleContext, Trip } from '../types';
 
 export interface Stop {
@@ -20,16 +21,13 @@ export function stopsOf(ctx: RuleContext, trip: Trip): Stop[] {
     const order = ctx.orderById.get(id);
     const outlet = order ? ctx.input.outlets[order.outletId] : undefined;
     if (!order || !outlet) continue;
-    const mall =
-      outlet.parkingConstraint === 'MALL_DOCK' &&
-      outlet.mallWindowOpenMin !== null &&
-      outlet.mallWindowCloseMin !== null;
+    const window = effectiveWindow(outlet);
     stops.push({
       order,
       outlet,
       allowanceMin: allowanceMinutes(ctx.input.allowances, trip.brand, outlet.dockType),
-      effectiveOpenMin: mall ? Math.max(outlet.windowOpenMin, outlet.mallWindowOpenMin ?? 0) : outlet.windowOpenMin,
-      effectiveCloseMin: mall ? Math.min(outlet.windowCloseMin, outlet.mallWindowCloseMin ?? 0) : outlet.windowCloseMin,
+      effectiveOpenMin: window.openMin,
+      effectiveCloseMin: window.closeMin,
     });
   }
   return stops;

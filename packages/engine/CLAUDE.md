@@ -10,7 +10,7 @@ already do.
 
 ## Purity is an allowlist
 src/__tests__/purity-check.ts lists the only bare imports (zod and those two entry points) and the
-only globals (Error, JSON, Map, Math without random, Object, String) the engine may use. Anything
+only globals (Error, JSON, Map, Math without random, Number, Object, Set, String) the engine may use. Anything
 else fails purity.spec.ts with file:line:col and the name, and so does a name the checker cannot
 resolve. To use something new, add it to the list with a reason; do not work around the test.
 
@@ -25,6 +25,8 @@ errors.spec.ts pins that so a weaker shared fails an engine test.
 - time/      trip minutes (the time model) and the arrival schedule
 - rules/     one file per rule: export const CAP_WEIGHT: Rule = { code, severity, check(ctx) }
 - validate.ts runs every rule over a plan or a proposed edit
+- manual/    the helpers for building a plan by hand: applyEdits, fits, optionsForTrip, vehicleOptions,
+             suggestFixes, and the EditOp union (specs/engine/rules.md, "Manual plan helpers")
 - allocate/  pre-screen, rank, group, pack, sequence, repair, validate (specs/engine/rules.md section 5)
 - explain.ts turns violations and unplanned orders into sentences
 - fixtures/  small hand-built instances, including the 101, 112 and 213-minute worked examples

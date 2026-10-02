@@ -5,6 +5,15 @@ export const ENGINE_INPUT_ERROR_CODES = [
   'UNKNOWN_DISTRICT',
   'UNKNOWN_OUTLET',
   'MISSING_ALLOWANCE',
+  // Edits (src/manual): the edit itself is wrong, whatever the plan.
+  'INVALID_EDIT',
+  'UNKNOWN_TRIP',
+  'TRIP_EXISTS',
+  'FIXED_TRIP',
+  'ORDER_ALREADY_ASSIGNED',
+  'ORDER_NOT_ASSIGNED',
+  'INVALID_RESEQUENCE',
+  'INVALID_POSITION',
 ] as const;
 export type EngineInputErrorCode = (typeof ENGINE_INPUT_ERROR_CODES)[number];
 
