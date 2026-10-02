@@ -11,7 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { instant, pk } from '../columns';
+import { createdAt, instant, pk } from '../columns';
 import { alertStatusEnum, alertTypeEnum } from './enums';
 
 export const alerts = pgTable(
@@ -46,3 +46,23 @@ export const alerts = pgTable(
       .where(sql`status <> 'RESOLVED'`),
   ],
 );
+
+/**
+ * Which outbox events the alert listeners have already handled. The relay
+ * delivers at least once, so a replay must not raise a second alert or emit a
+ * second event (AC-ALR-10). The alerts table's own partial unique index
+ * already collapses a replay that arrives while the alert is open; this table
+ * is what stops a replay that arrives *after* it resolved from opening a
+ * fresh one, which no index can tell from a genuine new episode.
+ *
+ * One row per outbox event, written in the same transaction as the raise or
+ * resolve it covers, so the two cannot disagree. Rows are bookkeeping, not
+ * business data: nothing reads them but the listener.
+ */
+export const alertEventReceipts = pgTable('alert_event_receipts', {
+  /** The outbox_events id, with no foreign key: the relay may prune its rows. */
+  eventId: uuid().primaryKey(),
+  /** The event type, so a stuck listener can be read off the table. */
+  type: text().notNull(),
+  handledAt: createdAt(),
+});

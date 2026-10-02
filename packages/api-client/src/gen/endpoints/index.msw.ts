@@ -1,3 +1,4 @@
+export { getAlertsMock } from './alerts/alerts.msw.ts'
 export { getCalendarMock } from './calendar/calendar.msw.ts'
 export { getClockMock } from './clock/clock.msw.ts'
 export { getDeferralReasonsMock } from './deferral-reasons/deferral-reasons.msw.ts'

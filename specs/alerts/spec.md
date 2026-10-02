@@ -1,9 +1,9 @@
 ---
 module: alerts
 owner: Harini
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: ["01", "19", "19a"]
-depends-on: []   # core only; alerts learns about other modules from their events
+depends-on: [audit]   # and core; alerts learns about every other module from its events
 ---
 
 # Alerts
@@ -150,18 +150,26 @@ Admin, loader, driver and store manager hold neither and get 403. Scope: depotId
 actor.depotId, or all depots when none is set. Out of scope answers 404.
 
 ## Acceptance criteria
-- [ ] AC-ALR-01  Every catalog event raises its alert
-- [ ] AC-ALR-02  Late risk dedupes per stop
-- [ ] AC-ALR-03  Late risk clears itself
-- [ ] AC-ALR-04  Can't run clears on reassign
-- [ ] AC-ALR-05  Loader shortfall severity follows departure
-- [ ] AC-ALR-06  Store issue severity and clearing
-- [ ] AC-ALR-07  Fix links follow the affordance rule
-- [ ] AC-ALR-08  Acknowledge and resolve by hand
-- [ ] AC-ALR-09  The list, its order and access
-- [ ] AC-ALR-10  Replays dedupe; a new episode opens a new alert
-- [ ] AC-ALR-11  Alerts never block the fix
-- [ ] AC-ALR-12  A broken audit chain is not an alert
+- [x] AC-ALR-01  Every catalog event raises its alert
+- [x] AC-ALR-02  Late risk dedupes per stop
+- [x] AC-ALR-03  Late risk clears itself
+- [x] AC-ALR-04  Can't run clears on reassign
+- [x] AC-ALR-05  Loader shortfall severity follows departure
+- [x] AC-ALR-06  Store issue severity and clearing
+- [x] AC-ALR-07  Fix links follow the affordance rule
+- [x] AC-ALR-08  Acknowledge and resolve by hand
+- [x] AC-ALR-09  The list, its order and access
+- [x] AC-ALR-10  Replays dedupe; a new episode opens a new alert
+- [~] AC-ALR-11  Alerts never block the fix — alerts' half only; see the note below
+- [x] AC-ALR-12  A broken audit chain is not an alert
+
+Tests are in `apps/backend/src/modules/alerts/__tests__`, one `it()` per id.
+
+AC-ALR-11 names two things. That the sync result is applied and `stop.completed` emitted is
+execution's and sync's, covered by their own criteria; alerts cannot import either module. The
+test here covers alerts' half: an open LATE_RISK on that stop resolves itself when
+`stop.completed` arrives, with no `resolvedById`, and nothing in alerts can refuse the delivery.
+Tick it fully once sync can drive the whole path end to end (Aniqa).
 
 ```gherkin
 AC-ALR-01  Every catalog event raises its alert
@@ -302,30 +310,85 @@ AC-ALR-12  A broken audit chain is not an alert
 - Nothing polls: 01, 19 and 19a stay live over SSE, and alert.raised and alert.resolved invalidate
   the alerts queries.
 - Severity 1 alerts push to the depot's dispatchers.
+- `alert_event_receipts` grows by one row per consumed event and nothing prunes it. It holds only
+  an id, a type and a timestamp, so a demo week is negligible, but a long-lived deployment wants
+  the relay's own retention to cover it (ROO-24).
 - Listeners are idempotent: at-least-once delivery never adds a second row or a second event.
 - Severity shows as text as well as colour on 01, 19 and 19a (status never by colour alone).
 - 01 and 19 are on the judge path.
 
 ## Open questions
-- Dedupe keys: the doc gives only LATE_RISK:stop:<id>; the other keys in the catalog table are
-  proposed. VEHICLE_OFFLINE per trip or per vehicle? (Harini)
-- Does ACKNOWLEDGED count as open for the one-per-key rule and the list's open-first order, and may
-  a dispatcher resolve straight from OPEN? (Harini)
-- LATE_RISK clears when "the ETA is back inside the window", but it is raised at late risk 0.5,
-  which is 10 minutes of slack, still inside the window. Clear it when late risk drops below the
-  threshold instead? The criteria use values that satisfy both readings. (Harini, Aniqa)
-- LOADER_SHORTFALL: does "the wave leaves" mean the trip's plannedDepartAt or the depot wave's
-  start, is exactly 30 minutes severity 1, and does an undone flag clear the alert? (Harini)
-- Resolve triggers with no named event: FAILED_STOP's "redelivery is planned" and
-  PRIORITY_REQUEST's "the dispatcher replies" (a deferral comment?). Also, vehicle.offline and
-  vehicle.back_online are missing from the boundaries table's consumes list. (Harini, Tihara)
-- Relation names for fix links, and whether a repeat raise re-emits alert.raised so 01 refreshes.
-  (Harini, Nimesha)
+
+Every question below was answered for the ROO-50 build so the code could be written; each answer
+is a decision this build made, not the owner's ruling, and each is cheap to change. Harini, these
+are yours to confirm or overturn.
+
+- **Dedupe keys.** The doc gives only `LATE_RISK:stop:<id>`; the other seven follow its shape,
+  `<TYPE>:<subject>:<id>`, and `subjectOf()` parses the subject back out for the fix link, so no
+  column was added for the flag, issue, deferral or conflict an alert points at.
+  **VEHICLE_OFFLINE is keyed per trip**, as the catalog table proposed: the dispatcher cares about
+  the run that has gone quiet, and the same vehicle on tomorrow's trip is a new problem. (Harini)
+- **ACKNOWLEDGED counts as open** for the one-per-key rule. The schema already said so — the
+  partial unique index is `WHERE status <> 'RESOLVED'` — so acknowledging an alert cannot let a
+  second one open for the same key. In the list it sorts between OPEN and RESOLVED, which the
+  `alert_status` enum's declaration order gives for free. **A dispatcher may resolve straight from
+  OPEN**, as `alertMachine` already allows. (Harini)
+- **LATE_RISK clears on the threshold**, not on "back inside the window". The same number raises
+  and clears it, which is the only reading that cannot leave an alert open forever or flap at the
+  window's edge. It also clears on `stop.completed`, `stop.failed` and `stop.deferred`.
+  (Harini, Aniqa)
+- **LOADER_SHORTFALL reads the trip's own `plannedDepartAt`**, which is the time the dock works to,
+  and **exactly 30 minutes is severity 1** (`<= 30`): the dispatcher has less time than the number
+  suggests once the flag reaches the panel. **An undone flag does not clear it** — there is no
+  event for it; `load.flag_undone` would be the fix. When the event carries no departure the alert
+  stays a warning rather than guessing. (Harini)
+- **Resolve triggers with no named event.** FAILED_STOP clears on `stop.deferred`, or on
+  `deferral.confirmed` carrying its `stopId`; PRIORITY_REQUEST clears on `deferral.confirmed`.
+  Neither covers "a redelivery is planned" or "the dispatcher replies", which still have no event.
+  `vehicle.offline` and `vehicle.back_online` are consumed and are still missing from the
+  boundaries table. (Harini, Tihara)
+- **Relation names** for fix links are `resequence`, `defer`, `decide`, `issue`, `reassign`,
+  `tracking`, `deferral` and `resolveConflict`, each carrying the permission its own module's
+  Endpoints table guards that endpoint with. **A repeat raise does not re-emit `alert.raised`** and
+  writes no second audit row: it refreshes the open alert's severity, title and detail, which is a
+  change to what the alert shows rather than to its state (AC-ALR-10). 01 and 19 still see the new
+  detail, because `alert.raised` is not what they poll — they refetch the list. (Harini, Nimesha)
 - Step 2 says the chain verify job "raises an alert"; the module tab says a broken chain is not an
-  alert. These criteria follow the module tab. (Nimesha)
+  alert. These criteria follow the module tab, and no rule consumes an audit event. (Nimesha)
 - Dates: the doc's examples call 1 Oct 2026 a Wednesday, but 30 Sep is the Wednesday. These
   criteria use ISO dates without weekdays. (Nimesha)
+
+Still open, and not decided here:
+
+- The outbox relay (ROO-24) does not exist, so nothing drives the listeners in production yet.
+  `AlertEventListener.handle(event)` is the seam the relay will call, one outbox row at a time;
+  the tests drive it exactly that way. (Nimesha)
+- Most events alerts consumes are not published yet: only `stop.failed`, `stop.completed` and
+  `trip.cant_run` have producers. The rest are parsed from the shapes in
+  `domain/event-payloads.ts`, which is this build's statement of what alerts needs from each.
+  `load.flag_raised` in particular needs `plannedDepartAt` for AC-ALR-05. (Harini, Tihara, Aniqa)
+- Severity 1 pushes to the depot's dispatchers: alerts emits `alert.raised` with the severity and
+  the depot routing; the push itself is notifications' and is not built. (Nimesha)
+- The fix links point at endpoints several of which do not exist yet (`/trips/{id}/reassign`,
+  `/trips/{id}/resequence`, `/trips/{id}/stops/{stopId}/defer`, `/load-flags/{id}/decision`,
+  `/issues/{id}`, `/deferrals/{id}`, `/trips/{id}/tracking`, `/sync-conflicts/{id}/resolve`). The
+  link is still correct — it says what would fix the alert and who may do it — but a dispatcher
+  pressing one today reaches a screen that is not built. (Harini)
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `alerts.raisedById` (merged from the Supabase draft's reported_by)
+- 2026-10-02 ROO-50 built the module: catalog, AlertRules, AlertsService, AlertQueries, AlertLinks,
+  the four endpoints, and the panels on 01, 19 and 19a. Status draft to in-progress; AC-ALR-01 to
+  AC-ALR-10 and AC-ALR-12 have passing tests, AC-ALR-11 partly (see the checklist)
+- 2026-10-02 depends-on gains `audit`: alerts writes audit rows, like every other module that does
+  (identity's spec records the same decision). Nothing else is imported
+- 2026-10-02 Model: `alert_event_receipts` (eventId, type, handledAt), one row per handled outbox
+  event. The dedupe-key index collapses a replay that arrives while the alert is open; this is what
+  stops one that arrives after it resolved from looking like a new episode (AC-ALR-10)
+- 2026-10-02 Endpoints: `GET /alerts` gains `filter[depotId]`. 01 and 19 are one depot's view and a
+  dispatcher scoped to no depot sees every depot, so without it their panels mixed depots
+- 2026-10-02 Model: `AlertDto` carries `severityLabel` and `resolvesWhen`, so the panels show
+  severity as a word and can say what will close the alert on its own
+- 2026-10-02 Open questions: all eight answered as build decisions; what is still genuinely open
+  (the relay, the unpublished events, the push, the unbuilt fix endpoints) is listed separately
