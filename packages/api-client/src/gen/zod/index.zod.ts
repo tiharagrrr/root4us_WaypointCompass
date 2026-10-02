@@ -11,6 +11,7 @@ export * from './execution/execution.zod.ts';
 export * from './health/health.zod.ts';
 export * from './invitations/invitations.zod.ts';
 export * from './items/items.zod.ts';
+export * from './loading/loading.zod.ts';
 export * from './me/me.zod.ts';
 export * from './order-lines/order-lines.zod.ts';
 export * from './order-templates/order-templates.zod.ts';

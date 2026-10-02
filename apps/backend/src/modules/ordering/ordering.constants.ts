@@ -27,6 +27,8 @@ export const ORDER_EVENTS = {
   submitted: 'order.submitted',
   rolledToNextRun: 'order.rolled_to_next_run',
   cancelled: 'order.cancelled',
+  /** A load-check removal left part of an order behind (AC-LOD-12). */
+  backordered: 'order.backordered',
   priorityChanged: 'order.priority_changed',
   cutoffClosed: 'order.cutoff_closed',
   /** The 15:30 nudge for an outlet with no order for tomorrow (AC-ORD-26). */
@@ -44,6 +46,7 @@ export const ORDER_AUDIT = {
   priorityChanged: 'ordering.order.priority_changed',
   deleted: 'ordering.order.deleted',
   reordered: 'ordering.order.reordered',
+  backordered: 'ordering.order.backordered',
   statusChanged: 'ordering.order.status_changed',
   templateSaved: 'ordering.order_template.created',
   templateRenamed: 'ordering.order_template.renamed',

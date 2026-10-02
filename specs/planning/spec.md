@@ -111,8 +111,13 @@ Command services (`services/`, each method `@Transactional()`, audited, one outb
 - `EngineRunner`: builds the context, calls `allocate()`, bulk-persists trips, stops and proposed
   deferrals, records the engine version and input hash. It holds the audit advisory lock, so it uses
   bulk inserts and finishes fast.
-- `DeferralService`: `decide`, `respond`, `reverse`. Loading's `LoadFlagService` calls it for a
-  REMOVE decision (partial deferral).
+- `DeferralService`: `decide`, `respond`, `reverse`, and `deferPartially` (ROO-33, exported in
+  `index.ts`), which loading's `LoadFlagService` calls on a REMOVE decision. `deferPartially`
+  writes one CONFIRMED deferral with `partial` true and `source` LOAD_CHECK — nobody is being
+  asked, the goods are already off the vehicle — bumps the plan's `revision` in one statement and
+  writes the matching `plan_revisions` row with the decision's reason code, so the dock's list and
+  the driver's bundle both learn the plan moved. It refuses a reason code that is missing or
+  inactive with 404. `decide`, `respond` and `reverse` land with planning's own API.
 - `PublishPolicy`: the six publish preconditions and the opening time.
 - `RevisionService`: the diff, affected trips and affected outlets of a change after publish.
 - `ReassignService`, `ResequenceService`, `ReservationService`.
@@ -128,9 +133,12 @@ Lifecycle service (exported in `index.ts`): `TripLifecycleService` with `markLoa
 `markDownloaded` and `markCantRun` (columns the driver's events set that move no status). Loading
 and execution move trip and stop status only through it, with the same state-machine check and
 audit as a command. Built so far (ROO-31): `markDownloaded`, `markStarted`, `markArrived`,
-`markStopOutcome`, `markCompleted`, `markCantRun`; `markLoading`, `markReleased` and `cancel` land
-with planning's own API. Each writes one audit row, `planning.trip.status_changed` or
-`planning.stop.status_changed`, and the caller emits the domain event.
+`markStopOutcome`, `markCompleted`, `markCantRun`; and (ROO-33, for the dock) `markLoading`
+(PLANNED to LOADING on the first check), `markReleased` (LOADING to RELEASED, setting `releasedAt`,
+`releasedById` and `releaseTempC`) and `markReloading` (RELEASED to LOADING, clearing those three,
+for a released trip moved to another vehicle — AC-LOD-19). `cancel` lands with planning's own API.
+Each writes one audit row, `planning.trip.status_changed` or `planning.stop.status_changed`, and
+the caller emits the domain event.
 
 Engine functions used (`packages/engine`, also run in the browser from `/context`):
 `allocate()`, `validate()`, `vehicleOptions()`, `optionsForTrip()`, `applyEdits()`,
@@ -586,3 +594,8 @@ Checklist (tick in the PR that adds the passing test):
 - 2026-10-01 GET, POST /deferral-reasons and GET, PATCH /deferral-reasons/{code} added by ROO-27 (Nimesha) in this module,
   which owns the table: `DeferralReasonsService`, audit `planning.deferral_reason.created|updated`, events
   `deferral_reason.created|updated`. Tihara owns them from here
+- 2026-10-02 ROO-33 (Nimesha) added what the dock needs from this module, because only planning may
+  write `trips`, `plans`, `plan_revisions` and `deferrals`: `TripLifecycleService.markLoading`,
+  `markReleased` and `markReloading`, and `DeferralService.deferPartially`, both exported from
+  `index.ts`. Tihara owns them from here; they are covered by AC-LOD-04, 12, 16 and 19 and have no
+  planning test of their own yet

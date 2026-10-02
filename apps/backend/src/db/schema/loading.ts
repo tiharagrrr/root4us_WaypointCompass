@@ -3,13 +3,14 @@
 import { sql } from 'drizzle-orm';
 import {
   check,
+  doublePrecision,
   index,
   integer,
   pgTable,
   text,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { instant, pk } from '../columns';
+import { createdAt, instant, pk } from '../columns';
 import {
   loadFlagDecisionEnum,
   loadFlagReasonEnum,
@@ -79,3 +80,56 @@ export const loadFlags = pgTable(
     check('load_flags_qty_chk', sql`${t.qtyAffected} > 0`),
   ],
 );
+
+/**
+ * What one release recorded, which `trips` has no room for: the name the
+ * loader typed on the shared tablet, the plan revision they released
+ * against, and the `clientUuid` that makes a replayed release a duplicate
+ * rather than a second release (specs/loading/spec.md, Open questions).
+ *
+ * One row per trip: a trip reassigned to another vehicle goes back to
+ * LOADING and must pass its checks again, which deletes this row and writes
+ * a new one (AC-LOD-19). The trip itself keeps `releasedAt`, `releasedById`
+ * and `releaseTempC`, moved by planning's TripLifecycleService.
+ */
+export const loadReleases = pgTable(
+  'load_releases',
+  {
+    id: pk(),
+    tripId: uuid()
+      .notNull()
+      .unique()
+      .references(() => trips.id),
+    /** The name typed on the dock tablet, not the signed-in account's. */
+    checkedByName: text().notNull(),
+    releasedById: text(),
+    deviceId: text(),
+    /** Null on an ambient trip, which needs no reading. */
+    releaseTempC: doublePrecision(),
+    /** The plan revision the list was at when it was released. */
+    planRevision: integer().notNull(),
+    clientUuid: uuid().notNull().unique(), // offline idempotency
+    releasedAt: instant().notNull().defaultNow(),
+  },
+  (t) => [
+    check(
+      'load_releases_temp_chk',
+      sql`${t.releaseTempC} IS NULL OR ${t.releaseTempC} BETWEEN -40 AND 60`,
+    ),
+  ],
+);
+
+/**
+ * Which delivered events LoadListBuilder has already handled. Delivery is at
+ * least once, so the same `plan.published` can arrive twice; without this the
+ * second delivery would re-announce `load.list_updated` and put the Plan
+ * updated banner on a tablet for a plan that did not change (AC-LOD-01).
+ *
+ * The outbox id has no foreign key: the relay may prune its own rows.
+ */
+export const loadEventReceipts = pgTable('load_event_receipts', {
+  eventId: uuid().primaryKey(),
+  /** The event type, so a stuck listener can be read off the table. */
+  type: text().notNull(),
+  handledAt: createdAt(),
+});

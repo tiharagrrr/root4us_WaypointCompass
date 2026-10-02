@@ -9,10 +9,14 @@ import {
   VersionMismatchError,
 } from '../../../core/errors/domain-errors';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
-import { orders } from '../../../db/schema';
 import { AuditService } from '../../audit';
+import { OutboxService } from '../../../core/outbox/outbox.service';
+import type { EventPayload } from '../../../core/persistence/ports';
+import { orderLines, orders } from '../../../db/schema';
+import { computeTotals } from '../domain/totals';
 import { nextOrderStatus } from '../domain/transitions';
-import { ORDER_AUDIT } from '../ordering.constants';
+import { ORDER_AUDIT, ORDER_EVENTS } from '../ordering.constants';
+import { OrderNumberService } from './order-number.service';
 import type { OrderRow } from './order.view';
 
 /** Columns a lifecycle move may touch beside `status`. */
@@ -46,6 +50,8 @@ export class OrderLifecycleService {
     private readonly txHost: TransactionHost<StampedDrizzleAdapter>,
     private readonly clock: ClockService,
     private readonly audit: AuditService,
+    private readonly outbox: OutboxService,
+    private readonly numbers: OrderNumberService,
     private readonly log: PinoLogger,
   ) {
     this.log.setContext(OrderLifecycleService.name);
@@ -102,6 +108,117 @@ export class OrderLifecycleService {
 
   markIssueReported(id: string): Promise<OrderRow> {
     return this.move(id, 'REPORT');
+  }
+
+  /**
+   * A backorder for goods that did not travel (AC-LOD-12). The dispatcher
+   * decided REMOVE at the dock, so part of an order is staying behind;
+   * planning records the partial deferral and this records what the store is
+   * still owed, as a new order of its own with `parentOrderId` pointing at
+   * the one it came from and `source` backorder.
+   *
+   * It is CONFIRMED, not DRAFT: nobody has to place it, the store already
+   * ordered these goods and the next plan should carry them. The item's
+   * weight and value are copied from the parent's line, so the engine plans
+   * the backorder on the same numbers even after the catalog changes.
+   *
+   * Runs inside loading's transaction (architecture rule 2: only ordering
+   * writes `orders`).
+   */
+  @Transactional()
+  async createBackorder(input: {
+    parentOrderId: string;
+    /** The quantity still owed, per line of the parent order. */
+    lines: readonly { orderLineId: string; qty: number }[];
+    /** The date the deferral moved the goods to. */
+    deliveryDate: string;
+    note?: string | null;
+  }): Promise<OrderRow> {
+    const parent = await this.load(input.parentOrderId);
+    const wanted = new Map(input.lines.map((l) => [l.orderLineId, l.qty]));
+    const parentLines = await this.txHost.tx
+      .select()
+      .from(orderLines)
+      .where(inArray(orderLines.id, [...wanted.keys()]));
+
+    const snapshots = parentLines.map((line) => ({
+      itemId: line.itemId,
+      qty: wanted.get(line.id)!,
+      unitWeightKg: line.unitWeightKg,
+      unitVolumeM3: line.unitVolumeM3,
+      unitValueLkr: line.unitValueLkr,
+    }));
+    if (snapshots.length === 0) throw new NotFoundError('order line');
+    const totals = computeTotals(snapshots);
+
+    const [row] = await this.txHost.tx
+      .insert(orders)
+      .values({
+        orderNo: await this.numbers.next(parent.brand),
+        outletId: parent.outletId,
+        depotId: parent.depotId,
+        brand: parent.brand,
+        districtId: parent.districtId,
+        tempClass: parent.tempClass,
+        requestedDate: input.deliveryDate,
+        deliveryDate: input.deliveryDate,
+        status: 'CONFIRMED',
+        confirmedAt: this.clock.now(),
+        afterCutoff: false,
+        units: totals.units,
+        weightKg: totals.weightKg,
+        volumeM3: totals.volumeM3,
+        valueLkr: totals.valueLkr,
+        source: 'backorder',
+        parentOrderId: parent.id,
+        note: input.note ?? null,
+      })
+      .returning();
+    await this.txHost.tx
+      .insert(orderLines)
+      .values(snapshots.map((line) => ({ ...line, orderId: row.id })));
+
+    await this.audit.record({
+      action: ORDER_AUDIT.backordered,
+      entity: ['order', row.id],
+      before: { backorderOf: parent.orderNo },
+      after: {
+        status: row.status,
+        parentOrderId: row.parentOrderId,
+        deliveryDate: row.deliveryDate,
+        units: row.units,
+        source: row.source,
+      },
+      ...(input.note && { reasonNote: input.note }),
+    });
+    await this.outbox.add(
+      ORDER_EVENTS.backordered,
+      {
+        v: 1,
+        orderId: row.id,
+        orderNo: row.orderNo,
+        parentOrderId: parent.id,
+        parentOrderNo: parent.orderNo,
+        outletId: row.outletId,
+        deliveryDate: row.deliveryDate,
+        units: row.units,
+      } satisfies EventPayload,
+      {
+        aggregate: ['order', row.id],
+        depotId: row.depotId,
+        outletIds: [row.outletId],
+      },
+    );
+    this.log.info(
+      {
+        event: ORDER_AUDIT.backordered,
+        orderId: row.id,
+        parentOrderId: parent.id,
+        units: row.units,
+      },
+      'backorder raised for goods that stayed behind',
+    );
+    return row;
   }
 
   /** The same move for a set of orders, as publishing a plan makes. */
