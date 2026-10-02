@@ -41,7 +41,15 @@ const SLICE: RouteCase[] = [
     path: '/orders',
     body: { tempClass: 'AMBIENT', requestedDate: '2026-10-02' },
   },
+  { method: 'patch', path: `/orders/${ORDER_ID}`, body: { note: 'later' } },
+  { method: 'delete', path: `/orders/${ORDER_ID}` },
   { method: 'post', path: `/orders/${ORDER_ID}/submit`, body: {} },
+  {
+    method: 'post',
+    path: `/orders/${ORDER_ID}/cancel`,
+    body: { reasonNote: 'Ordered twice' },
+  },
+  { method: 'post', path: `/orders/${ORDER_ID}/reorder`, body: {} },
   {
     method: 'post',
     path: `/orders/${ORDER_ID}/save-as-template`,
@@ -93,9 +101,10 @@ const REFUSED: RefusedCase[] = [
 ];
 
 /**
- * The ordering contract, before its services exist: every route of the M1 slice is mounted with
- * its permission, its If-Match rule and its DTO, and answers an allowed caller 501 (the
- * contract-first skill). The behaviour tests arrive with the services, named AC-ORD-nn.
+ * The shape of the ordering contract, whatever the services do inside it:
+ * every route of the M1 slice is mounted with its permission, its If-Match
+ * rule and its DTO, and no handler answers 501 any more. What each route
+ * does with a real order is the AC-ORD-nn suites.
  */
 describeWithDb('ordering contract', () => {
   jest.setTimeout(30_000);
@@ -136,10 +145,15 @@ describeWithDb('ordering contract', () => {
       .set('If-Match', 'W/"1"')
       .send(route.body ?? {});
 
-  it.each(SLICE)('$method $path is mounted and answers 501', async (route) => {
+  it.each(SLICE)('$method $path is mounted and implemented', async (route) => {
     const res = await call(route, cookies.store_manager);
 
-    expect(res.status).toBe(501);
+    // The ids above belong to nothing, so a route that takes one answers 404
+    // (or 400 for a body that cannot apply) and a collection answers
+    // normally. What none may answer is 501, which would mean the contract
+    // still has no service behind it.
+    expect(res.status).not.toBe(501);
+    expect([200, 201, 400, 404, 409]).toContain(res.status);
   });
 
   it.each(REFUSED)(

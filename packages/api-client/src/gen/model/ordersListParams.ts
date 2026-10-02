@@ -47,6 +47,10 @@ include?: string;
  */
 'filter[tempClass]'?: string;
 /**
+ * one of FRESH, STYLE, TECH; comma-separated for any of. Also filter[brand][op] with op in eq, ne, null.
+ */
+'filter[brand]'?: string;
+/**
  * text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.
  */
 'filter[depotId]'?: string;
@@ -70,4 +74,8 @@ include?: string;
  * true or false; comma-separated for any of. Also filter[urgent][op] with op in eq, null.
  */
 'filter[urgent]'?: string;
+/**
+ * true or false; comma-separated for any of. Also filter[afterCutoff][op] with op in eq, null.
+ */
+'filter[afterCutoff]'?: string;
 };

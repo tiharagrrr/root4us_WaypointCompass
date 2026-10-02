@@ -7,6 +7,7 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Actor as SignedIn } from '@waypoint/shared';
 import type { Request } from 'express';
 import { ListQueryDto } from '../../../core/http/api.dto';
 import {
@@ -15,39 +16,39 @@ import {
   ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
-import { notImplemented } from '../../../core/http/not-implemented';
 import { ItemDto } from '../dto/item.dto';
 import { ITEM_RESOURCE } from '../item.resource';
+import { ItemLinks } from '../policies/item.links';
+import { ItemQueries } from '../services/item.queries';
 
-const SOON =
-  'Not implemented yet (501): the contract is final, the service lands next.';
-
-/**
- * The catalog behind M1a's item picker and M9. Read by every role that places or checks an order.
- *
- * Contract first: every handler answers 501 until the master-data queries land.
- */
+/** The catalog behind M1a's item picker and M9. Read by every role that places or checks an order. */
 @ApiTags('items')
 @Controller('items')
 export class ItemsController {
+  constructor(
+    private readonly queries: ItemQueries,
+    private readonly links: ItemLinks,
+  ) {}
+
   /** M1a asks for `filter[tempClass]=AMBIENT&filter[active]=true&limit=100`: one brand's range. */
   @Get()
   @RequirePermission('catalog:read')
   @ApiPaginated(ItemDto, { resource: ITEM_RESOURCE })
-  @ApiOperation({ summary: 'List catalog items', description: SOON })
-  list(
+  @ApiOperation({ summary: 'List catalog items' })
+  async list(
     @Query() query: ListQueryDto,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
     @Req() req: Request,
   ) {
-    return notImplemented('GET /items', { query, actor, req });
+    const page = await this.queries.list(query);
+    return this.links.page(page, actor, req);
   }
 
   @Get(':id')
   @RequirePermission('catalog:read')
   @ApiResource(ItemDto)
-  @ApiOperation({ summary: 'One catalog item', description: SOON })
-  get(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: Actor) {
-    return notImplemented('GET /items/{id}', { id, actor });
+  @ApiOperation({ summary: 'One catalog item' })
+  async get(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
+    return this.links.one(await this.queries.get(id), actor);
   }
 }

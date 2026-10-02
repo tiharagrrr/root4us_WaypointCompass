@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary The outlet's presets
  */
 export const orderTemplatesListQueryLimitMax = 1000;
@@ -82,7 +81,6 @@ export const OrderTemplatesListResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Save a preset
  */
 export const OrderTemplatesCreateHeader = zod.object({
@@ -136,4 +134,99 @@ export const OrderTemplatesCreateResponse = zod.object({
 })).optional()
 })
 })
+
+/**
+ * @summary One preset
+ */
+export const OrderTemplatesGetParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrderTemplatesGetResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "lines": zod.array(zod.object({
+  "itemId": zod.string(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "packLabel": zod.string(),
+  "qty": zod.number().describe('Packs')
+})),
+  "createdAt": zod.string(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Rename a preset
+ */
+export const OrderTemplatesUpdateParams = zod.object({
+  "id": zod.string()
+})
+
+export const orderTemplatesUpdateBodyNameMax = 60;
+
+
+
+export const OrderTemplatesUpdateBody = zod.object({
+  "name": zod.string().min(1).max(orderTemplatesUpdateBodyNameMax)
+})
+
+export const OrderTemplatesUpdateResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "tempClass": zod.enum(['AMBIENT', 'CHILLED']),
+  "lines": zod.array(zod.object({
+  "itemId": zod.string(),
+  "sku": zod.string(),
+  "name": zod.string(),
+  "packLabel": zod.string(),
+  "qty": zod.number().describe('Packs')
+})),
+  "createdAt": zod.string(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Delete a preset
+ */
+export const OrderTemplatesRemoveParams = zod.object({
+  "id": zod.string()
+})
+
+export const OrderTemplatesRemoveResponse = zod.void()
 

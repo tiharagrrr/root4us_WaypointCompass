@@ -1,8 +1,8 @@
-# Waypoint: delivery planning for Waypoint Group
+# Waypoint Compass: delivery planning for Waypoint Group
 
-> Tech-Triathlon 2026 · _TeamName_SolutionName_
+> Tech-Triathlon 2026 · root4us_waypointcompass
 
-Waypoint connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots (Peliyagoda, Kandy). One responsive web app serves four roles: **Dispatcher, Loader, Driver and Store manager**. The driver and loader flows work offline and sync when signal returns.
+Waypoint Compass connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots (Peliyagoda, Kandy). One responsive web app serves four roles: **Dispatcher, Loader, Driver and Store manager**. The driver and loader flows work offline and sync when signal returns.
 
 | | |
 | --- | --- |

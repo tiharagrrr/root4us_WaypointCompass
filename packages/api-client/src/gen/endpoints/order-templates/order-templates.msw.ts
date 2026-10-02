@@ -20,7 +20,9 @@ import type {
 
 import type {
   OrderTemplatesCreate201,
-  OrderTemplatesList200
+  OrderTemplatesGet200,
+  OrderTemplatesList200,
+  OrderTemplatesUpdate200
 } from '../../model';
 
 
@@ -31,6 +33,14 @@ export const getOrderTemplatesListResponseMock = (overrideResponse: Partial<Extr
       }, ...overrideResponse})
 
 export const getOrderTemplatesCreateResponseMock = (overrideResponse: Partial<Extract<OrderTemplatesCreate201, object>> = {}): OrderTemplatesCreate201 => ({data: {id: "0192a3f4-0000-7000-8000-00000000c001", name: "Weekday top-up", tempClass: "AMBIENT", lines: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({itemId: "0192a3f4-0000-7000-8000-00000000b001", sku: "FR-1102", name: "Basmati rice 5 kg", packLabel: "Bag ×4", qty: 12})), createdAt: "2026-09-28T09:12:00+05:30", _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrderTemplatesGetResponseMock = (overrideResponse: Partial<Extract<OrderTemplatesGet200, object>> = {}): OrderTemplatesGet200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000c001", name: "Weekday top-up", tempClass: "AMBIENT", lines: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({itemId: "0192a3f4-0000-7000-8000-00000000b001", sku: "FR-1102", name: "Basmati rice 5 kg", packLabel: "Bag ×4", qty: 12})), createdAt: "2026-09-28T09:12:00+05:30", _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getOrderTemplatesUpdateResponseMock = (overrideResponse: Partial<Extract<OrderTemplatesUpdate200, object>> = {}): OrderTemplatesUpdate200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000c001", name: "Weekday top-up", tempClass: "AMBIENT", lines: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({itemId: "0192a3f4-0000-7000-8000-00000000b001", sku: "FR-1102", name: "Basmati rice 5 kg", packLabel: "Bag ×4", qty: 12})), createdAt: "2026-09-28T09:12:00+05:30", _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -58,7 +68,44 @@ export const getOrderTemplatesCreateMockHandler = (overrideResponse?: OrderTempl
       })
   }, options)
 }
+
+export const getOrderTemplatesGetMockHandler = (overrideResponse?: OrderTemplatesGet200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OrderTemplatesGet200> | OrderTemplatesGet200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/order-templates/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrderTemplatesGetResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getOrderTemplatesUpdateMockHandler = (overrideResponse?: OrderTemplatesUpdate200 | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<OrderTemplatesUpdate200> | OrderTemplatesUpdate200), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/v1/order-templates/:id', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getOrderTemplatesUpdateResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getOrderTemplatesRemoveMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/api/v1/order-templates/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {await delay(300);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 export const getOrderTemplatesMock = () => [
   getOrderTemplatesListMockHandler(),
-  getOrderTemplatesCreateMockHandler()
+  getOrderTemplatesCreateMockHandler(),
+  getOrderTemplatesGetMockHandler(),
+  getOrderTemplatesUpdateMockHandler(),
+  getOrderTemplatesRemoveMockHandler()
 ]

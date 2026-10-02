@@ -3096,9 +3096,423 @@
         ]
       }
     },
+    "/api/v1/calendar": {
+      "get": {
+        "operationId": "calendarList",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-04",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CalendarDayDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Calendar days in a range",
+        "tags": [
+          "calendar"
+        ]
+      }
+    },
+    "/api/v1/depots": {
+      "get": {
+        "operationId": "depotsList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DepotDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List depots",
+        "tags": [
+          "depots"
+        ]
+      }
+    },
+    "/api/v1/depots/{id}": {
+      "get": {
+        "operationId": "depotsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One depot",
+        "tags": [
+          "depots"
+        ]
+      },
+      "patch": {
+        "operationId": "depotsUpdate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit depot settings",
+        "tags": [
+          "depots"
+        ]
+      }
+    },
+    "/api/v1/districts": {
+      "get": {
+        "operationId": "districtsList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DistrictDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List districts",
+        "tags": [
+          "districts"
+        ]
+      }
+    },
     "/api/v1/items": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "itemsList",
         "parameters": [
           {
@@ -3283,7 +3697,6 @@
     },
     "/api/v1/items/{id}": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "itemsGet",
         "parameters": [
           {
@@ -3365,9 +3778,616 @@
         ]
       }
     },
+    "/api/v1/outlets": {
+      "get": {
+        "operationId": "outletsList",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Tables: rows to skip",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Feeds: meta.page.nextCursor of the previous page",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated fields, \"-\" for descending",
+            "schema": {
+              "maxLength": 200,
+              "example": "-submittedAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated related resources",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[brand]",
+            "required": false,
+            "in": "query",
+            "description": "one of FRESH, STYLE, TECH; comma-separated for any of. Also filter[brand][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[districtId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[districtId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[depotId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[dockType]",
+            "required": false,
+            "in": "query",
+            "description": "one of REAR_DOCK, STREET, MALL_BAY; comma-separated for any of. Also filter[dockType][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[parkingConstraint]",
+            "required": false,
+            "in": "query",
+            "description": "one of NORMAL, VAN_ONLY, MALL_DOCK; comma-separated for any of. Also filter[parkingConstraint][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OutletDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List outlets",
+        "tags": [
+          "outlets"
+        ]
+      }
+    },
+    "/api/v1/outlets/{id}": {
+      "get": {
+        "operationId": "outletsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OutletDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One outlet",
+        "tags": [
+          "outlets"
+        ]
+      },
+      "patch": {
+        "operationId": "outletsUpdate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOutletDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OutletDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit an outlet",
+        "tags": [
+          "outlets"
+        ]
+      }
+    },
+    "/api/v1/service-allowances": {
+      "get": {
+        "operationId": "referenceServiceAllowances",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ServiceAllowanceDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Minutes at a stop, by brand and dock type",
+        "tags": [
+          "reference-data"
+        ]
+      }
+    },
+    "/api/v1/traffic-speeds": {
+      "get": {
+        "operationId": "referenceTrafficSpeeds",
+        "parameters": [
+          {
+            "name": "districtId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TrafficSpeedDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Hourly speed index by district",
+        "tags": [
+          "reference-data"
+        ]
+      }
+    },
+    "/api/v1/road-conditions": {
+      "get": {
+        "operationId": "referenceRoadConditions",
+        "parameters": [
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-09-30",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-04",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RoadConditionDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Daily road disruption by district",
+        "tags": [
+          "reference-data"
+        ]
+      }
+    },
     "/api/v1/orders": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "ordersList",
         "parameters": [
           {
@@ -3453,6 +4473,15 @@
             }
           },
           {
+            "name": "filter[brand]",
+            "required": false,
+            "in": "query",
+            "description": "one of FRESH, STYLE, TECH; comma-separated for any of. Also filter[brand][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "filter[depotId]",
             "required": false,
             "in": "query",
@@ -3502,6 +4531,15 @@
             "required": false,
             "in": "query",
             "description": "true or false; comma-separated for any of. Also filter[urgent][op] with op in eq, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[afterCutoff]",
+            "required": false,
+            "in": "query",
+            "description": "true or false; comma-separated for any of. Also filter[afterCutoff][op] with op in eq, null.",
             "schema": {
               "type": "string"
             }
@@ -3577,7 +4615,6 @@
         ]
       },
       "post": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "ordersCreate",
         "parameters": [
           {
@@ -3692,7 +4729,6 @@
     },
     "/api/v1/orders/{id}": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "ordersGet",
         "parameters": [
           {
@@ -3782,11 +4818,201 @@
         "tags": [
           "orders"
         ]
+      },
+      "patch": {
+        "operationId": "ordersUpdate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit an order",
+        "tags": [
+          "orders"
+        ]
+      },
+      "delete": {
+        "operationId": "ordersRemove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Delete a draft order",
+        "tags": [
+          "orders"
+        ]
       }
     },
     "/api/v1/orders/{id}/submit": {
       "post": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "ordersSubmit",
         "parameters": [
           {
@@ -3926,9 +5152,271 @@
         ]
       }
     },
+    "/api/v1/orders/{id}/cancel": {
+      "post": {
+        "operationId": "ordersCancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Cancel the order",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/reorder": {
+      "post": {
+        "operationId": "ordersReorder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Order the same again",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
     "/api/v1/orders/{id}/save-as-template": {
       "post": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "ordersSaveAsTemplate",
         "parameters": [
           {
@@ -4049,9 +5537,140 @@
         ]
       }
     },
+    "/api/v1/orders/{id}/priority": {
+      "patch": {
+        "operationId": "ordersSetPriority",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOrderPriorityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Mark an order urgent",
+        "tags": [
+          "orders"
+        ]
+      }
+    },
     "/api/v1/orders/{orderId}/lines": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderLinesList",
         "parameters": [
           {
@@ -4133,7 +5752,6 @@
         ]
       },
       "put": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderLinesReplace",
         "parameters": [
           {
@@ -4264,7 +5882,6 @@
         ]
       },
       "post": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderLinesAdd",
         "parameters": [
           {
@@ -4397,7 +6014,6 @@
     },
     "/api/v1/orders/{orderId}/lines/{lineId}": {
       "patch": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderLinesUpdate",
         "parameters": [
           {
@@ -4536,7 +6152,6 @@
         ]
       },
       "delete": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderLinesRemove",
         "parameters": [
           {
@@ -4667,7 +6282,6 @@
     },
     "/api/v1/order-templates": {
       "get": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderTemplatesList",
         "parameters": [
           {
@@ -4823,7 +6437,6 @@
         ]
       },
       "post": {
-        "description": "Not implemented yet (501): the contract is final, the service lands next.",
         "operationId": "orderTemplatesCreate",
         "parameters": [
           {
@@ -4933,6 +6546,615 @@
         "summary": "Save a preset",
         "tags": [
           "order-templates"
+        ]
+      }
+    },
+    "/api/v1/order-templates/{id}": {
+      "get": {
+        "operationId": "orderTemplatesGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderTemplateDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One preset",
+        "tags": [
+          "order-templates"
+        ]
+      },
+      "patch": {
+        "operationId": "orderTemplatesUpdate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderTemplateDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Rename a preset",
+        "tags": [
+          "order-templates"
+        ]
+      },
+      "delete": {
+        "operationId": "orderTemplatesRemove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a preset",
+        "tags": [
+          "order-templates"
+        ]
+      }
+    },
+    "/api/v1/outlets/{outletId}/receiving-roster": {
+      "get": {
+        "operationId": "receivingRosterGet",
+        "parameters": [
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReceivingRosterDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A day's receiving roster",
+        "tags": [
+          "receiving-roster"
+        ]
+      },
+      "put": {
+        "operationId": "receivingRosterReplace",
+        "parameters": [
+          {
+            "name": "outletId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetReceivingRosterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReceivingRosterDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Replace a day's receiving roster",
+        "tags": [
+          "receiving-roster"
+        ]
+      }
+    },
+    "/api/v1/depots/{depotId}/days/{date}": {
+      "get": {
+        "operationId": "depotDaysGet",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotDaySummaryDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A depot's delivery day in numbers",
+        "tags": [
+          "depot-days"
+        ]
+      }
+    },
+    "/api/v1/depots/{depotId}/days/{date}/close-cutoff": {
+      "post": {
+        "operationId": "depotDaysCloseCutoff",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CloseCutoffResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Close the cutoff now (DEMO_MODE=true only)",
+        "tags": [
+          "depot-days"
         ]
       }
     },
@@ -6721,6 +8943,272 @@
           "mode"
         ]
       },
+      "CalendarDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "dow": {
+            "type": "number",
+            "description": "0 = Monday",
+            "example": 4
+          },
+          "isWeekend": {
+            "type": "boolean",
+            "example": false
+          },
+          "isoYear": {
+            "type": "number",
+            "example": 2026
+          },
+          "isoWeek": {
+            "type": "number",
+            "example": 40
+          },
+          "isPayday": {
+            "type": "boolean",
+            "example": false
+          },
+          "festival": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "festivalRamp": {
+            "type": "number",
+            "example": 1
+          },
+          "isHoliday": {
+            "type": "boolean",
+            "example": false
+          },
+          "monsoon": {
+            "type": "boolean",
+            "example": false
+          },
+          "isOperating": {
+            "type": "boolean",
+            "description": "Orders may be delivered on this day",
+            "example": true
+          }
+        },
+        "required": [
+          "date",
+          "dow",
+          "isWeekend",
+          "isoYear",
+          "isoWeek",
+          "isPayday",
+          "festival",
+          "festivalRamp",
+          "isHoliday",
+          "monsoon",
+          "isOperating"
+        ]
+      },
+      "DepotKind": {
+        "type": "string",
+        "enum": [
+          "CENTRAL",
+          "REGIONAL"
+        ]
+      },
+      "DepotDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "name": {
+            "type": "string",
+            "example": "Peliyagoda"
+          },
+          "kind": {
+            "example": "CENTRAL",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DepotKind"
+              }
+            ]
+          },
+          "address": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "lat": {
+            "type": "number",
+            "nullable": true,
+            "example": 6.9654
+          },
+          "lng": {
+            "type": "number",
+            "nullable": true,
+            "example": 79.8871
+          },
+          "dockCount": {
+            "type": "number",
+            "example": 6
+          },
+          "chilledDocks": {
+            "type": "number",
+            "example": 2
+          },
+          "cutoffMin": {
+            "type": "number",
+            "nullable": true,
+            "description": "Overrides ordering.cutoffMin for this depot; 900 is 15:00",
+            "example": null
+          },
+          "effectiveCutoffMin": {
+            "type": "number",
+            "description": "The cutoff in force here, from the depot or the setting",
+            "example": 960
+          },
+          "effectiveCutoff": {
+            "type": "string",
+            "example": "16:00"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "address",
+          "lat",
+          "lng",
+          "dockCount",
+          "chilledDocks",
+          "cutoffMin",
+          "effectiveCutoffMin",
+          "effectiveCutoff",
+          "_links"
+        ]
+      },
+      "UpdateDepotDto": {
+        "type": "object",
+        "properties": {
+          "dockCount": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 6
+          },
+          "chilledDocks": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100,
+            "example": 3
+          },
+          "cutoffMin": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 1439,
+            "description": "null removes the override",
+            "example": 900
+          }
+        }
+      },
+      "RoadClass": {
+        "type": "string",
+        "enum": [
+          "URBAN",
+          "SUBURBAN",
+          "HIGHWAY",
+          "HILL"
+        ]
+      },
+      "DistrictDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "gampaha"
+          },
+          "name": {
+            "type": "string",
+            "example": "Gampaha"
+          },
+          "province": {
+            "type": "string",
+            "nullable": true,
+            "example": "Western"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "roadClass": {
+            "example": "URBAN",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoadClass"
+              }
+            ]
+          },
+          "freeFlowKmh": {
+            "type": "number",
+            "example": 30
+          },
+          "depotToDistrictKm": {
+            "type": "number",
+            "example": 20
+          },
+          "depotToDistrictMin": {
+            "type": "number",
+            "example": 37
+          },
+          "interStopKm": {
+            "type": "number",
+            "example": 4
+          },
+          "interStopMin": {
+            "type": "number",
+            "example": 9
+          },
+          "centroidLat": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.0912
+          },
+          "centroidLng": {
+            "type": "number",
+            "nullable": true,
+            "example": 79.9999
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "province",
+          "depotId",
+          "roadClass",
+          "freeFlowKmh",
+          "depotToDistrictKm",
+          "depotToDistrictMin",
+          "interStopKm",
+          "interStopMin",
+          "centroidLat",
+          "centroidLng",
+          "_links"
+        ]
+      },
       "Brand": {
         "type": "string",
         "enum": [
@@ -6822,6 +9310,327 @@
           "fragile",
           "active",
           "_links"
+        ]
+      },
+      "DockType": {
+        "type": "string",
+        "enum": [
+          "REAR_DOCK",
+          "STREET",
+          "MALL_BAY"
+        ]
+      },
+      "ParkingConstraint": {
+        "type": "string",
+        "enum": [
+          "NORMAL",
+          "VAN_ONLY",
+          "MALL_DOCK"
+        ]
+      },
+      "OutletDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "name": {
+            "type": "string",
+            "example": "Fresh Kadawatha"
+          },
+          "brand": {
+            "example": "FRESH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Brand"
+              }
+            ]
+          },
+          "districtId": {
+            "type": "string",
+            "example": "gampaha"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "dockType": {
+            "example": "REAR_DOCK",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DockType"
+              }
+            ]
+          },
+          "parkingConstraint": {
+            "example": "NORMAL",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ParkingConstraint"
+              }
+            ]
+          },
+          "windowOpenMin": {
+            "type": "number",
+            "description": "Minutes after midnight",
+            "example": 360
+          },
+          "windowOpen": {
+            "type": "string",
+            "example": "06:00"
+          },
+          "windowCloseMin": {
+            "type": "number",
+            "example": 600
+          },
+          "windowClose": {
+            "type": "string",
+            "example": "10:00"
+          },
+          "mallWindowOpenMin": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "mallWindowOpen": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "mallWindowCloseMin": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "mallWindowClose": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "styleDeliveryDow": {
+            "type": "number",
+            "nullable": true,
+            "description": "Style's weekly delivery day, 0 = Monday",
+            "example": null
+          },
+          "address": {
+            "type": "string",
+            "nullable": true,
+            "example": "Kadawatha, Gampaha"
+          },
+          "lat": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.0012
+          },
+          "lng": {
+            "type": "number",
+            "nullable": true,
+            "example": 79.9521
+          },
+          "receivingContactName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Mr Perera"
+          },
+          "receivingContactPhone": {
+            "type": "string",
+            "nullable": true,
+            "example": "+94711234567"
+          },
+          "accessNotes": {
+            "type": "string",
+            "nullable": true,
+            "description": "D9: how to reach the dock",
+            "example": "Use the lane behind the bakery."
+          },
+          "accessNotesUpdatedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "accessNotesUpdatedById": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "brand",
+          "districtId",
+          "depotId",
+          "dockType",
+          "parkingConstraint",
+          "windowOpenMin",
+          "windowOpen",
+          "windowCloseMin",
+          "windowClose",
+          "mallWindowOpenMin",
+          "mallWindowOpen",
+          "mallWindowCloseMin",
+          "mallWindowClose",
+          "styleDeliveryDow",
+          "address",
+          "lat",
+          "lng",
+          "receivingContactName",
+          "receivingContactPhone",
+          "accessNotes",
+          "accessNotesUpdatedAt",
+          "accessNotesUpdatedById",
+          "_links"
+        ]
+      },
+      "UpdateOutletDto": {
+        "type": "object",
+        "properties": {
+          "dockType": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DockType"
+              }
+            ]
+          },
+          "parkingConstraint": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ParkingConstraint"
+              }
+            ]
+          },
+          "windowOpenMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 360
+          },
+          "windowCloseMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 600
+          },
+          "mallWindowOpenMin": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 420
+          },
+          "mallWindowCloseMin": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 540
+          },
+          "receivingContactName": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "receivingContactPhone": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "accessNotes": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        }
+      },
+      "ServiceAllowanceDto": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "example": "FRESH",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Brand"
+              }
+            ]
+          },
+          "dockType": {
+            "example": "REAR_DOCK",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DockType"
+              }
+            ]
+          },
+          "minutes": {
+            "type": "number",
+            "description": "Minutes at the stop",
+            "example": 18
+          }
+        },
+        "required": [
+          "brand",
+          "dockType",
+          "minutes"
+        ]
+      },
+      "TrafficSpeedDto": {
+        "type": "object",
+        "properties": {
+          "districtId": {
+            "type": "string",
+            "example": "gampaha"
+          },
+          "hour": {
+            "type": "number",
+            "example": 7
+          },
+          "monsoon": {
+            "type": "boolean",
+            "example": false
+          },
+          "speedIndex": {
+            "type": "number",
+            "example": 72
+          }
+        },
+        "required": [
+          "districtId",
+          "hour",
+          "monsoon",
+          "speedIndex"
+        ]
+      },
+      "RoadConditionDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "districtId": {
+            "type": "string",
+            "example": "gampaha"
+          },
+          "disruptionIndex": {
+            "type": "number",
+            "example": 92
+          }
+        },
+        "required": [
+          "date",
+          "districtId",
+          "disruptionIndex"
         ]
       },
       "OrderStatus": {
@@ -7003,6 +9812,17 @@
             "nullable": true,
             "example": null
           },
+          "cancelledAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "cancelReason": {
+            "type": "string",
+            "nullable": true,
+            "description": "A store's note or a dispatcher's reason code",
+            "example": null
+          },
           "editableUntil": {
             "type": "string",
             "description": "The cutoff instant: edits and cancels close here",
@@ -7035,6 +9855,8 @@
           "note",
           "templateId",
           "submittedAt",
+          "cancelledAt",
+          "cancelReason",
           "editableUntil",
           "version",
           "_links"
@@ -7099,6 +9921,42 @@
           "tempClass",
           "requestedDate"
         ]
+      },
+      "UpdateOrderDto": {
+        "type": "object",
+        "properties": {
+          "requestedDate": {
+            "type": "string",
+            "example": "2026-10-03"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "Extra rice"
+          }
+        }
+      },
+      "CancelOrderDto": {
+        "type": "object",
+        "properties": {
+          "reasonNote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Required when a store manager cancels",
+            "example": "Ordered twice"
+          },
+          "reasonCode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "pattern": "^[A-Z][A-Z0-9_]*$",
+            "description": "Required when a dispatcher cancels",
+            "example": "STORE_CLOSED"
+          }
+        }
       },
       "OrderTemplateLineDto": {
         "type": "object",
@@ -7190,6 +10048,18 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "SetOrderPriorityDto": {
+        "type": "object",
+        "properties": {
+          "urgent": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "urgent"
         ]
       },
       "OrderLineDto": {
@@ -7357,6 +10227,310 @@
           "name",
           "tempClass",
           "lines"
+        ]
+      },
+      "UpdateOrderTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "example": "Weekday dry"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ReceivingRosterEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "staffName": {
+            "type": "string",
+            "example": "Nadeesha"
+          },
+          "fromMin": {
+            "type": "number",
+            "description": "Minutes after midnight",
+            "example": 420
+          },
+          "from": {
+            "type": "string",
+            "example": "07:00"
+          },
+          "toMin": {
+            "type": "number",
+            "example": 540
+          },
+          "to": {
+            "type": "string",
+            "example": "09:00"
+          }
+        },
+        "required": [
+          "id",
+          "staffName",
+          "fromMin",
+          "from",
+          "toMin",
+          "to"
+        ]
+      },
+      "ReceivingRosterDto": {
+        "type": "object",
+        "properties": {
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceivingRosterEntryDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "outletId",
+          "date",
+          "entries",
+          "_links"
+        ]
+      },
+      "ReceivingRosterEntryInputDto": {
+        "type": "object",
+        "properties": {
+          "staffName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "example": "Nadeesha"
+          },
+          "fromMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 420
+          },
+          "toMin": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1440,
+            "example": 540
+          }
+        },
+        "required": [
+          "staffName",
+          "fromMin",
+          "toMin"
+        ]
+      },
+      "SetReceivingRosterDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceivingRosterEntryInputDto"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ]
+      },
+      "CutoffStateDto": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "example": "2026-10-01T16:00:00+05:30"
+          },
+          "cutoffMin": {
+            "type": "number",
+            "description": "Minutes after midnight",
+            "example": 960
+          },
+          "passed": {
+            "type": "boolean",
+            "description": "The clock has passed the cutoff",
+            "example": false
+          },
+          "closed": {
+            "type": "boolean",
+            "description": "Every submitted order for the day has been confirmed",
+            "example": false
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true,
+            "description": "When the day was closed, if it has been",
+            "example": null
+          },
+          "minutesLeft": {
+            "type": "number",
+            "description": "Minutes left before the cutoff; 0 once it has passed",
+            "example": 48
+          }
+        },
+        "required": [
+          "at",
+          "cutoffMin",
+          "passed",
+          "closed",
+          "closedAt",
+          "minutesLeft"
+        ]
+      },
+      "DepotDaySummaryDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "total": {
+            "type": "number",
+            "description": "Orders on this run, whatever their status",
+            "example": 57
+          },
+          "byStatus": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Count by order status",
+            "example": {
+              "SUBMITTED": 12,
+              "CONFIRMED": 45
+            }
+          },
+          "byBrand": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Count by brand",
+            "example": {
+              "FRESH": 40,
+              "STYLE": 10,
+              "TECH": 7
+            }
+          },
+          "byClass": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "description": "Count by temperature class",
+            "example": {
+              "AMBIENT": 44,
+              "CHILLED": 13
+            }
+          },
+          "urgent": {
+            "type": "number",
+            "description": "Orders the dispatcher marked urgent",
+            "example": 2
+          },
+          "afterCutoff": {
+            "type": "number",
+            "description": "Orders that came in after the cutoff",
+            "example": 3
+          },
+          "units": {
+            "type": "number",
+            "description": "Packs across the day",
+            "example": 2314
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 18240.5
+          },
+          "volumeM3": {
+            "type": "number",
+            "example": 86.4
+          },
+          "cutoff": {
+            "$ref": "#/components/schemas/CutoffStateDto"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "depotId",
+          "date",
+          "total",
+          "byStatus",
+          "byBrand",
+          "byClass",
+          "urgent",
+          "afterCutoff",
+          "units",
+          "weightKg",
+          "volumeM3",
+          "cutoff",
+          "_links"
+        ]
+      },
+      "CloseCutoffResultDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "confirmed": {
+            "type": "number",
+            "description": "Orders moved to CONFIRMED",
+            "example": 3
+          },
+          "closed": {
+            "type": "boolean",
+            "description": "False when the day was already closed",
+            "example": true
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "depotId",
+          "date",
+          "confirmed",
+          "closed",
+          "_links"
         ]
       },
       "DeferralReasonDto": {

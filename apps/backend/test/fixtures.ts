@@ -1,9 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import type { Database } from '../src/db/client';
 import {
+  calendarDays,
   depots,
   devices,
   districts,
+  items,
   outlets,
   plans,
   trips,
@@ -45,23 +47,129 @@ export async function depotFixture(db: Database, sfx: string) {
   return ids;
 }
 
-/** A Fresh outlet in a depot's district. */
+/** What an outlet fixture may differ from a plain Fresh outlet in. */
+export interface OutletOptions {
+  brand?: (typeof outlets.$inferInsert)['brand'];
+  name?: string;
+  dockType?: (typeof outlets.$inferInsert)['dockType'];
+  parkingConstraint?: (typeof outlets.$inferInsert)['parkingConstraint'];
+  windowOpenMin?: number;
+  windowCloseMin?: number;
+  mallWindowOpenMin?: number | null;
+  mallWindowCloseMin?: number | null;
+  /** Style's weekly delivery day, 0 = Monday. */
+  styleDeliveryDow?: number | null;
+}
+
+/** An outlet in a depot's district; Fresh with a 05:30–07:30 window by default. */
 export async function outletFixture(
   db: Database,
   id: string,
   depot: { depotId: string; districtId: string },
+  options: OutletOptions = {},
 ) {
+  const brand = options.brand ?? 'FRESH';
   await db.insert(outlets).values({
     id,
-    name: `Fresh ${id}`,
-    brand: 'FRESH',
-    dockType: 'REAR_DOCK',
-    parkingConstraint: 'NORMAL',
-    windowOpenMin: 330,
-    windowCloseMin: 450,
+    name: options.name ?? `${titleCase(brand)} ${id}`,
+    brand,
+    dockType: options.dockType ?? 'REAR_DOCK',
+    parkingConstraint: options.parkingConstraint ?? 'NORMAL',
+    windowOpenMin: options.windowOpenMin ?? 330,
+    windowCloseMin: options.windowCloseMin ?? 450,
+    mallWindowOpenMin: options.mallWindowOpenMin ?? null,
+    mallWindowCloseMin: options.mallWindowCloseMin ?? null,
+    styleDeliveryDow: options.styleDeliveryDow ?? null,
     ...depot,
   });
   return id;
+}
+
+const titleCase = (s: string) => s[0] + s.slice(1).toLowerCase();
+
+/** One catalog item. Weight and volume are whole numbers, so totals are exact. */
+export async function itemFixture(
+  db: Database,
+  input: {
+    sku: string;
+    brand?: (typeof items.$inferInsert)['brand'];
+    tempClass?: (typeof items.$inferInsert)['tempClass'];
+    name?: string;
+    category?: string;
+    packLabel?: string;
+    unitWeightKg?: number;
+    unitVolumeM3?: number;
+    unitValueLkr?: number | null;
+    active?: boolean;
+  },
+): Promise<string> {
+  const [row] = await db
+    .insert(items)
+    .values({
+      sku: input.sku,
+      name: input.name ?? `Item ${input.sku}`,
+      brand: input.brand ?? 'FRESH',
+      category: input.category ?? 'Staples',
+      tempClass: input.tempClass ?? 'AMBIENT',
+      packLabel: input.packLabel ?? 'Case of 6',
+      unitWeightKg: input.unitWeightKg ?? 10,
+      unitVolumeM3: input.unitVolumeM3 ?? 0.02,
+      unitValueLkr: input.unitValueLkr ?? null,
+      active: input.active ?? true,
+    })
+    .returning({ id: items.id });
+  return row.id;
+}
+
+/**
+ * Calendar rows for the demo window of specs/ordering/spec.md: 2026-09-30 to
+ * 2026-10-03 operate and 2026-10-04 (a Sunday) does not. Dates with no row
+ * fall back to Monday to Saturday, which is what AC-MD-10 checks.
+ */
+export const DEMO_DAYS: Record<string, boolean> = {
+  '2026-09-28': true,
+  '2026-09-29': true,
+  '2026-09-30': true,
+  '2026-10-01': true,
+  '2026-10-02': true,
+  '2026-10-03': true,
+  '2026-10-04': false,
+};
+
+export async function calendarFixture(
+  db: Database,
+  days: Record<string, boolean> = DEMO_DAYS,
+): Promise<void> {
+  const rows = Object.entries(days).map(([date, isOperating]) => {
+    const at = new Date(`${date}T00:00:00Z`);
+    const dow = (at.getUTCDay() + 6) % 7; // 0 = Monday
+    return {
+      date,
+      dow,
+      isWeekend: dow >= 5,
+      isoYear: at.getUTCFullYear(),
+      isoWeek: isoWeekOf(at),
+      isPayday: false,
+      festival: null,
+      festivalRamp: 1,
+      isHoliday: !isOperating,
+      monsoon: false,
+      isOperating,
+    };
+  });
+  await db.insert(calendarDays).values(rows).onConflictDoNothing();
+}
+
+function isoWeekOf(at: Date): number {
+  const thursday = new Date(at);
+  thursday.setUTCDate(at.getUTCDate() + 3 - ((at.getUTCDay() + 6) % 7));
+  const firstThursday = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 4));
+  return (
+    1 +
+    Math.round(
+      (thursday.getTime() - firstThursday.getTime()) / (7 * 86_400_000),
+    )
+  );
 }
 
 /** A registered device; a dock device when depotId is given. */

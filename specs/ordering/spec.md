@@ -1,7 +1,7 @@
 ---
 module: ordering
 owner: Harini
-status: ready          # draft | ready | in-progress | done
+status: done           # draft | ready | in-progress | done
 screens: [M1, M1a, M1b, M2, M3, M8, "03", "04"]
 depends-on: [core, audit, master-data]
 ---
@@ -57,6 +57,7 @@ Schema file: `apps/backend/src/db/schema/ordering.ts` (owner: ordering). "Dry" o
 | `order_templates` | `id`; `outletId` (FK); `name`; `tempClass`; `createdById`; `createdAt`, `updatedAt` |
 | `order_template_lines` | `templateId` (FK, cascade); `itemId`; `qty` |
 | `receiving_roster_entries` | `id`; `outletId` (FK); `date` (business date); `staffName`; `fromMin`, `toMin` (minutes after midnight) |
+| `order_day_marks` | `kind` (`cutoff_closed` or `cutoff_reminder`), `scopeId` (a depot for a close, an outlet for a reminder), `deliveryDate` — together the primary key; `at`; `detail` (jsonb). The once-a-day acts ordering must not repeat: an `ON CONFLICT DO NOTHING` insert lets exactly one caller win, so the cutoff is announced once however many times the ticker and the demo button reach the same day |
 
 Sequences: `order_no_fresh_seq` (WF-0001), `order_no_style_seq` (WS-0001), `order_no_tech_seq`
 (WT-0001).
@@ -86,16 +87,20 @@ Enforced by the service:
   match the dataset exactly. Tech orders carry value.
 - No hard deletes of business records; orders are cancelled.
 
-State machine, `packages/shared/src/machines/order.machine.ts`. `assertTransition` refuses anything
-else with 409 `CONFLICT_STATE`; the same table drives `_links` and the status chips.
+State machine, `packages/shared/src/machines/order.machine.ts` (the file is the source; the table
+below mirrors it). `nextOrderStatus` (`domain/transitions.ts`) refuses anything else with
+`StateConflictError`, which renders as 409 `CONFLICT_STATE`; the same table drives `_links` and the
+status chips.
 
 ```ts
-export const orderMachine = defineMachine<OrderStatus, OrderEvent>({
+export const orderMachine = defineMachine<OrderStatus, OrderEvent>('order', {
   DRAFT:          { SUBMIT: 'SUBMITTED', CANCEL: 'CANCELLED' },
   SUBMITTED:      { EDIT: 'SUBMITTED', CUTOFF: 'CONFIRMED', CANCEL: 'CANCELLED' },
   CONFIRMED:      { PLAN: 'PLANNED', DEFER: 'DEFERRED', CANCEL: 'CANCELLED' },
-  DEFERRED:       { REQUEUE: 'CONFIRMED', CANCEL: 'CANCELLED' },
-  PLANNED:        { LOAD: 'LOADED', DEFER: 'DEFERRED' },
+  // DEFERRED also takes DELIVER and PARTIAL: a device that recorded a delivery for a stop
+  // deferred while it was offline stands, through KEEP_DEVICE on the sync conflict (19c).
+  DEFERRED:       { REQUEUE: 'CONFIRMED', DELIVER: 'DELIVERED', PARTIAL: 'PARTIAL', CANCEL: 'CANCELLED' },
+  PLANNED:        { LOAD: 'LOADED', DEFER: 'DEFERRED', REQUEUE: 'CONFIRMED' },
   LOADED:         { DEPART: 'IN_TRANSIT', DEFER: 'DEFERRED' },
   IN_TRANSIT:     { DELIVER: 'DELIVERED', PARTIAL: 'PARTIAL', FAIL: 'FAILED', DEFER: 'DEFERRED' },
   DELIVERED:      { RECEIVE: 'RECEIVED', REPORT: 'ISSUE_REPORTED' },
@@ -130,7 +135,7 @@ also send `Idempotency-Key`. Every list follows `specs/api-conventions.md` for p
 | POST | `/orders/{id}/save-as-template` | `order:create` | M1 |
 | PATCH | `/orders/{id}/priority` | `order:queue` | Dispatcher marks urgent, for example after a priority request |
 | GET, POST | `/order-templates` | `order:create` | M1 Use template; scoped to the store's outlet |
-| PATCH, DELETE | `/order-templates/{id}` | `order:create` | |
+| GET, PATCH, DELETE | `/order-templates/{id}` | `order:create` | PATCH renames; DELETE answers 204 |
 | GET, PUT | `/outlets/{id}/receiving-roster?date=` | `order:update` | Who receives deliveries, and when; PUT replaces the day's entries |
 | GET | `/depots/{id}/days/{date}` | `order:read` | Day summary for 01 and 03: counts by status, brand and class, cutoff state |
 | POST | `/depots/{id}/days/{date}/close-cutoff` | `order:queue` | Demo mode only; the ticker normally does this |
@@ -172,19 +177,30 @@ order offers none (AC-ORD-03, AC-ORD-15).
 Module folder `apps/backend/src/modules/ordering/`:
 
 ```text
-ordering.module.ts, index.ts (OrderingModule, OrderQueries, OrderLifecycleService, event types)
-ordering.constants.ts            queue names, event names, setting keys
+ordering.module.ts, index.ts (OrderingModule, OrderQueries, OrderLifecycleService, CutoffService, event types)
+ordering.constants.ts            event names, audit actions, notice codes, tick names, setting keys
 order.resource.ts                ORDER_RESOURCE (filters, sorts, search, includes)
-order.mapper.ts                  toOrderDto, toOrderInsert (pure)
-controllers/                     orders.controller.ts, order-lines.controller.ts, order-templates.controller.ts
-dto/                             CreateOrderDto, CreateOrderLineDto, UpdateOrderDto, OrderDto
-services/                        orders.service.ts, order.queries.ts, order-lifecycle.service.ts, cutoff.service.ts
-policies/                        order.scope.ts (OrderScope), order.links.ts (OrderLinks)
-domain/                          totals, order numbers, cutoff maths
-jobs/cutoff.processor.ts         BullMQ processor, runs in the worker
+order-template.resource.ts       ORDER_TEMPLATE_RESOURCE
+controllers/                     orders, order-lines, order-templates, receiving-roster, depot-days
+dto/                             order.dto.ts, order-template.dto.ts, receiving-roster.dto.ts, depot-day.dto.ts
+services/                        orders.service.ts, order-lines.service.ts, order.queries.ts, order.views.ts,
+                                 order.view.ts (the OrderView type), order-lines.validator.ts,
+                                 order-lifecycle.service.ts, order-number.service.ts, templates.service.ts,
+                                 roster.service.ts, cutoff.service.ts, cutoff-close.service.ts,
+                                 cutoff-reminder.service.ts, depot-day.queries.ts
+policies/                        order.scope.ts (OrderScope, OrderTemplateScope, ReceivingRosterScope),
+                                 order.rules.ts (OrderRules), order.links.ts, order-template.links.ts,
+                                 depot-day.links.ts, receiving-roster.links.ts
+domain/                          totals.ts, order-number.ts, transitions.ts, errors.ts
+jobs/cutoff.processor.ts         the two @OnTick handlers, run once a minute in the worker
 events/ordering.events.ts        typed payloads with v: 1
-__tests__/
+__tests__/                       ordering.world.ts (the fixtures every suite shares) and the AC-ORD suites
 ```
+
+`OrderView` is the shape every response is built from: the order row plus the outlet's name, the
+cutoff instant, the receiving window and the totals with their line count. `OrderViews` fills it in
+one pass per page, so a page of 25 orders costs three extra queries rather than 25, and `OrderLinks`
+stays a pure mapping that never reads the database.
 
 - `OrdersService` (commands, each `@Transactional()` with `audit.record()`, `outbox.add()` and one log
   line): `createDraft`, `updateDraft`, `setLines`, `submit`, `cancel`, `reorder`, `setPriority`.
@@ -220,10 +236,14 @@ Emits (all through the outbox, in the use case's transaction):
 | Event | Payload (`v: 1`) | Routing | Consumed by |
 | --- | --- | --- | --- |
 | `order.submitted` | `orderId`, `outletId`, `afterCutoff`, `deliveryDate` | aggregate order; `depotId`; `outletIds: [outletId]` | notifications (M1b confirmation to the store manager, in-app and email: "Order WF-0171 sent for Fri 2 Oct."), realtime (03; the web invalidates `['orders']` and `['depot-day', depotId]`) |
-| `order.rolled_to_next_run` | not given | | notifications (M2 notice to the store manager, in-app, email and push: "Sent after 16:00, so it goes on Sat 3 Oct's run."), realtime |
-| `order.cancelled` | not given | | realtime, planning (removes the order from a draft plan) |
-| `order.priority_changed` | not given | | realtime, planning (re-ranks the order in a draft plan) |
-| `order.cutoff_closed` | not given | | realtime, planning (day summary) |
+| `order.rolled_to_next_run` | `orderId`, `outletId`, `requestedDate`, `deliveryDate`, `reason` (`AFTER_CUTOFF` or `WEEKLY_DELIVERY_DAY`) | aggregate order; `depotId`; `outletIds` | notifications (M2 notice to the store manager, in-app, email and push: "Sent after 16:00, so it goes on Sat 3 Oct's run."), realtime |
+| `order.cancelled` | `orderId`, `outletId`, `deliveryDate`, `cancelledBy` (`store` or `dispatcher`), `reasonCode` | aggregate order; `depotId`; `outletIds` | realtime, planning (removes the order from a draft plan) |
+| `order.priority_changed` | `orderId`, `outletId`, `deliveryDate`, `urgent` | aggregate order; `depotId`; `outletIds` | realtime, planning (re-ranks the order in a draft plan) |
+| `order.cutoff_closed` | `depotId`, `deliveryDate`, `confirmed`, `closedBy` (`ticker` or `demo`); aggregate `depot_day`, `<depotId>#<date>` | `depotId` | realtime, planning (day summary) |
+| `order.created`, `order.updated`, `order.deleted`, `order.lines_changed` | `orderId`, `outletId`, and for the line event `lines` and `units` | aggregate order; `depotId`; `outletIds` | realtime (M1 and 03 refresh from one stream) |
+| `order_template.created`, `order_template.deleted` | `templateId`, `outletId` | `outletIds` | realtime (M1's preset list) |
+| `receiving_roster.replaced` | `outletId`, `date`, `entries` | `outletIds` | realtime (M3) |
+| `order.cutoff_reminder` | `outletId`, `depotId`, `deliveryDate`, `cutoffAt` | `depotId`; `outletIds` | notifications (push and in-app: "Cutoff for tomorrow's delivery is in 30 minutes.") |
 
 A late submit adds both `order.submitted` (with `afterCutoff: true`) and `order.rolled_to_next_run`.
 The 15:30 reminder reaches store managers with no order for tomorrow by push and in-app: "Cutoff for
@@ -553,45 +573,55 @@ AC-ORD-36  Lifecycle moves check the machine
   When planning calls OrderLifecycleService.markPlanned for each inside its own transaction
   Then the SUBMITTED order's call throws StateConflictError (409 CONFLICT_STATE), that order is unchanged and no audit row is written for it
     And the CONFIRMED order becomes PLANNED with one audit row written in planning's transaction
+
+AC-ORD-37  A Style order's run is its outlet's weekly delivery day
+  Given a store manager for a Style outlet whose weekly delivery day is Friday (styleDeliveryDow 4)
+    And the clock reads 2026-10-01 15:00:00
+  When she creates an order with requestedDate 2026-10-02, a Friday
+  Then its deliveryDate is 2026-10-02, the day that outlet is served
+  When she submits it at 2026-10-01 16:00:00, after the cutoff
+  Then status is SUBMITTED, afterCutoff true and deliveryDate 2026-10-09, the next Friday, not Sat 3 Oct
+    And an order.rolled_to_next_run event carries deliveryDate 2026-10-09
 ```
 
 Checklist (tick in the same PR as the passing test):
-- [ ] AC-ORD-01 Submit before the cutoff
-- [ ] AC-ORD-02 A late order rolls to the next run
-- [ ] AC-ORD-03 Edits lock at the cutoff
-- [ ] AC-ORD-04 One order per outlet, date and class
-- [ ] AC-ORD-05 Chilled items stay in chilled orders
-- [ ] AC-ORD-06 The cutoff confirms the day's orders
-- [ ] AC-ORD-07 Reorder from order history
-- [ ] AC-ORD-08 Style orders only for the delivery day
-- [ ] AC-ORD-09 Create a draft order
-- [ ] AC-ORD-10 Outlet from scope, whole packs
-- [ ] AC-ORD-11 Only Fresh outlets order chilled
-- [ ] AC-ORD-12 Lines match brand; inactive items refused
-- [ ] AC-ORD-13 Totals follow every line change
-- [ ] AC-ORD-14 Versioned writes need current If-Match
-- [ ] AC-ORD-15 Submitted orders stay editable until cutoff
-- [ ] AC-ORD-16 Submit needs lines and a draft
-- [ ] AC-ORD-17 Replays apply once
-- [ ] AC-ORD-18 Only drafts can be deleted
-- [ ] AC-ORD-19 Store cancels before cutoff with note
-- [ ] AC-ORD-20 Store cancel needs note, before cutoff
-- [ ] AC-ORD-21 Dispatcher cancels before planning with code
-- [ ] AC-ORD-22 Dispatcher marks an order urgent
-- [ ] AC-ORD-23 Depot override moves the cutoff
-- [ ] AC-ORD-24 Cutoff confirms only due orders
-- [ ] AC-ORD-25 Close a cutoff in demo mode
-- [ ] AC-ORD-26 Reminder at 15:30 for missing orders
-- [ ] AC-ORD-27 Save and reuse a template
-- [ ] AC-ORD-28 Receiving roster replaces the day
-- [ ] AC-ORD-29 Dispatcher's order queue (03)
-- [ ] AC-ORD-30 Unlisted filters are refused
-- [ ] AC-ORD-31 Past orders search (04)
-- [ ] AC-ORD-32 Store sees only its orders
-- [ ] AC-ORD-33 Out of scope is 404
-- [ ] AC-ORD-34 A missing permission is 403
-- [ ] AC-ORD-35 Depot day summary (01, 03)
-- [ ] AC-ORD-36 Lifecycle moves check the machine
+- [x] AC-ORD-01 Submit before the cutoff
+- [x] AC-ORD-02 A late order rolls to the next run
+- [x] AC-ORD-03 Edits lock at the cutoff
+- [x] AC-ORD-04 One order per outlet, date and class
+- [x] AC-ORD-05 Chilled items stay in chilled orders
+- [x] AC-ORD-06 The cutoff confirms the day's orders
+- [x] AC-ORD-07 Reorder from order history
+- [x] AC-ORD-08 Style orders only for the delivery day
+- [x] AC-ORD-09 Create a draft order
+- [x] AC-ORD-10 Outlet from scope, whole packs
+- [x] AC-ORD-11 Only Fresh outlets order chilled
+- [x] AC-ORD-12 Lines match brand; inactive items refused
+- [x] AC-ORD-13 Totals follow every line change
+- [x] AC-ORD-14 Versioned writes need current If-Match
+- [x] AC-ORD-15 Submitted orders stay editable until cutoff
+- [x] AC-ORD-16 Submit needs lines and a draft
+- [x] AC-ORD-17 Replays apply once
+- [x] AC-ORD-18 Only drafts can be deleted
+- [x] AC-ORD-19 Store cancels before cutoff with note
+- [x] AC-ORD-20 Store cancel needs note, before cutoff
+- [x] AC-ORD-21 Dispatcher cancels before planning with code
+- [x] AC-ORD-22 Dispatcher marks an order urgent
+- [x] AC-ORD-23 Depot override moves the cutoff
+- [x] AC-ORD-24 Cutoff confirms only due orders
+- [x] AC-ORD-25 Close a cutoff in demo mode
+- [x] AC-ORD-26 Reminder at 15:30 for missing orders
+- [x] AC-ORD-27 Save and reuse a template
+- [x] AC-ORD-28 Receiving roster replaces the day
+- [x] AC-ORD-29 Dispatcher's order queue (03)
+- [x] AC-ORD-30 Unlisted filters are refused
+- [x] AC-ORD-31 Past orders search (04)
+- [x] AC-ORD-32 Store sees only its orders
+- [x] AC-ORD-33 Out of scope is 404
+- [x] AC-ORD-34 A missing permission is 403
+- [x] AC-ORD-35 Depot day summary (01, 03)
+- [x] AC-ORD-36 Lifecycle moves check the machine
+- [x] AC-ORD-37 A Style order's run is its outlet's weekly delivery day
 
 ## Non-functional
 - M1 loads in under 1 s on 4G.
@@ -606,53 +636,70 @@ Checklist (tick in the same PR as the passing test):
 - Log lines carry ids only: no names, notes or roster staff names.
 - Row-level security on `orders` and `order_lines` backs up `OrderScope` (AC-ORD-32).
 
+## Decided while building (ROO-19)
+Every answer below is the behaviour the tests now pin; the questions they came from are gone.
+
+- **Audit actions and events.** Audit actions are `ordering.order.created`, `.updated`,
+  `.lines_changed`, `.submitted`, `.cancelled`, `.confirmed`, `.priority_changed`, `.deleted`,
+  `.reordered`, `.status_changed`, plus `ordering.order_template.created`, `.deleted`,
+  `ordering.receiving_roster.replaced` and `ordering.cutoff.closed`
+  (`ordering.constants.ts`, `ORDER_AUDIT`). The event catalog gains `order.created`,
+  `order.updated`, `order.deleted`, `order.lines_changed`, `order_template.created`,
+  `order_template.deleted`, `receiving_roster.replaced` and `order.cutoff_reminder`, so rule 4's
+  "an outbox event on every state change" holds for a draft's whole life. Payloads are in
+  `events/ordering.events.ts`, each with `v: 1`.
+- **Lifecycle moves emit no event of their own.** `OrderLifecycleService` audits the move and
+  leaves the event to the use case it runs inside (planning's `plan.published`, loading's and
+  execution's own), so publishing a plan with 57 orders does not put 57 events on the outbox. The
+  cutoff is the one exception: it is ordering's own use case and emits one `order.cutoff_closed`
+  for the depot's day.
+- **`CreateOrderDto`.** `lines` is optional and `templateId` is accepted: M1 starts an order from a
+  preset or from nothing, and submit is what insists on at least one line (AC-ORD-16).
+- **A draft is always editable.** The cutoff governs what has been sent, so `editableUntil` locks a
+  SUBMITTED order's edits and a store's cancel, while a DRAFT stays editable and simply rolls to the
+  next run when it is sent late. A draft therefore carries `edit`, `addLine`, `setLines`, `cancel`,
+  `delete` and `submit`.
+- **DELETE on a draft is a hard delete.** A draft was never sent anywhere, so it is no business
+  record; its lines go with it and the removal is audited as `ordering.order.deleted`. Anything
+  sent answers 409 and is cancelled instead (AC-ORD-18).
+- **Reorder.** The next open date is the next run whose cutoff has not passed
+  (`CutoffService.nextOpenDate`), or for a Style outlet its next weekly delivery day. Any status but
+  DRAFT can be reordered. An order of that class already on the date answers 409 with a link to it,
+  as a second create does. Items that have left the catalog are dropped and named in the notice
+  `REORDER_ITEMS_LEFT_OUT`; if none remain, the reorder answers 409.
+- **Priority.** SUBMITTED, CONFIRMED, DEFERRED and PLANNED orders may be marked urgent: after that
+  the order is on a vehicle and re-ranking it would change nothing.
+- **`close-cutoff` outside demo mode answers 404**, like every other demo tool (identity's
+  `/demo/*`), and the link is absent from the day summary. On success it answers
+  `{ depotId, date, confirmed, closed }`; the day summary's fields are `DepotDaySummaryDto`.
+- **The cutoff closes once.** `order_day_marks` holds one row per depot and delivery date, so the
+  demo button and the ticker reaching the same day emit `order.cutoff_closed` once between them
+  (AC-ORD-25). The same table keeps the 15:30 reminder to one per outlet and date.
+- **The 15:30 reminder** emits `order.cutoff_reminder` per outlet, and "no order" means no
+  non-cancelled order of any class for that run.
+- **Order resource.** `ORDER_RESOURCE` now sorts by `requestedDate`, `deliveryDate`, `brand`,
+  `tempClass` and `createdAt` as well, filters by `brand`, `districtId`, `urgent` and
+  `afterCutoff`, and `q` matches the order number or the outlet's name. The response nests `totals`
+  and carries `urgent`, `afterCutoff`, `editableUntil`, `cancelledAt` and `cancelReason`.
+- **Dispatcher cancel reasons** are free upper-case codes for now (`^[A-Z][A-Z0-9_]*$`), stored in
+  `orders.cancelReason` and the audit row's `reasonCode`. The reason table that A6 edits is
+  planning's `deferral_reasons`; a cancel-reason list of its own is still to come.
+
 ## Open questions
 - `order_lines.available` (default true) came from the Supabase draft's `order_lines.availability`.
   What sets it to false (the depot is out of stock at cutoff, the loader flags it missing, the store
-  removes it?), and does an unavailable line still count towards the order's weight and volume?
-  (Harini)
+  removes it?), and does an unavailable line still count towards the order's weight and volume? The
+  column is written as true and read back on every line; nothing sets it to false yet. (Harini)
 - AC-ORD-01 to 06 in the Build Spec say Wed 1 Oct, Thu 2 Oct and Fri 3 Oct, but 2026-10-01 is a
   Thursday. This spec corrects the labels and keeps the dates, so AC-ORD-02's late order rolls to
   Sat 3 Oct. Confirm Saturday is an operating day for Fresh at Peliyagoda in the demo calendar, and
   fix Step 3 of the Build Spec. (Harini)
-- Frontmatter: Step 3's example header lists depends-on [identity, master-data] and screen M9. This
-  spec follows Step 2's boundaries table (core, audit, master-data) and the module tab (M9 belongs to
-  master-data; 04 added). (Nimesha)
-- `CreateOrderDto` requires at least one line and has no `templateId`, but M1 creates with an optional
-  template and submit checks for zero lines. Make lines optional and add `templateId`? (Harini)
-- Audit and events: only `ordering.order.submitted` is named as an audit action. This spec uses
-  `ordering.order.created` and `ordering.order.cancelled` (from the log events); names for edits, line
-  changes, priority, templates, roster, cutoff close, confirmations and lifecycle moves are open. Rule
-  4 asks for an outbox event on every state change, but the catalog has none for drafts, edits, lines,
-  templates or the roster. Payloads for `order.rolled_to_next_run`, `order.cancelled`,
-  `order.priority_changed` and `order.cutoff_closed` are not given. Step 2's reason table keys the
-  cancel rule as `order.cancelled`. (Harini, Nimesha)
-- Reorder (AC-ORD-07): "next open date" is read as the next operating day whose cutoff has not
-  passed. What if an order for that date and class already exists? Which statuses can be reordered?
-  Which notice code names the dropped items? (Harini)
-- DELETE on a draft: a hard delete (Step 4, module tab) or a move to CANCELLED (Step 1's
-  no-hard-delete convention)? (Harini)
-- Reorder and save-as-template create resources, so this spec answers 201 with Location (Step 4's
-  create rule). Decided 2026-10-01: the line endpoints answer with the order, so a screen gets the
-  new totals, version and `_links` from the same response (ROO-20).
 - `GET /orders/{id}/lines` needs `order:update`, so dispatchers, loaders and admins read lines only
   through `?include=lines`. Intended? (Harini)
-- Order resource: M3 sorts by `-requestedDate` and 03 groups by brand, but `ORDER_RESOURCE` has no
-  requestedDate sort and no brand filter or sort. Step 4's response nests `totals`, while
-  `toOrderDto` returns them flat and omits `urgent`, `valueLkr`, `afterCutoff` and `editableUntil`.
-  (Harini)
-- A late Style order: does it roll to the next operating day or to the outlet's next weekly delivery
-  day? Decided 2026-10-01: the next weekly delivery day. `deliveryDate` is set to it when the order is
-  placed, so a not-due Style order never reaches the planning queue (specs/engine/rules.md §9).
-- Which reason codes may a dispatcher use to cancel, and where are they stored? (Harini)
-- `close-cutoff` with `DEMO_MODE=false`: which status (403 or 404)? What does it return on success,
-  and what are the day summary's field names? (Harini)
-- Does a DRAFT carry `edit` and `cancel` links? The machine allows CANCEL for DRAFT but has no EDIT;
-  drafts are edited through PATCH and removed through DELETE. (Harini)
-- The 15:30 reminder has no event in the catalog. Which event does ordering emit for it, and does
-  "no order" mean no order of any class? (Harini, Nimesha)
-- Priority: this spec uses `{ "urgent": true }` from `orders.urgent`. Which statuses may be marked
-  urgent? (Harini)
+- Should a store manager be refused a `requestedDate` in the past? Nothing refuses one today, and
+  the engine only ever plans the day it is given. (Harini)
+- Which cancel reason codes may a dispatcher use, and where should the list live: a table of its
+  own, or the deferral reasons A6 already edits? (Harini)
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
@@ -662,3 +709,9 @@ Checklist (tick in the same PR as the passing test):
   and answer 501; the store screens M1, M1a, M1b and M2 run on them through MSW. Adds `addLine`,
   `setLines` and `saveAsTemplate` links, the line-level `edit` and `remove`, and the response fields
   M1 shows (`totals.lines`, `deliveryWindow`, `brand`, `templateId`)
+- 2026-10-02 ROO-19: the module is built. Every endpoint answers for real, AC-ORD-01 to 37 pass, and
+  the decisions the build had to make are in "Decided while building" above. Adds AC-ORD-37 (a Style
+  order's run is its outlet's weekly delivery day), `order_day_marks` (the once-a-day marks behind
+  the cutoff close and the 15:30 reminder), `cancelledAt` and `cancelReason` on the order response,
+  and the business-time helpers `cutoffFor`, `nextOperatingDay`, `nextWeekdayAfter` and
+  `minuteLabel` in packages/shared

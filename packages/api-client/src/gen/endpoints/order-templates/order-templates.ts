@@ -28,9 +28,12 @@ import type {
   CreateOrderTemplateDto,
   OrderTemplatesCreate201,
   OrderTemplatesCreateHeaders,
+  OrderTemplatesGet200,
   OrderTemplatesList200,
   OrderTemplatesListParams,
-  ProblemDto
+  OrderTemplatesUpdate200,
+  ProblemDto,
+  UpdateOrderTemplateDto
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -72,7 +75,6 @@ export const getOrderTemplatesListUrl = (params?: OrderTemplatesListParams,) => 
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary The outlet's presets
  */
 export const orderTemplatesList = async (params?: OrderTemplatesListParams, options?: Parameters<typeof compassFetch>[1]): Promise<OrderTemplatesList200> => {
@@ -173,7 +175,6 @@ export const getOrderTemplatesCreateUrl = () => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Save a preset
  */
 export const orderTemplatesCreate = async (createOrderTemplateDto: CreateOrderTemplateDto,
@@ -252,4 +253,265 @@ export const useOrderTemplatesCreate = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getOrderTemplatesCreateMutationOptions(options), queryClient);
+    }
+    export const getOrderTemplatesGetUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/order-templates/${id}`
+}
+
+/**
+ * @summary One preset
+ */
+export const orderTemplatesGet = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<OrderTemplatesGet200> => {
+
+  return compassFetch<OrderTemplatesGet200>(getOrderTemplatesGetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getOrderTemplatesGetQueryKey = (id: string,) => {
+    return [
+    `/api/v1/order-templates/${id}`
+    ] as const;
+    }
+
+
+export const getOrderTemplatesGetQueryOptions = <TData = Awaited<ReturnType<typeof orderTemplatesGet>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getOrderTemplatesGetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof orderTemplatesGet>>> = ({ signal }) => orderTemplatesGet(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type OrderTemplatesGetQueryResult = NonNullable<Awaited<ReturnType<typeof orderTemplatesGet>>>
+export type OrderTemplatesGetQueryError = ErrorType<ProblemDto>
+
+
+export function useOrderTemplatesGet<TData = Awaited<ReturnType<typeof orderTemplatesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof orderTemplatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof orderTemplatesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrderTemplatesGet<TData = Awaited<ReturnType<typeof orderTemplatesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof orderTemplatesGet>>,
+          TError,
+          Awaited<ReturnType<typeof orderTemplatesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useOrderTemplatesGet<TData = Awaited<ReturnType<typeof orderTemplatesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary One preset
+ */
+
+export function useOrderTemplatesGet<TData = Awaited<ReturnType<typeof orderTemplatesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof orderTemplatesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getOrderTemplatesGetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getOrderTemplatesUpdateUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/order-templates/${id}`
+}
+
+/**
+ * @summary Rename a preset
+ */
+export const orderTemplatesUpdate = async (id: string,
+    updateOrderTemplateDto: UpdateOrderTemplateDto, options?: Parameters<typeof compassFetch>[1]): Promise<OrderTemplatesUpdate200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<OrderTemplatesUpdate200>(getOrderTemplatesUpdateUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateOrderTemplateDto)
+  }
+);}
+
+
+
+
+
+export const getOrderTemplatesUpdateMutationKey = () => ['orderTemplatesUpdate'] as const;
+
+export const getOrderTemplatesUpdateMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesUpdate>>, TError,OrderTemplatesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesUpdate>>, TError,OrderTemplatesUpdateMutationVariables, TContext> => {
+
+const mutationKey = getOrderTemplatesUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderTemplatesUpdate>>, OrderTemplatesUpdateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  orderTemplatesUpdate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderTemplatesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof orderTemplatesUpdate>>>
+    export type OrderTemplatesUpdateMutationBody = BodyType<UpdateOrderTemplateDto>
+    export type OrderTemplatesUpdateMutationError = ErrorType<ProblemDto>
+    export type OrderTemplatesUpdateMutationVariables = {id: string;data: BodyType<UpdateOrderTemplateDto>}
+
+    /**
+ * @summary Rename a preset
+ */
+export const useOrderTemplatesUpdate = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesUpdate>>, TError,OrderTemplatesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof orderTemplatesUpdate>>,
+        TError,
+        OrderTemplatesUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrderTemplatesUpdateMutationOptions(options), queryClient);
+    }
+    export const getOrderTemplatesRemoveUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/order-templates/${id}`
+}
+
+/**
+ * @summary Delete a preset
+ */
+export const orderTemplatesRemove = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<void> => {
+
+  return compassFetch<void>(getOrderTemplatesRemoveUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getOrderTemplatesRemoveMutationKey = () => ['orderTemplatesRemove'] as const;
+
+export const getOrderTemplatesRemoveMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesRemove>>, TError,OrderTemplatesRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesRemove>>, TError,OrderTemplatesRemoveMutationVariables, TContext> => {
+
+const mutationKey = getOrderTemplatesRemoveMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof orderTemplatesRemove>>, OrderTemplatesRemoveMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  orderTemplatesRemove(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrderTemplatesRemoveMutationResult = NonNullable<Awaited<ReturnType<typeof orderTemplatesRemove>>>
+
+    export type OrderTemplatesRemoveMutationError = ErrorType<unknown>
+    export type OrderTemplatesRemoveMutationVariables = {id: string}
+
+    /**
+ * @summary Delete a preset
+ */
+export const useOrderTemplatesRemove = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof orderTemplatesRemove>>, TError,OrderTemplatesRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof orderTemplatesRemove>>,
+        TError,
+        OrderTemplatesRemoveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrderTemplatesRemoveMutationOptions(options), queryClient);
     }

@@ -117,7 +117,7 @@ A module writes only its own tables. Planning owns trips and stops; loading and 
 | `notifications.ts` | notifications, notification_preferences | Nimesha |
 | `webhooks.ts` | inbound_webhook_events, webhook_endpoints, webhook_deliveries | Nimesha |
 | `master-data.ts` | depots, depot_waves, districts, service_allowances, traffic_speeds, road_conditions, calendar_days, outlets, items | Harini |
-| `ordering.ts` | orders, order_lines, order_templates, order_template_lines, receiving_roster_entries | Harini |
+| `ordering.ts` | orders, order_lines, order_templates, order_template_lines, receiving_roster_entries, order_day_marks | Harini |
 | `loading.ts` | load_check_lines, load_flags | Harini |
 | `receipt.ts` | receipts, receipt_lines, issues | Harini |
 | `alerts.ts` | alerts | Harini |

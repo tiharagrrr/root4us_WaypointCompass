@@ -44,6 +44,10 @@ const providers = [
         setup: (cls, req: Request, res: Response) => {
           cls.set('correlationId', correlationIdOf(req));
           cls.set('deviceId', deviceIdOf(req));
+          // One array per request, pushed into by RequestContext.addNotice:
+          // a nested CLS context (every @Transactional() opens one) copies
+          // the store, so the array has to exist before the handler runs.
+          cls.set('notices', []);
           res.setHeader('x-request-id', cls.getId());
         },
       },
