@@ -15,13 +15,15 @@ import { suffix } from '../../../../test/fixtures';
 import type { Database } from '../../../db/client';
 
 /**
- * The catalog contract behind M1a's picker: the routes are mounted, every role that places or
- * checks an order may read them, and they answer 501 until the master-data queries land.
+ * The catalog contract behind M1a's picker: the routes are mounted, every
+ * role that places or checks an order may read them, and a role without
+ * `catalog:read` is refused. What the list returns is AC-MD-08, in
+ * master-data.e2e.spec.ts.
  */
 describeWithDb('catalog contract', () => {
   jest.setTimeout(30_000);
 
-  const ITEM_ID = '0192a3f4-0000-7000-8000-00000000b001';
+  const MISSING_ITEM = '0192a3f4-0000-7000-8000-00000000b001';
   let app: NestExpressApplication;
   let db: Database;
   let close: () => Promise<void>;
@@ -42,18 +44,32 @@ describeWithDb('catalog contract', () => {
       .set(browser())
       .set('Cookie', cookie);
 
-  it('the store manager reads the catalog, which is not implemented yet', async () => {
+  it('the store manager reads the catalog', async () => {
     const store = await signedInAs(app, db, {
       role: 'store_manager',
       outletId: null,
       name: `Store ${suffix()}`,
     });
 
-    expect(
-      (await get('/items?filter[tempClass]=AMBIENT&limit=100', store.cookie))
-        .status,
-    ).toBe(501);
-    expect((await get(`/items/${ITEM_ID}`, store.cookie)).status).toBe(501);
+    const list = await get(
+      '/items?filter[tempClass]=AMBIENT&limit=100',
+      store.cookie,
+    );
+
+    expect(list.status).toBe(200);
+    const page = list.body as {
+      data: unknown[];
+      meta: { page: { limit: number } };
+      _links: Record<string, unknown>;
+    };
+    expect(Array.isArray(page.data)).toBe(true);
+    expect(page.meta.page.limit).toBe(100);
+    expect(page._links.self).toBeDefined();
+
+    // An id nothing matches is a 404, not an empty resource.
+    const missing = await get(`/items/${MISSING_ITEM}`, store.cookie);
+    expect(missing.status).toBe(404);
+    expect(bodyOf<Problem>(missing).code).toBe('NOT_FOUND');
   });
 
   it('a driver has no catalog:read and is refused', async () => {

@@ -79,8 +79,19 @@ export class RequestContext {
     return this.cls.isActive() ? this.cls.get('actor') : undefined;
   }
 
-  /** Adds a notice to this response's meta.notices. */
+  /**
+   * Adds a notice to this response's meta.notices.
+   *
+   * It pushes into the array the CLS middleware opened the request with
+   * rather than replacing it: `@Transactional()` runs the method in a nested
+   * CLS context that shallow-copies the store, so a `set` inside a
+   * transaction would never reach the envelope. Outside a request (a job)
+   * there is no array yet, and the notice simply has nowhere to go.
+   */
   addNotice(notice: Notice): void {
-    this.cls.set('notices', [...(this.cls.get('notices') ?? []), notice]);
+    if (!this.cls.isActive()) return;
+    const notices = this.cls.get('notices');
+    if (notices) notices.push(notice);
+    else this.cls.set('notices', [notice]);
   }
 }

@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary An order's lines
  */
 export const OrderLinesListParams = zod.object({
@@ -60,7 +59,6 @@ export const OrderLinesListResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Replace the lines
  */
 export const OrderLinesReplaceParams = zod.object({
@@ -114,6 +112,8 @@ export const OrderLinesReplaceResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -136,7 +136,6 @@ export const OrderLinesReplaceResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Add a line
  */
 export const OrderLinesAddParams = zod.object({
@@ -186,6 +185,8 @@ export const OrderLinesAddResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -208,7 +209,6 @@ export const OrderLinesAddResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Change a quantity
  */
 export const OrderLinesUpdateParams = zod.object({
@@ -258,6 +258,8 @@ export const OrderLinesUpdateResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({
@@ -280,7 +282,6 @@ export const OrderLinesUpdateResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Remove a line
  */
 export const OrderLinesRemoveParams = zod.object({
@@ -323,6 +324,8 @@ export const OrderLinesRemoveResponse = zod.object({
   "note": zod.string().nullable(),
   "templateId": zod.string().nullable().describe('The preset this order was started from'),
   "submittedAt": zod.string().nullable(),
+  "cancelledAt": zod.string().nullable(),
+  "cancelReason": zod.string().nullable().describe('A store\'s note or a dispatcher\'s reason code'),
   "editableUntil": zod.string().describe('The cutoff instant: edits and cancels close here'),
   "version": zod.number(),
   "_links": zod.record(zod.string(), zod.object({

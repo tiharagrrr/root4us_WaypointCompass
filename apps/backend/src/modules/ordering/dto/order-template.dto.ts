@@ -87,3 +87,11 @@ export class CreateOrderTemplateDto {
   @ApiProperty({ type: [OrderLineInputDto] })
   lines!: OrderLineInputDto[];
 }
+
+/** PATCH /order-templates/{id}: renaming a preset is all M1 offers. */
+export class UpdateOrderTemplateDto {
+  @IsString()
+  @Length(1, 60)
+  @ApiProperty({ example: 'Weekday dry' })
+  name!: string;
+}

@@ -25,19 +25,31 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CancelOrderDto,
   CreateOrderDto,
+  OrdersCancel200,
+  OrdersCancelHeaders,
   OrdersCreate201,
   OrdersCreateHeaders,
   OrdersGet200,
   OrdersGetParams,
   OrdersList200,
   OrdersListParams,
+  OrdersRemoveHeaders,
+  OrdersReorder201,
+  OrdersReorderHeaders,
   OrdersSaveAsTemplate201,
   OrdersSaveAsTemplateHeaders,
+  OrdersSetPriority200,
+  OrdersSetPriorityHeaders,
   OrdersSubmit200,
   OrdersSubmitHeaders,
+  OrdersUpdate200,
+  OrdersUpdateHeaders,
   ProblemDto,
-  SaveAsTemplateDto
+  SaveAsTemplateDto,
+  SetOrderPriorityDto,
+  UpdateOrderDto
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -79,7 +91,6 @@ export const getOrdersListUrl = (params?: OrdersListParams,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary List orders
  */
 export const ordersList = async (params?: OrdersListParams, options?: Parameters<typeof compassFetch>[1]): Promise<OrdersList200> => {
@@ -180,7 +191,6 @@ export const getOrdersCreateUrl = () => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Start a draft order
  */
 export const ordersCreate = async (createOrderDto: CreateOrderDto,
@@ -277,7 +287,6 @@ export const useOrdersCreate = <TError = ErrorType<ProblemDto>,
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary One order
  */
 export const ordersGet = async (id: string,
@@ -376,7 +385,184 @@ export function useOrdersGet<TData = Awaited<ReturnType<typeof ordersGet>>, TErr
 
 
 
-export const getOrdersSubmitUrl = (id: string,) => {
+export const getOrdersUpdateUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}`
+}
+
+/**
+ * @summary Edit an order
+ */
+export const ordersUpdate = async (id: string,
+    updateOrderDto: UpdateOrderDto,
+    headers: OrdersUpdateHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<OrdersUpdate200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<OrdersUpdate200>(getOrdersUpdateUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateOrderDto)
+  }
+);}
+
+
+
+
+
+export const getOrdersUpdateMutationKey = () => ['ordersUpdate'] as const;
+
+export const getOrdersUpdateMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersUpdate>>, TError,OrdersUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordersUpdate>>, TError,OrdersUpdateMutationVariables, TContext> => {
+
+const mutationKey = getOrdersUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordersUpdate>>, OrdersUpdateMutationVariables> = (props) => {
+          const {id,data,headers} = props ?? {};
+
+          return  ordersUpdate(id,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdersUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof ordersUpdate>>>
+    export type OrdersUpdateMutationBody = BodyType<UpdateOrderDto>
+    export type OrdersUpdateMutationError = ErrorType<ProblemDto>
+    export type OrdersUpdateMutationVariables = {id: string;data: BodyType<UpdateOrderDto>;headers: OrdersUpdateHeaders}
+
+    /**
+ * @summary Edit an order
+ */
+export const useOrdersUpdate = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersUpdate>>, TError,OrdersUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordersUpdate>>,
+        TError,
+        OrdersUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdersUpdateMutationOptions(options), queryClient);
+    }
+    export const getOrdersRemoveUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}`
+}
+
+/**
+ * @summary Delete a draft order
+ */
+export const ordersRemove = async (id: string,
+    headers: OrdersRemoveHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<void> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<void>(getOrdersRemoveUrl(id),
+  {
+    ...options,
+    method: 'DELETE',
+    headers: { ...headers, ...getHeaders(options?.headers) }
+
+  }
+);}
+
+
+
+
+
+export const getOrdersRemoveMutationKey = () => ['ordersRemove'] as const;
+
+export const getOrdersRemoveMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersRemove>>, TError,OrdersRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordersRemove>>, TError,OrdersRemoveMutationVariables, TContext> => {
+
+const mutationKey = getOrdersRemoveMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordersRemove>>, OrdersRemoveMutationVariables> = (props) => {
+          const {id,headers} = props ?? {};
+
+          return  ordersRemove(id,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdersRemoveMutationResult = NonNullable<Awaited<ReturnType<typeof ordersRemove>>>
+
+    export type OrdersRemoveMutationError = ErrorType<ProblemDto>
+    export type OrdersRemoveMutationVariables = {id: string;headers: OrdersRemoveHeaders}
+
+    /**
+ * @summary Delete a draft order
+ */
+export const useOrdersRemove = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersRemove>>, TError,OrdersRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordersRemove>>,
+        TError,
+        OrdersRemoveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdersRemoveMutationOptions(options), queryClient);
+    }
+    export const getOrdersSubmitUrl = (id: string,) => {
 
 
 
@@ -385,7 +571,6 @@ export const getOrdersSubmitUrl = (id: string,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Send the order
  */
 export const ordersSubmit = async (id: string,
@@ -465,6 +650,183 @@ export const useOrdersSubmit = <TError = ErrorType<ProblemDto>,
       > => {
       return useMutation(getOrdersSubmitMutationOptions(options), queryClient);
     }
+    export const getOrdersCancelUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}/cancel`
+}
+
+/**
+ * @summary Cancel the order
+ */
+export const ordersCancel = async (id: string,
+    cancelOrderDto: CancelOrderDto,
+    headers: OrdersCancelHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<OrdersCancel200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<OrdersCancel200>(getOrdersCancelUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(cancelOrderDto)
+  }
+);}
+
+
+
+
+
+export const getOrdersCancelMutationKey = () => ['ordersCancel'] as const;
+
+export const getOrdersCancelMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersCancel>>, TError,OrdersCancelMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordersCancel>>, TError,OrdersCancelMutationVariables, TContext> => {
+
+const mutationKey = getOrdersCancelMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordersCancel>>, OrdersCancelMutationVariables> = (props) => {
+          const {id,data,headers} = props ?? {};
+
+          return  ordersCancel(id,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdersCancelMutationResult = NonNullable<Awaited<ReturnType<typeof ordersCancel>>>
+    export type OrdersCancelMutationBody = BodyType<CancelOrderDto>
+    export type OrdersCancelMutationError = ErrorType<ProblemDto>
+    export type OrdersCancelMutationVariables = {id: string;data: BodyType<CancelOrderDto>;headers: OrdersCancelHeaders}
+
+    /**
+ * @summary Cancel the order
+ */
+export const useOrdersCancel = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersCancel>>, TError,OrdersCancelMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordersCancel>>,
+        TError,
+        OrdersCancelMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdersCancelMutationOptions(options), queryClient);
+    }
+    export const getOrdersReorderUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}/reorder`
+}
+
+/**
+ * @summary Order the same again
+ */
+export const ordersReorder = async (id: string,
+    headers?: OrdersReorderHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<OrdersReorder201> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<OrdersReorder201>(getOrdersReorderUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { ...headers, ...getHeaders(options?.headers) }
+
+  }
+);}
+
+
+
+
+
+export const getOrdersReorderMutationKey = () => ['ordersReorder'] as const;
+
+export const getOrdersReorderMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersReorder>>, TError,OrdersReorderMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordersReorder>>, TError,OrdersReorderMutationVariables, TContext> => {
+
+const mutationKey = getOrdersReorderMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordersReorder>>, OrdersReorderMutationVariables> = (props) => {
+          const {id,headers} = props ?? {};
+
+          return  ordersReorder(id,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdersReorderMutationResult = NonNullable<Awaited<ReturnType<typeof ordersReorder>>>
+
+    export type OrdersReorderMutationError = ErrorType<ProblemDto>
+    export type OrdersReorderMutationVariables = {id: string;headers?: OrdersReorderHeaders}
+
+    /**
+ * @summary Order the same again
+ */
+export const useOrdersReorder = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersReorder>>, TError,OrdersReorderMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordersReorder>>,
+        TError,
+        OrdersReorderMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdersReorderMutationOptions(options), queryClient);
+    }
     export const getOrdersSaveAsTemplateUrl = (id: string,) => {
 
 
@@ -474,7 +836,6 @@ export const useOrdersSubmit = <TError = ErrorType<ProblemDto>,
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Save the lines as a preset
  */
 export const ordersSaveAsTemplate = async (id: string,
@@ -554,4 +915,93 @@ export const useOrdersSaveAsTemplate = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getOrdersSaveAsTemplateMutationOptions(options), queryClient);
+    }
+    export const getOrdersSetPriorityUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}/priority`
+}
+
+/**
+ * @summary Mark an order urgent
+ */
+export const ordersSetPriority = async (id: string,
+    setOrderPriorityDto: SetOrderPriorityDto,
+    headers: OrdersSetPriorityHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<OrdersSetPriority200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<OrdersSetPriority200>(getOrdersSetPriorityUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(setOrderPriorityDto)
+  }
+);}
+
+
+
+
+
+export const getOrdersSetPriorityMutationKey = () => ['ordersSetPriority'] as const;
+
+export const getOrdersSetPriorityMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersSetPriority>>, TError,OrdersSetPriorityMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof ordersSetPriority>>, TError,OrdersSetPriorityMutationVariables, TContext> => {
+
+const mutationKey = getOrdersSetPriorityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof ordersSetPriority>>, OrdersSetPriorityMutationVariables> = (props) => {
+          const {id,data,headers} = props ?? {};
+
+          return  ordersSetPriority(id,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OrdersSetPriorityMutationResult = NonNullable<Awaited<ReturnType<typeof ordersSetPriority>>>
+    export type OrdersSetPriorityMutationBody = BodyType<SetOrderPriorityDto>
+    export type OrdersSetPriorityMutationError = ErrorType<ProblemDto>
+    export type OrdersSetPriorityMutationVariables = {id: string;data: BodyType<SetOrderPriorityDto>;headers: OrdersSetPriorityHeaders}
+
+    /**
+ * @summary Mark an order urgent
+ */
+export const useOrdersSetPriority = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof ordersSetPriority>>, TError,OrdersSetPriorityMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof ordersSetPriority>>,
+        TError,
+        OrdersSetPriorityMutationVariables,
+        TContext
+      > => {
+      return useMutation(getOrdersSetPriorityMutationOptions(options), queryClient);
     }

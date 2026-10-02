@@ -15,6 +15,13 @@
       "when": 1790787980354,
       "tag": "202609301707_platform_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790884279245,
+      "tag": "202610011951_ordering_day_marks",
+      "breakpoints": true
     }
   ]
 }

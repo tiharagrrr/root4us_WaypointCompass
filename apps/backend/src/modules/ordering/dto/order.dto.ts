@@ -13,6 +13,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -21,6 +22,7 @@ import {
   Length,
   Matches,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { ApiLinks } from '../../../core/http/decorators';
@@ -191,6 +193,17 @@ export class OrderDto {
   @ApiProperty({ nullable: true, type: String, example: null })
   submittedAt!: string | null;
 
+  @ApiProperty({ nullable: true, type: String, example: null })
+  cancelledAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: "A store's note or a dispatcher's reason code",
+    example: null,
+  })
+  cancelReason!: string | null;
+
   @ApiProperty({
     description: 'The cutoff instant: edits and cancels close here',
     example: '2026-10-01T16:00:00+05:30',
@@ -291,4 +304,57 @@ export class OrderLinesDto {
 
   @ApiLinks()
   _links!: Record<string, Link>;
+}
+
+/**
+ * PATCH /orders/{id}: the note, and the day the store is asking for, while
+ * the order is still editable. The outlet, class and brand never change:
+ * a different class is a different order.
+ */
+export class UpdateOrderDto {
+  @IsOptional()
+  @Matches(BUSINESS_DATE, { message: 'Use a date as YYYY-MM-DD' })
+  @ApiPropertyOptional({ example: '2026-10-03' })
+  requestedDate?: string;
+
+  @IsOptional()
+  @ValidateIf((d: UpdateOrderDto) => d.note !== null)
+  @IsString()
+  @Length(1, 500)
+  @ApiPropertyOptional({ nullable: true, type: String, example: 'Extra rice' })
+  note?: string | null;
+}
+
+/**
+ * POST /orders/{id}/cancel. A store manager gives a note in their own words;
+ * a dispatcher gives a code from the reason list (AC-ORD-20, AC-ORD-21).
+ */
+export class CancelOrderDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 500)
+  @ApiPropertyOptional({
+    description: 'Required when a store manager cancels',
+    example: 'Ordered twice',
+  })
+  reasonNote?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 60)
+  @Matches(/^[A-Z][A-Z0-9_]*$/, {
+    message: 'Use a reason code such as STORE_CLOSED',
+  })
+  @ApiPropertyOptional({
+    description: 'Required when a dispatcher cancels',
+    example: 'STORE_CLOSED',
+  })
+  reasonCode?: string;
+}
+
+/** PATCH /orders/{id}/priority: the dispatcher's urgent flag on 03. */
+export class SetOrderPriorityDto {
+  @IsBoolean()
+  @ApiProperty({ example: true })
+  urgent!: boolean;
 }

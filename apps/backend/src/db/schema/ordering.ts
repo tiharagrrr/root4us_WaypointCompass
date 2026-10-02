@@ -9,6 +9,7 @@ import {
   foreignKey,
   index,
   integer,
+  jsonb,
   pgPolicy,
   pgSequence,
   pgTable,
@@ -206,5 +207,28 @@ export const receivingRosterEntries = pgTable(
   (t) => [
     index('roster_outlet_date_idx').on(t.outletId, t.date),
     check('roster_band_chk', sql`${t.toMin} > ${t.fromMin}`),
+  ],
+);
+
+/**
+ * The once-a-day acts ordering must not repeat, whatever retries a worker
+ * makes: closing a depot's cutoff for a delivery date, and the 15:30 reminder
+ * to one outlet about that date. The primary key is the guarantee: an
+ * ON CONFLICT DO NOTHING insert lets exactly one caller win, so the cutoff
+ * emits `order.cutoff_closed` once even when the demo close and the ticker
+ * both reach the same day (AC-ORD-25, AC-ORD-26).
+ */
+export const orderDayMarks = pgTable(
+  'order_day_marks',
+  {
+    kind: text().notNull(), // 'cutoff_closed' | 'cutoff_reminder'
+    scopeId: text().notNull(), // depotId for a close, outletId for a reminder
+    deliveryDate: businessDate().notNull(),
+    at: instant().notNull(),
+    detail: jsonb().$type<Record<string, unknown>>(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.kind, t.scopeId, t.deliveryDate] }),
+    index('order_day_marks_date_idx').on(t.kind, t.deliveryDate),
   ],
 );

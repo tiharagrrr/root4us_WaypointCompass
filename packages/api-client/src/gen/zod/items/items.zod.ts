@@ -9,7 +9,6 @@ import * as zod from 'zod';
 
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary List catalog items
  */
 export const itemsListQueryLimitMax = 1000;
@@ -86,7 +85,6 @@ export const ItemsListResponse = zod.object({
 })
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary One catalog item
  */
 export const ItemsGetParams = zod.object({

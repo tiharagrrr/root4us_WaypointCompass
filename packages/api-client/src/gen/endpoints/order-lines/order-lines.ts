@@ -72,7 +72,6 @@ export const getOrderLinesListUrl = (orderId: string,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary An order's lines
  */
 export const orderLinesList = async (orderId: string, options?: Parameters<typeof compassFetch>[1]): Promise<OrderLinesList200> => {
@@ -173,7 +172,6 @@ export const getOrderLinesReplaceUrl = (orderId: string,) => {
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Replace the lines
  */
 export const orderLinesReplace = async (orderId: string,
@@ -263,7 +261,6 @@ export const useOrderLinesReplace = <TError = ErrorType<ProblemDto>,
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Add a line
  */
 export const orderLinesAdd = async (orderId: string,
@@ -354,7 +351,6 @@ export const useOrderLinesAdd = <TError = ErrorType<ProblemDto>,
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Change a quantity
  */
 export const orderLinesUpdate = async (orderId: string,
@@ -446,7 +442,6 @@ export const useOrderLinesUpdate = <TError = ErrorType<ProblemDto>,
 }
 
 /**
- * Not implemented yet (501): the contract is final, the service lands next.
  * @summary Remove a line
  */
 export const orderLinesRemove = async (orderId: string,

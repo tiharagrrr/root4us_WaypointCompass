@@ -44,6 +44,8 @@ export const order = (over: Partial<OrderDto> = {}): OrderDto => {
     note: null,
     templateId: null,
     submittedAt: null,
+    cancelledAt: null,
+    cancelReason: null,
     editableUntil: '2026-10-01T16:00:00+05:30',
     version: 1,
     _links: {

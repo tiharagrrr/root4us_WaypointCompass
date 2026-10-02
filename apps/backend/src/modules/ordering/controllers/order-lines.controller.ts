@@ -11,6 +11,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Actor as SignedIn } from '@waypoint/shared';
 import {
   Actor,
   ApiProblems,
@@ -18,7 +19,6 @@ import {
   IfMatch,
   RequirePermission,
 } from '../../../core/http/decorators';
-import { notImplemented } from '../../../core/http/not-implemented';
 import {
   OrderDto,
   OrderLineInputDto,
@@ -26,29 +26,36 @@ import {
   SetOrderLinesDto,
   UpdateOrderLineDto,
 } from '../dto/order.dto';
-
-const SOON =
-  'Not implemented yet (501): the contract is final, the service lands next.';
+import { OrderLinks } from '../policies/order.links';
+import { OrderLinesService } from '../services/order-lines.service';
+import { OrderQueries } from '../services/order.queries';
 
 /**
- * The lines of one order: M1's table and the items M1a adds. Every write carries the order's
- * version as If-Match and answers with the order, whose totals and version have moved on, so the
- * screen redraws from one response.
- *
- * Contract first: every handler answers 501 until the ordering services land.
+ * The lines of one order: M1's table and the items M1a adds. Every write
+ * carries the order's version as If-Match and answers with the order, whose
+ * totals and version have moved on, so the screen redraws from one response.
  */
 @ApiTags('order-lines')
 @Controller('orders/:orderId/lines')
 export class OrderLinesController {
+  constructor(
+    private readonly lines: OrderLinesService,
+    private readonly queries: OrderQueries,
+    private readonly links: OrderLinks,
+  ) {}
+
   @Get()
   @RequirePermission('order:update')
   @ApiResource(OrderLinesDto)
-  @ApiOperation({ summary: "An order's lines", description: SOON })
-  list(
+  @ApiOperation({ summary: "An order's lines" })
+  async list(
     @Param('orderId', ParseUUIDPipe) orderId: string,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
   ) {
-    return notImplemented('GET /orders/{id}/lines', { orderId, actor });
+    return this.links.lines(
+      await this.queries.getWithLines(orderId, actor),
+      actor,
+    );
   }
 
   /** Replaces every line at once, as applying a preset on M1 does. */
@@ -56,19 +63,17 @@ export class OrderLinesController {
   @RequirePermission('order:update')
   @ApiResource(OrderDto)
   @ApiProblems(409)
-  @ApiOperation({ summary: 'Replace the lines', description: SOON })
-  replace(
+  @ApiOperation({ summary: 'Replace the lines' })
+  async replace(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() dto: SetOrderLinesDto,
     @IfMatch() version: number,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
   ) {
-    return notImplemented('PUT /orders/{id}/lines', {
-      orderId,
-      dto,
-      version,
+    return this.links.one(
+      await this.lines.replace(orderId, dto, actor, version),
       actor,
-    });
+    );
   }
 
   /** M1a: one item added. A second line for the same item answers 409. */
@@ -77,19 +82,17 @@ export class OrderLinesController {
   @RequirePermission('order:update')
   @ApiResource(OrderDto)
   @ApiProblems(409)
-  @ApiOperation({ summary: 'Add a line', description: SOON })
-  add(
+  @ApiOperation({ summary: 'Add a line' })
+  async add(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Body() dto: OrderLineInputDto,
     @IfMatch() version: number,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
   ) {
-    return notImplemented('POST /orders/{id}/lines', {
-      orderId,
-      dto,
-      version,
+    return this.links.one(
+      await this.lines.add(orderId, dto, actor, version),
       actor,
-    });
+    );
   }
 
   /** The quantity stepper on M1 and M1a. */
@@ -97,21 +100,18 @@ export class OrderLinesController {
   @RequirePermission('order:update')
   @ApiResource(OrderDto)
   @ApiProblems(409)
-  @ApiOperation({ summary: 'Change a quantity', description: SOON })
-  update(
+  @ApiOperation({ summary: 'Change a quantity' })
+  async update(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @Body() dto: UpdateOrderLineDto,
     @IfMatch() version: number,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
   ) {
-    return notImplemented('PATCH /orders/{id}/lines/{lineId}', {
-      orderId,
-      lineId,
-      dto,
-      version,
+    return this.links.one(
+      await this.lines.setQty(orderId, lineId, dto, actor, version),
       actor,
-    });
+    );
   }
 
   /** Answers with the order rather than 204, so M1 redraws its totals from one response. */
@@ -120,18 +120,16 @@ export class OrderLinesController {
   @RequirePermission('order:update')
   @ApiResource(OrderDto)
   @ApiProblems(409)
-  @ApiOperation({ summary: 'Remove a line', description: SOON })
-  remove(
+  @ApiOperation({ summary: 'Remove a line' })
+  async remove(
     @Param('orderId', ParseUUIDPipe) orderId: string,
     @Param('lineId', ParseUUIDPipe) lineId: string,
     @IfMatch() version: number,
-    @Actor() actor: Actor,
+    @Actor() actor: SignedIn,
   ) {
-    return notImplemented('DELETE /orders/{id}/lines/{lineId}', {
-      orderId,
-      lineId,
-      version,
+    return this.links.one(
+      await this.lines.remove(orderId, lineId, actor, version),
       actor,
-    });
+    );
   }
 }
