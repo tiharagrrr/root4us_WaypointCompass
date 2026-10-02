@@ -6,6 +6,7 @@ import { AuditModule } from '../audit';
 import { DeferralReasonsController } from './controllers/deferral-reasons.controller';
 import { DeferralReasonLinks } from './policies/deferral-reason.links';
 import { DeferralReasonsService } from './services/deferral-reasons.service';
+import { DeferralService } from './services/deferral.service';
 import { TripLifecycleService } from './services/trip-lifecycle.service';
 
 @Module({
@@ -14,10 +15,12 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
   providers: [
     DeferralReasonsService,
     DeferralReasonLinks,
+    DeferralService,
     TripLifecycleService,
   ],
-  // Loading and execution move trip and stop status only through this
-  // service (architecture rule 2, AC-PLN-34).
-  exports: [TripLifecycleService],
+  // Loading and execution move trip and stop status, and record the
+  // deferrals they cause, only through these services (architecture rule 2,
+  // AC-PLN-34, AC-LOD-12).
+  exports: [DeferralService, TripLifecycleService],
 })
 export class PlanningModule {}

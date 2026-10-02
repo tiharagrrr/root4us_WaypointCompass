@@ -1,7 +1,7 @@
 ---
 module: loading
 owner: Harini
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [L2, L3, L3a, L3b, L3c, L4, L5, L2m-a, L2m-b, L3m, L3m-a, L4m, L5m, "01", "19"]
 depends-on: [audit, planning, ordering]
 ---
@@ -82,6 +82,33 @@ LoadFlag (load_flags):
 
 Index load_flags_trip_status_idx on (tripId, status).
 
+LoadRelease (load_releases), added by ROO-33:
+
+| Column | Notes |
+| --- | --- |
+| id | UUIDv7 |
+| tripId | references trips.id, unique: one release per trip |
+| checkedByName | the name typed on the dock tablet; required |
+| releasedById, deviceId, releasedAt | who released it, from where, when |
+| releaseTempC | null on an ambient trip, which needs no reading |
+| planRevision | the revision the list was released against |
+| clientUuid | unique; offline idempotency |
+
+`trips` has no room for the typed Checked-by name or for a release's
+`clientUuid`, and both were Open questions; this table answers them. It also
+records which revision the dock released against, which is what makes
+"released against a plan that has since moved" a visible fact rather than an
+inference. A trip reassigned to another vehicle drops its row and must be
+released again (AC-LOD-19).
+
+LoadEventReceipt (load_event_receipts), added by ROO-33: eventId (the
+outbox_events id, primary key, no foreign key because the relay may prune its
+rows), type, handledAt. Delivery is at least once, and a redelivered
+`plan.published` would change nothing but would still emit
+`load.list_updated` and put the Plan updated banner on a tablet for a plan
+that did not move; only the event id can tell a redelivery from a genuine
+re-publish (AC-LOD-01). The same pattern as alerts' `alert_event_receipts`.
+
 Invariants:
 - Lines appear last stop first, so the first stop's goods go in last, nearest the door.
 - A line is checked with the quantity loaded; loading less than expected requires a flag.
@@ -109,6 +136,8 @@ Invariants:
 | POST | /trips/{id}/load-flags | load:flag | L3: line, reason, quantity, note, optional photo, `clientUuid`; 201 with Location |
 | POST | /load-flags/{id}/undo | load:flag | The raiser, before the dispatcher decides |
 | GET | /load-flags?filter[status]=OPEN | load:read | The dispatcher's flag queue; offset pages |
+| GET | /load-flags/{id} | load:read | One flag, with what can be done about it (its `self`) |
+| GET | /load-lines/{id} | load:read | One line (its `self`) |
 | POST | /load-flags/{id}/decision | load:decide | L3b: REPLACE or REMOVE with a note and reason code |
 | POST | /load-flags/{id}/recheck | load:check | L3c: quantity and checker; resolves the flag |
 | GET | /trips/{id}/release-checks | load:read | L4: each precondition with pass or fail |
@@ -137,8 +166,13 @@ Module folder apps/backend/src/modules/loading.
   `OrderLifecycleService.markLoaded` for the trip's orders.
 - **LoadingQueries**: runs, trips, load list, flag queue and release checks, each through the
   loading ScopePolicy.
-- Domain helpers: `loadOrder(stops)` for last-stop-first order, `releaseChecks(trip, lines, flags,
-  settings)` as a pure function the web also uses, `groupByStop(lines)`.
+- Domain helpers: `loadOrder(stops)` for last-stop-first order and
+  `groupByStop(lines)` in `domain/load-order.ts`;
+  `releaseChecks(trip, lines, flags, settings)` in
+  **packages/shared/src/rules/release-checks.ts**, because the tablet calls it
+  too — it is the one function L4's checklist, the 409 and the greyed-out
+  Release button are all built from, and it cannot live in apps/backend if the
+  web is to share it.
 - index.ts exports what sync needs to apply loader events (sync may import loading).
 - Offline (apps/frontend): the tablet caches the day's lists in Dexie (`loadLines: 'id, tripId,
   stopSeq, status'`). Checks, flags, flag undo and re-checks go through `outbox.enqueue(type,
@@ -151,16 +185,18 @@ Module folder apps/backend/src/modules/loading.
 | LOAD_FLAG_RAISED | line, reason, quantity, note, photo clientUuid, clientUuid | L3 |
 | LOAD_FLAG_UNDONE | the flag, clientUuid | L3a |
 | LOAD_RECHECKED | the flag, quantity, checkedByName, clientUuid | L3c |
+| LOAD_CHECK_UNDONE | the line, clientUuid | L2 (added by ROO-33; see Decided while building) |
 
 ## Events
 Emits:
 
 | Event | Consumed by | Payload |
 | --- | --- | --- |
-| load.list_updated | realtime (Plan updated banner on the tablet) | v: 1, ids (fields not given) |
-| load.flag_raised | alerts, notifications (dispatcher push), realtime | v: 1, ids (fields not given) |
-| load.flag_decided, load.flag_resolved | realtime (L3b, L3c), notifications (store, when a REMOVE defers part of its order) | load.flag_decided carries tripId (the web invalidates ['load-list', tripId]) |
-| trip.released | execution, notifications (driver), realtime, webhooks | v: 1, ids (fields not given) |
+| load.list_updated | realtime (Plan updated banner on the tablet) | v: 1, tripId, planId, depotId, revision, lines, added, removed, keptChecks, reopened, reasonCode |
+| load.flag_raised | alerts, notifications (dispatcher push), realtime | v: 1, flagId, tripId, loadLineId, orderId, outletId, reason, qtyAffected, plannedDepartAt (which alerts reads to decide whether a shortfall is critical) |
+| load.line_checked, load.line_check_undone | realtime (another tablet on the same dock) | v: 1, tripId, loadLineId, orderId, outletId, status, qtyExpected, qtyLoaded, stopSeq |
+| load.flag_decided, load.flag_resolved | realtime (L3b, L3c), notifications (store, when a REMOVE defers part of its order) | load.flag_decided: v: 1, flagId, tripId (the web invalidates ['load-list', tripId]), loadLineId, orderId, outletId, decision, reasonCode, deferralId, backorderId, revision. load.flag_resolved: v: 1, flagId, tripId, loadLineId, status, how (RECHECK, REMOVE or UNDONE), qtyLoaded |
+| trip.released | execution, notifications (driver), realtime, webhooks | v: 1, tripId, planId, depotId, vehicleId, driverId, stops, orderIds, releaseTempC, releasedAt, firstStopAt |
 
 Consumes: `plan.published` (data: revision, tripIds), `plan.revised`, `trip.reassigned`.
 
@@ -173,6 +209,8 @@ Audit actions (same transaction as the write):
 | loading.line.check_undone | a check is undone | — | proposed |
 | loading.flag.raised | a flag is raised | reason: missing, damaged, wrong temperature or over capacity | the doc's log name |
 | loading.flag.undone | the raiser undoes a flag | — | proposed |
+| ordering.order.backordered | a REMOVE raises the backorder (ordering's row) | — | ROO-33 |
+| planning.stop.deferred | a REMOVE records the partial deferral (planning's row) | the decision's reason code | ROO-33 |
 | loading.flag.decided | the dispatcher decides | a reason code for REMOVE | the doc's log name |
 | loading.flag.rechecked | the re-check resolves a flag | — | proposed |
 | loading.trip.released | the trip is released, with the reefer temperature | — | the doc's log name |
@@ -199,25 +237,25 @@ Scope: a loader sees depotId = actor.depotId and trips for today and tomorrow; a
 depotId = actor.depotId, or all depots when none is set. Out of scope answers 404.
 
 ## Acceptance criteria
-- [ ] AC-LOD-01  Publishing builds last-stop-first lists
-- [ ] AC-LOD-02  The dock sees its own trips
-- [ ] AC-LOD-03  Roles without the permission are refused
-- [ ] AC-LOD-04  Checking lines
-- [ ] AC-LOD-05  A short check needs a flag
-- [ ] AC-LOD-06  A check can be undone until release
-- [ ] AC-LOD-07  Flag a missing item
-- [ ] AC-LOD-08  Flags and removals need reasons
-- [ ] AC-LOD-09  Undo a flag before the decision
-- [ ] AC-LOD-10  The dispatcher asks for a replacement
-- [ ] AC-LOD-11  The re-check resolves the flag
-- [ ] AC-LOD-12  Removing an item defers part of the order
-- [ ] AC-LOD-13  A revision keeps unchanged checks
-- [ ] AC-LOD-14  Release is refused while a check fails
-- [ ] AC-LOD-15  Chilled trips need a cold reefer
-- [ ] AC-LOD-16  Release the trip
-- [ ] AC-LOD-17  Release needs a connection
-- [ ] AC-LOD-18  Offline loader events apply once, in order
-- [ ] AC-LOD-19  A moved released trip loads again
+- [x] AC-LOD-01  Publishing builds last-stop-first lists
+- [x] AC-LOD-02  The dock sees its own trips
+- [x] AC-LOD-03  Roles without the permission are refused
+- [x] AC-LOD-04  Checking lines
+- [x] AC-LOD-05  A short check needs a flag
+- [x] AC-LOD-06  A check can be undone until release
+- [x] AC-LOD-07  Flag a missing item
+- [x] AC-LOD-08  Flags and removals need reasons
+- [x] AC-LOD-09  Undo a flag before the decision
+- [x] AC-LOD-10  The dispatcher asks for a replacement
+- [x] AC-LOD-11  The re-check resolves the flag
+- [x] AC-LOD-12  Removing an item defers part of the order
+- [x] AC-LOD-13  A revision keeps unchanged checks
+- [x] AC-LOD-14  Release is refused while a check fails
+- [x] AC-LOD-15  Chilled trips need a cold reefer
+- [x] AC-LOD-16  Release the trip
+- [x] AC-LOD-17  Release needs a connection (the API half; L4's offline state is ROO-52's)
+- [x] AC-LOD-18  Offline loader events apply once, in order
+- [x] AC-LOD-19  A moved released trip loads again
 
 ```gherkin
 AC-LOD-01  Publishing builds last-stop-first lists
@@ -450,26 +488,102 @@ AC-LOD-19  A moved released trip loads again
   Plan updated banner comes from load.list_updated.
 - L2 to L4 are on the judge path; L3a to L3c are in the exceptions tier.
 
-## Open questions
-- Refused release: which problem code goes with the 409, which field lists the failing checks, and
-  is a missing reefer temperature a failing check (409) or a 400? (Harini)
-- A check below qtyExpected with no flag: which code does its rejected result carry? (Harini)
-- The doc names no audit or log events for check, check undo, flag undo and re-check (proposed
-  names above), and no outbox event for checks, though architecture rule 4 wants one per state
-  change. (Harini)
-- Check undo has no sync event type (only LOAD_LINE_CHECKED, LOAD_FLAG_RAISED, LOAD_FLAG_UNDONE,
-  LOAD_RECHECKED), yet loader writes go through the outbox. Add one, or keep undo online only?
-  (Harini, Aniqa)
-- REMOVE on a short line: is the whole line removed or only qtyAffected backordered, what
-  qtyLoaded does the line keep, and which reason-code list do decisions use? (Harini, Tihara)
-- How does release confirm the tablet saw the latest revision (the body has no planRevision), and
-  where is the release clientUuid kept for replays, since trips have no clientUuid? (Harini)
-- Assumed, to confirm: the first check marks the trip LOADING; an undone flag returns its line to
-  PENDING; load.list_updated is emitted once per trip; link names check, flag, undo, decide,
-  recheck. (Harini)
-- Runs board: how are trips with no wave (Fresh trips leave at 03:30) grouped? (Harini)
-- Dates: the doc's examples call 1 Oct 2026 a Wednesday, but 30 Sep is the Wednesday. These
-  criteria use ISO dates without weekdays. (Nimesha)
+## Decided while building (ROO-33)
+
+Every Open question that blocked the API was settled here, in code, with the
+test that proves it. Harini and Tihara own the ones marked **to confirm**:
+changing one is a behaviour change, not a bug fix.
+
+- **A refused release is 409 `CONFLICT_STATE` with a `checks` member**, and
+  `failedChecks` listing the ids that failed. The member carries *every*
+  check, not only the failures, so L4 draws the same checklist from the
+  refusal as from `GET /trips/{id}/release-checks` and never has to merge two
+  shapes. Not 422: nothing about the request is wrong, the dock is simply not
+  finished, and the same body succeeds two minutes later (AC-LOD-14).
+- **A missing reefer reading is a failing check, not a 400.** AC-LOD-15 asks
+  for 409 with the temperature check failing, and a loader who has not read
+  the thermometer is in the same position as one with a line still to check.
+- **A short check with no flag is rejected `SHORT_WITHOUT_FLAG`**, with a
+  message naming what to do instead. A check says "all 12 are here"; fewer is
+  a flag for the dispatcher, not a quietly smaller number (AC-LOD-05). The
+  other per-item codes are `OVER_EXPECTED`, `LINE_NOT_FOUND`,
+  `LINE_NOT_CHECKABLE` and `TRIP_CLOSED`.
+- **Checks do emit outbox events** (`load.line_checked`,
+  `load.line_check_undone`), which the doc's catalog does not name.
+  Architecture rule 4 wants one per state change, and a tick that another
+  tablet on the same dock cannot see is a worse answer than an extra event
+  type. The audit actions are the proposed `loading.line.checked` and
+  `loading.line.check_undone`.
+- **Check undo is syncable**: `LOAD_CHECK_UNDONE` joins the four sync event
+  types. Architecture rule 10 says every loader write goes through the
+  outbox, and leaving undo out would have made it the one control on L2 that
+  stops working when the dock's wifi does. Release stays online only, which
+  is why no loader event type mentions it (AC-LOD-17).
+- **A REMOVE backorders only the affected quantity.** The line goes REMOVED
+  with `qtyLoaded = qtyExpected − qtyAffected`, so the 10 cases that are in
+  the building still travel; planning holds a partial deferral and ordering a
+  backorder for the 2 that did not. This is AC-LOD-12's "the removed quantity
+  of 2" read literally. **To confirm** (Harini, Tihara): the alternative is
+  that the whole line stays behind.
+- **Decisions use the `deferral_reasons` table**, the same list 16 and 17
+  draw on, and a code that is missing or inactive is a 404 on the reason
+  rather than a deferral the store cannot be told about.
+- **The release confirms the revision two ways.** The body takes an optional
+  `planRevision`; when it is given and stale, the revision check fails, which
+  is how the server knows the tablet has seen the latest plan. The lines' own
+  revisions are checked regardless, so a tablet that sends nothing is still
+  held to the current plan. The release's `clientUuid` lives in
+  `load_releases`, so a replay is a 200 that changes nothing (AC-LOD-16).
+- **The runs board gives trips with no wave a group of their own**, labelled
+  "No wave" and placed last, rather than dropping them from the board or
+  folding them into somebody else's run. Fresh trips leave at 03:30 and
+  belong to no wave. **To confirm** (Harini): the label.
+- **An undone flag returns its line to where it was**: PENDING when it had
+  not been checked, OK when it had, which `qtyLoaded` already records, so no
+  column keeps the status the line held before the flag (AC-LOD-09).
+- **Only the loader who raised a flag may undo it** — the account, not the
+  typed name, because a shared tablet signs in as itself. The undo link is
+  absent for anyone else, and the endpoint answers 403.
+- **The release link follows the trip machine, not the release checks.** It is
+  present while the trip is LOADING and the viewer holds `load:release`, and
+  gone once it is RELEASED (AC-LOD-16). Gating it on the checks passing would
+  leave L4 with no button to press and nothing to explain; `releaseChecks` on
+  the same resource is what the screen enables the button from.
+- **`loading.maxReleaseTempC` is global, not per depot**: it is not declared
+  `perDepot` in the settings registry, because the cold chain is a
+  food-safety limit rather than a depot's preference.
+- **The first check marks the trip LOADING**, through planning's
+  `TripLifecycleService.markLoading`; a refused check does not (AC-LOD-04,
+  AC-LOD-05).
+- **A refresh resets a check whose quantity moved under it.** A line whose
+  order, item and quantity are unchanged keeps its status, quantity and
+  checker (AC-LOD-13); one whose `qtyExpected` changed goes back to PENDING,
+  because a tick against 12 cases says nothing about 14. A line settled by a
+  decided flag is never reset.
+- **A re-release leaves an already-LOADED order alone.** `orderMachine` has no
+  LOAD from LOADED, so a trip released, reassigned to another vehicle and
+  released again would otherwise fail on an order the dock did nothing wrong
+  with (AC-LOD-19). An order every line of which was removed is never marked
+  LOADED at all.
+
+## Still open
+
+- Dates: the doc's examples call 1 Oct 2026 a Wednesday, but 30 Sep is the
+  Wednesday. These criteria use ISO dates without weekdays. (Nimesha)
+- `trip.reassigned`'s payload does not say whether the *vehicle* changed.
+  LoadListBuilder reads `vehicleChanged` when planning sends it, compares
+  `vehicleId` with the trip's when it does not, and treats an unreadable
+  reassign as a driver change — the safer reading, because it keeps a
+  released trip released rather than sending a loaded vehicle back to the
+  dock on a guess. Planning's spec should name the field. (Tihara)
+- Flag photos (`photoClientUuid`) are accepted and ignored: the attachment
+  endpoints are execution's and the link from a flag to its photo has no
+  table. (Harini, Aniqa)
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-02 ROO-33: the module built against AC-LOD-01 to 19, each with a
+  passing test. `load_releases` and `load_event_receipts` added to the Model;
+  `GET /load-flags/{id}` and `GET /load-lines/{id}` added to the Endpoints;
+  Open questions replaced by "Decided while building" and "Still open";
+  status draft to in-progress (the screens L2 to L5 are ROO-52's)
