@@ -20,7 +20,12 @@ export const dispatchRoutes: RouteObject[] = [
       {
         lazy: async () => ({ Component: (await import('../layouts/dispatch-shell')).DispatchShell }),
         children: [
-          { index: true, handle: handle('Dashboard'), element: <ScreenPlaceholder code="01" name="Dashboard" node="488:8577" /> },
+          {
+            index: true,
+            handle: handle('Dashboard'),
+            // 01 is shared: alerts builds the banner and the exception panel (ROO-50).
+            lazy: async () => ({ Component: (await import('@/features/alerts/dashboard-page')).DashboardPage }),
+          },
           { path: 'orders', handle: handle('Order queue'), element: <ScreenPlaceholder code="03" name="Order queue" node="185:12856" /> },
           { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
           { path: 'plan', handle: handle('Plan'), element: <ScreenPlaceholder code="05" name="Plan" node="265:2134" /> },
@@ -31,8 +36,18 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('Plan ahead'),
             element: <ScreenPlaceholder code="13" name="Plan ahead · day" node="289:2797" />,
           },
-          { path: 'tracking', handle: handle('Tracking'), element: <ScreenPlaceholder code="19" name="Tracking" node="185:17224" /> },
-          { path: 'trips/:id', handle: handle('Trip details'), element: <ScreenPlaceholder code="19a" name="Trip details" node="464:1966" /> },
+          {
+            path: 'tracking',
+            handle: handle('Tracking'),
+            // 19 is shared: alerts builds the alerts column (ROO-50).
+            lazy: async () => ({ Component: (await import('@/features/alerts/tracking-page')).TrackingPage }),
+          },
+          {
+            path: 'trips/:id',
+            handle: handle('Trip details'),
+            // 19a is shared: alerts builds the trip's chips and its alerts (ROO-50).
+            lazy: async () => ({ Component: (await import('@/features/alerts/trip-details-page')).TripDetailsPage }),
+          },
           {
             path: 'end-of-day',
             handle: handle('End of day'),

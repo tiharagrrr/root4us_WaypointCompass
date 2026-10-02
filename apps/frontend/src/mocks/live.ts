@@ -57,6 +57,11 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: 'all', path: '/api/v1/trips/*' },
   { method: 'all', path: '/api/v1/stops/*' },
   { method: 'all', path: '/api/v1/attachments/*' },
+  // Alerts: the list, the detail, acknowledge and resolve (ROO-50). The fix
+  // links they carry point at endpoints other modules still owe, so a panel
+  // may show a fix whose POST is still mocked.
+  { method: 'all', path: '/api/v1/alerts' },
+  { method: 'all', path: '/api/v1/alerts/*' },
 ]
 
 /** Pass-through handlers; they go before the mocks so they win. */

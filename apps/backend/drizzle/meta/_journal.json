@@ -22,6 +22,13 @@
       "when": 1790884279245,
       "tag": "202610011951_ordering_day_marks",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790939412124,
+      "tag": "202610021110_alerts_event_receipts",
+      "breakpoints": true
     }
   ]
 }

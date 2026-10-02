@@ -21,6 +21,8 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders'],
   'eta.updated': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, `/api/v1/orders/${String(e.data.orderId)}/eta`],
   'alert.raised': () => ['/api/v1/alerts'],
+  // So another dispatcher's 01 shows who is on it without a reload (AC-ALR-08).
+  'alert.acknowledged': () => ['/api/v1/alerts'],
   'alert.resolved': () => ['/api/v1/alerts'],
   'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
   'clock.changed': () => ['/api/v1/clock'],
