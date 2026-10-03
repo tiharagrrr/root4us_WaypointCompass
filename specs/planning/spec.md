@@ -151,7 +151,9 @@ Shared helpers (`packages/shared`): `publishOpensAt(date)`, `cutoffFor(depot, de
 `nextOperatingDay(date)`, `isoWeekOf(date)`, the plan, trip, stop and deferral machines.
 
 Cross-module calls inside the transaction: `OrderLifecycleService` (`markPlanned`, `markDeferred`,
-`requeue`) from ordering; `FuelLedgerService` from fleet (planned entries on publish, reversals on
+`requeue`) from ordering; the day's queue is `OrderQueries.queueFor(depotId, date)`, CONFIRMED orders
+plus DEFERRED ones an earlier plan moved to this date (a deferred order is never requeued to
+CONFIRMED; AC-ORD-38, AC-ORD-39); `FuelLedgerService` from fleet (planned entries on publish, reversals on
 revision, actuals at close).
 
 Settings read: `planning.reeferCarriesAmbient` (true), `planning.enforceWindows` (true),
@@ -588,6 +590,9 @@ Checklist (tick in the PR that adds the passing test):
   the plan is published) or at publish? Decides: Tihara with Harini.
 
 ## Changelog
+- 2026-10-03 The plan's queue is `OrderQueries.queueFor`: CONFIRMED and DEFERRED orders for the
+  depot and date. A deferred order waits as DEFERRED and goes straight to PLANNED (or is deferred
+  again) when a later plan is published
 - 2026-10-03 `deferral_reasons` is seeded from the engine's reason map; the old seed used codes the
   engine never emits (`REEFER_CAPACITY`, `VEHICLE_CAPACITY`, `MANUAL`), so an engine run's deferral
   would have failed its foreign key, and the store wording was never stored. A re-seed retires an

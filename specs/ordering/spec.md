@@ -97,9 +97,11 @@ export const orderMachine = defineMachine<OrderStatus, OrderEvent>('order', {
   DRAFT:          { SUBMIT: 'SUBMITTED', CANCEL: 'CANCELLED' },
   SUBMITTED:      { EDIT: 'SUBMITTED', CUTOFF: 'CONFIRMED', CANCEL: 'CANCELLED' },
   CONFIRMED:      { PLAN: 'PLANNED', DEFER: 'DEFERRED', CANCEL: 'CANCELLED' },
+  // A deferred order waits as DEFERRED until a run carries it: its new date's plan takes it
+  // straight to PLANNED or defers it again; it never shows CONFIRMED in between (AC-ORD-39).
   // DEFERRED also takes DELIVER and PARTIAL: a device that recorded a delivery for a stop
   // deferred while it was offline stands, through KEEP_DEVICE on the sync conflict (19c).
-  DEFERRED:       { REQUEUE: 'CONFIRMED', DELIVER: 'DELIVERED', PARTIAL: 'PARTIAL', CANCEL: 'CANCELLED' },
+  DEFERRED:       { PLAN: 'PLANNED', DEFER: 'DEFERRED', REQUEUE: 'CONFIRMED', DELIVER: 'DELIVERED', PARTIAL: 'PARTIAL', CANCEL: 'CANCELLED' },
   PLANNED:        { LOAD: 'LOADED', DEFER: 'DEFERRED', REQUEUE: 'CONFIRMED' },
   LOADED:         { DEPART: 'IN_TRANSIT', DEFER: 'DEFERRED' },
   IN_TRANSIT:     { DELIVER: 'DELIVERED', PARTIAL: 'PARTIAL', FAIL: 'FAILED', DEFER: 'DEFERRED' },
@@ -205,7 +207,8 @@ stays a pure mapping that never reads the database.
 - `OrdersService` (commands, each `@Transactional()` with `audit.record()`, `outbox.add()` and one log
   line): `createDraft`, `updateDraft`, `setLines`, `submit`, `cancel`, `reorder`, `setPriority`.
 - `OrderQueries`: list and get, always with `this.scope.where(actor)`, via `CrudQueryService` and
-  `ORDER_RESOURCE`.
+  `ORDER_RESOURCE`; and `queueFor(depotId, date)`, the CONFIRMED and DEFERRED orders a plan is built
+  from, with no actor scope because planning calls it for a plan it already holds in its own scope.
 - `CutoffService`: `cutoffFor(depotId, deliveryDate)` (the previous operating day at `cutoffMin`: the
   depot's `cutoffMin` or the setting `ordering.cutoffMin`, default 960 = 16:00); `nextRun(depotId,
   date)` (the next operating day); `closeCutoff(depotId, date)`. A submit is late when
@@ -218,7 +221,8 @@ stays a pure mapping that never reads the database.
   service and `OrderLinks` call the same function, so a link never promises what the server refuses.
 - `OrderLifecycleService` (exported): `markConfirmed`, `markPlanned`, `markDeferred`, `requeue`,
   `markLoaded`, `markInTransit`, `markDelivered`, `markPartial`, `markFailed`, `markReceived`,
-  `markIssueReported`, plus `statusesOf(ids)` and `createBackorder` (ROO-33). Each move checks the
+  `markIssueReported`, plus `statusesOf(ids)` and `createBackorder` (ROO-33). `markPlanned` and
+  `markDeferred` take CONFIRMED and DEFERRED orders alike (AC-ORD-39). Each move checks the
   state machine and audits. Planning, loading, execution and receipt call it; planning's publish
   calls `markPlanned` inside its own transaction.
   `createBackorder({ parentOrderId, lines, deliveryDate, note })` is what a dock removal leaves
@@ -589,6 +593,19 @@ AC-ORD-37  A Style order's run is its outlet's weekly delivery day
   When she submits it at 2026-10-01 16:00:00, after the cutoff
   Then status is SUBMITTED, afterCutoff true and deliveryDate 2026-10-09, the next Friday, not Sat 3 Oct
     And an order.rolled_to_next_run event carries deliveryDate 2026-10-09
+
+AC-ORD-38  A deferred order joins the queue for its new date
+  Given Peliyagoda orders with deliveryDate 2026-10-03: one CONFIRMED, one DEFERRED from an earlier plan, one SUBMITTED, one PLANNED and one CANCELLED
+    And a DEFERRED Peliyagoda order with deliveryDate 2026-10-05 and a CONFIRMED Kandy order with deliveryDate 2026-10-03
+  When planning asks OrderQueries.queueFor(PLG, 2026-10-03)
+  Then it gets the CONFIRMED and the DEFERRED order for that date, sorted by orderNo, and no other
+    And nothing ran at the cutoff to move the DEFERRED order: it is still DEFERRED
+
+AC-ORD-39  A deferred order is planned or deferred again without returning to CONFIRMED
+  Given two DEFERRED orders with deliveryDate 2026-10-03
+  When the 2026-10-03 plan is published carrying the first on a trip and deferring the second to 2026-10-05
+  Then markPlanned moves the first from DEFERRED to PLANNED, with one ordering.order.status_changed audit row
+    And markDeferred keeps the second DEFERRED, with deliveryDate 2026-10-05 and deferredCount one higher
 ```
 
 Checklist (tick in the same PR as the passing test):
@@ -629,6 +646,8 @@ Checklist (tick in the same PR as the passing test):
 - [x] AC-ORD-35 Depot day summary (01, 03)
 - [x] AC-ORD-36 Lifecycle moves check the machine
 - [x] AC-ORD-37 A Style order's run is its outlet's weekly delivery day
+- [x] AC-ORD-38 A deferred order joins the queue for its new date
+- [x] AC-ORD-39 A deferred order is planned or deferred again without returning to CONFIRMED
 
 ## Non-functional
 - M1 loads in under 1 s on 4G.
@@ -709,6 +728,10 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   own, or the deferral reasons A6 already edits? (Harini)
 
 ## Changelog
+- 2026-10-03 A deferred order stays DEFERRED until a run carries it: the order machine gains
+  DEFERRED to PLANNED and DEFERRED to DEFERRED, and `OrderQueries.queueFor(depotId, date)` (exported,
+  for planning) returns the CONFIRMED and DEFERRED orders for a depot's date. Nothing requeues at
+  the cutoff, so a store never sees a deferred order flip back to Confirmed (AC-ORD-38, AC-ORD-39)
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 AC-ORD-01..06 weekday labels corrected to the 2026 calendar; dates and behaviour unchanged
 - 2026-09-30 Model: `order_lines.available` (merged from the Supabase draft; meaning is an open question)

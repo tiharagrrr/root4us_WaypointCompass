@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import type { Actor, TempClass } from '@waypoint/shared';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne } from 'drizzle-orm';
 import { CrudQueryService } from '../../../core/persistence/crud-query.service';
 import type { ListQuery, Page } from '../../../core/persistence/page';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
@@ -80,5 +80,28 @@ export class OrderQueries {
       )
       .limit(1);
     return row;
+  }
+
+  /**
+   * The orders a depot's plan for a date is built from: CONFIRMED orders for
+   * that date, and DEFERRED orders an earlier plan moved to it (they wait as
+   * DEFERRED until a run carries them). Sorted by order number, so the
+   * engine's input is the same every time.
+   *
+   * No actor scope: planning calls this for a plan it has already loaded
+   * within its own scope, the way it calls the lifecycle methods.
+   */
+  async queueFor(depotId: string, date: string): Promise<OrderRow[]> {
+    return this.txHost.tx
+      .select()
+      .from(orders)
+      .where(
+        and(
+          eq(orders.depotId, depotId),
+          eq(orders.deliveryDate, date),
+          inArray(orders.status, ['CONFIRMED', 'DEFERRED']),
+        ),
+      )
+      .orderBy(asc(orders.orderNo));
   }
 }
