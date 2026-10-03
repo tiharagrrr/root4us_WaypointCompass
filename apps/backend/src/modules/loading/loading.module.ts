@@ -1,7 +1,8 @@
 // apps/backend/src/modules/loading/loading.module.ts · owner: Harini
 // Last-stop-first load lists, checks, flags and release.
 // Spec: specs/loading/spec.md. Tables: src/db/schema/loading.ts.
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
+import { EventBus } from '../../core/outbox/event-bus';
 import { AuditModule } from '../audit';
 import { OrderingModule } from '../ordering';
 import { PlanningModule } from '../planning';
@@ -33,8 +34,10 @@ import { ReleaseService } from './services/release.service';
  * was reassigned — arrives as an event payload, parsed before it is trusted,
  * which is what keeps the dock from depending on the planning API.
  *
- * `LoadListBuilder` and `LoaderEventService` are exported: the outbox relay
- * (ROO-24) drives the first, and `POST /sync` (ROO-44) the second.
+ * `LoadListBuilder` is registered on the `EventBus`, so the outbox relay
+ * (ROO-24) delivers it `plan.published`, `plan.revised` and
+ * `trip.reassigned`; `LoaderEventService` is exported for `POST /sync`
+ * (ROO-44).
  */
 @Module({
   imports: [AuditModule, PlanningModule, OrderingModule],
@@ -57,4 +60,17 @@ import { ReleaseService } from './services/release.service';
   ],
   exports: [LoadListBuilder, LoaderEventService, LoadingQueries],
 })
-export class LoadingModule {}
+export class LoadingModule implements OnModuleInit {
+  constructor(
+    private readonly bus: EventBus,
+    private readonly builder: LoadListBuilder,
+  ) {}
+
+  onModuleInit(): void {
+    this.bus.register({
+      name: 'loading',
+      consumes: (type) => LoadListBuilder.consumes(type),
+      handle: (event) => this.builder.handle(event),
+    });
+  }
+}

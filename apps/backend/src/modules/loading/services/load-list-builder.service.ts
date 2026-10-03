@@ -93,10 +93,9 @@ const DECIDED: readonly LoadLineStatus[] = ['REPLACED'];
  * release; a line whose quantity changed under the loader goes back to
  * PENDING, because a tick against 12 cases says nothing about 14.
  *
- * **How it is driven.** The outbox relay (ROO-24) is not built yet, so
- * nothing calls this in production today. It is exported from the module's
- * index.ts for the relay to call once it lands, one row at a time, which is
- * also exactly how the tests drive it.
+ * **How it is driven.** The module registers it on the `EventBus`, and the
+ * outbox relay (ROO-24) calls it one row at a time, inside that row's
+ * transaction, which is also exactly how the tests drive it.
  *
  * **Why the receipts table.** Delivery is at least once. A redelivered
  * `plan.published` would find every line already correct and change nothing,

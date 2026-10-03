@@ -13,8 +13,8 @@ import { outboxEvents } from '../../db/schema';
 /**
  * Writes a domain event into outbox_events inside the use case's
  * transaction, so the event exists exactly when the change does. The
- * worker's relay (ROO-24) publishes each row after commit to SSE, jobs and
- * webhooks; until then rows wait with publishedAt null.
+ * worker's `OutboxRelay` delivers each row after commit to the consumers that
+ * registered on the `EventBus`, then publishes it on Redis for SSE.
  */
 @Injectable()
 export class OutboxService implements OutboxWriter {
@@ -31,11 +31,6 @@ export class OutboxService implements OutboxWriter {
   ): Promise<{ id: string }> {
     if (!this.txHost.isTransactionActive())
       throw new Error('outbox.add() must run inside a transaction');
-    // outbox_events has no column for user channels yet; refuse rather than
-    // drop them. Until ROO-24 adds one, put the user's id in the payload.
-    if (routing.userIds?.length)
-      throw new Error('outbox.add(): routing.userIds is not stored yet');
-
     const [aggregateType, aggregateId] = routing.aggregate;
     const [row] = await this.txHost.tx
       .insert(outboxEvents)
@@ -45,6 +40,7 @@ export class OutboxService implements OutboxWriter {
         aggregateId,
         depotId: routing.depotId ?? null,
         outletIds: routing.outletIds ?? [],
+        userIds: routing.userIds ?? [],
         payload: data,
         correlationId: this.context.correlationId ?? null,
         occurredAt: this.clock.now(),

@@ -239,7 +239,7 @@ endpoints (A5) come later. Copy the module layout from `master-data`.
    `packages/shared/src/rules/business-time.ts` with a test.
 5. **Tests:** AC-FLT-01 and AC-FLT-02 (service level), plus the `excludePlanId` case.
 
-## PR-E `feat(platform): outbox relay and event bus` (ROO-24)
+## PR-E `feat(platform): outbox relay and event bus` (ROO-24) (done: branch `feat/roo-24-outbox-relay`; drains every second, not on the minute tick; consumers register on `EventBus` in `onModuleInit`)
 
 Fixes problem 6. Read the ROO-24 ticket and the comments on it first.
 

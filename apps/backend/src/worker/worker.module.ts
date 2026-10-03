@@ -7,6 +7,7 @@ import { TickerService } from '../core/scheduling/ticker.service';
 import { QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
 import { NotificationsProcessor } from './notifications.processor';
+import { OutboxProcessor } from './outbox.processor';
 import { TickerProcessor } from './ticker.processor';
 
 /**
@@ -20,10 +21,12 @@ import { TickerProcessor } from './ticker.processor';
     AppModule,
     DiscoveryModule,
     BullModule.registerQueue({ name: QUEUES.ticker }),
+    BullModule.registerQueue({ name: QUEUES.outbox }),
   ],
   providers: [
     AllocationProcessor,
     NotificationsProcessor,
+    OutboxProcessor,
     DemoInbox,
     TickerService,
     TickerProcessor,

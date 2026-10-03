@@ -1,9 +1,11 @@
 // apps/backend/src/modules/alerts/alerts.module.ts · owner: Harini
 // One action list for the dispatcher, raised from other modules' events.
 // Spec: specs/alerts/spec.md. Tables: src/db/schema/alerts.ts.
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
+import { EventBus } from '../../core/outbox/event-bus';
 import { AuditModule } from '../audit';
 import { AlertsController } from './controllers/alerts.controller';
+import { AlertRules } from './domain/alert-rules';
 import { AlertLinks } from './policies/alert.links';
 import { AlertScope } from './policies/alert.scope';
 import { AlertEventListener } from './services/alert-event.listener';
@@ -17,8 +19,8 @@ import { AlertsService } from './services/alerts.service';
  * payload, parsed before it is trusted, which is what lets the module react
  * to nine other modules without depending on any of them.
  *
- * `AlertEventListener` is exported for the outbox relay (ROO-24) to call once
- * it exists; nothing in this build drives it yet.
+ * `AlertEventListener` is registered on the `EventBus`, so the outbox relay
+ * (ROO-24) delivers it every event a rule reacts to, one row at a time.
  */
 @Module({
   imports: [AuditModule],
@@ -32,4 +34,17 @@ import { AlertsService } from './services/alerts.service';
   ],
   exports: [AlertEventListener, AlertQueries],
 })
-export class AlertsModule {}
+export class AlertsModule implements OnModuleInit {
+  constructor(
+    private readonly bus: EventBus,
+    private readonly listener: AlertEventListener,
+  ) {}
+
+  onModuleInit(): void {
+    this.bus.register({
+      name: 'alerts',
+      consumes: (type) => AlertRules.consumes(type),
+      handle: (event) => this.listener.handle(event),
+    });
+  }
+}

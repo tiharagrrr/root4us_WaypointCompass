@@ -8,6 +8,7 @@ which decisions people made and why, how every output was reviewed, and the data
 
 | Date | Person | Tool and model | Task | Used in | Human review and changes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Outbox relay and event bus (ROO-24): per-row delivery with SKIP LOCKED, retries, Redis publish, `userIds` routing column; alerts and loading registered as consumers; `docs/events.md`. Tests first | `apps/backend/src/core/outbox/`, `apps/backend/src/worker/`, `apps/backend/drizzle/`, `docs/events.md` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Fleet read side (ROO-42): vehicle queries, the fuel ledger service and `GET /vehicles/{id}/fuel` (AC-FLT-08), `isoWeekOf` in shared. Tests first | `apps/backend/src/modules/fleet/`, `packages/shared/src/rules/business-time.ts` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Deferral `choice` and `bindingRule` columns and a live-deferral unique index (ROO-74), additive only. Tests first | `apps/backend/src/db/schema/`, `apps/backend/drizzle/` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Deferred orders stay DEFERRED until planned again; `OrderQueries.queueFor` (AC-ORD-38, 39). Tests first | `packages/shared/src/machines/`, `apps/backend/src/modules/ordering/` | _To fill after review_ |
