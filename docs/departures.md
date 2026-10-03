@@ -88,3 +88,7 @@ row for every intended difference; anything else that differs is a bug.
 | 16 Swap order | "last deferred: None in 30 days", DEFERRED RECENTLY chip | Weight, volume and trip; Recommended on the lowest priority | The engine context has the outlet's last-run flag, not a 30-day history |
 | 17 Review and publish | Export run sheets | Not shown | No run-sheet export endpoint yet |
 | 17 Review and publish | History "1ST IN 30 DAYS" | "First deferral" or "2 of 2 runs" | Same missing 30-day history as 16 |
+| M3 Orders | "Order #WF-0231 sent" banner; ETA and "REF-07 · 2 stops away" on a live order | No banner; ETA shows a dash | The banner needs M1 to hand over the sent order; ETAs come from execution's ETA endpoint, not built yet |
+| M3 Receiving roster | One row per delivery with its time and staff count | One row per roster entry with its hours and the person | The roster API holds staff and their hours, not deliveries |
+| M4 Deferral notice | Edit order and Cancel order always shown; dispatcher's name under the note | Shown only when the order carries its `edit` or `cancel` link; the note's date and time only | Rule 9: a deferred order is usually past its cutoff, so neither link is offered; the deferral does not carry the dispatcher's name |
+| M7 Deferrals | Last 30 days filter; Chilled count; Type column | Newest first, paged; Repeat skips count; no Type column | The deferral list carries no temperature class, and the dates filter can follow if a real store needs it |
