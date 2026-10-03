@@ -152,6 +152,22 @@ export interface Unplanned {
   bindingRule: BindingRule | null;
   /** UNAVOIDABLE or PRIORITY_CHOICE for an engine decision. Null for a manual removal. */
   choice: DeferralChoice | null;
+  /** What it needed and the most room any trip could have given it. Absent on a manual removal. */
+  detail?: UnplannedDetail;
+  /** Every vehicle tried, in the order they were tried. Absent on a manual removal. */
+  tried?: readonly TriedVehicle[];
+  /** The order that took its place, when repair pushed this one off: a PRIORITY_CHOICE swap. */
+  displacedBy?: string;
+}
+
+/**
+ * An order that should never have reached the engine, settled before packing. Not a deferral: it
+ * gets no reason code and the store is not told, because nothing was decided about it.
+ */
+export interface Excluded {
+  orderId: string;
+  code: string;
+  message: string;
 }
 
 export interface Plan {

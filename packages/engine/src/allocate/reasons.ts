@@ -1,6 +1,6 @@
 import type { BindingRule } from '../rules/codes';
 import { reasonCodeFor, type DeferralReasonCode } from '../rules/reason-map';
-import { isRepeatSkip } from '../rules/repeat-skip';
+import { isRepeatSkip } from '../plan/repeat-skip';
 import type { DeferralChoice } from '../rules/codes';
 import type {
   EngineOrder,
