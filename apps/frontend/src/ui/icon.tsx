@@ -4,6 +4,7 @@ import add from '@material-symbols/svg-400/rounded/add-fill.svg'
 import assignmentTurnedIn from '@material-symbols/svg-400/rounded/assignment_turned_in-fill.svg'
 import backspace from '@material-symbols/svg-400/rounded/backspace-fill.svg'
 import calendarToday from '@material-symbols/svg-400/rounded/calendar_today-fill.svg'
+import check from '@material-symbols/svg-400/rounded/check-fill.svg'
 import close from '@material-symbols/svg-400/rounded/close-fill.svg'
 import dragIndicator from '@material-symbols/svg-400/rounded/drag_indicator-fill.svg'
 import dashboard from '@material-symbols/svg-400/rounded/dashboard-fill.svg'
@@ -18,6 +19,7 @@ import localShipping from '@material-symbols/svg-400/rounded/local_shipping-fill
 import navigation from '@material-symbols/svg-400/rounded/navigation-fill.svg'
 import notifications from '@material-symbols/svg-400/rounded/notifications-fill.svg'
 import person from '@material-symbols/svg-400/rounded/person-fill.svg'
+import photoCamera from '@material-symbols/svg-400/rounded/photo_camera-fill.svg'
 import route from '@material-symbols/svg-400/rounded/route-fill.svg'
 import search from '@material-symbols/svg-400/rounded/search-fill.svg'
 import settings from '@material-symbols/svg-400/rounded/settings-fill.svg'
@@ -33,6 +35,8 @@ const icons = {
   account: person,
   backspace,
   bell: notifications,
+  camera: photoCamera,
+  check,
   'chevron-down': keyboardArrowDown,
   'chevron-down-small': keyboardArrowDown,
   close,

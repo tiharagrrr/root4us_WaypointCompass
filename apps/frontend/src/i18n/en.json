@@ -72,6 +72,24 @@
     "accessNotes": "Access notes",
     "noAccessNotes": "The store has not added access notes for this outlet.",
     "noContact": "No receiving contact on file.",
-    "backToStop": "Back to stop"
+    "backToStop": "Back to stop",
+    "recordStop": "Record stop {{n}}",
+    "unloadAndTick": "Unload & tick items",
+    "deliveredInFull": "Delivered in full?",
+    "yes": "Yes",
+    "noException": "No · exception",
+    "proofOfDelivery": "Proof of delivery",
+    "photo": "Photo",
+    "receiverName": "Receiver name",
+    "signHere": "Sign here",
+    "signature": "Signature",
+    "saveStop": "Save stop",
+    "reportException": "Report an exception",
+    "shortNote": "What was short, and why?",
+    "lineQty": "{{name}}, packs delivered",
+    "needReceiver": "Who took the delivery?",
+    "needProof": "Add a signature or a photo",
+    "needShortNote": "Say what was short and why",
+    "back": "Back"
   }
 }
