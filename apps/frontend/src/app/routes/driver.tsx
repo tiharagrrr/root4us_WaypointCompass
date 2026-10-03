@@ -17,7 +17,12 @@ export const driverRoutes: RouteObject[] = [
       {
         lazy: async () => ({ Component: (await import('../layouts/driver-shell')).DriverShell }),
         children: [
-          { index: true, element: <ScreenPlaceholder code="D1" name="Today's trip" node="185:19938" /> },
+          {
+            index: true,
+            lazy: async () => ({
+              Component: (await import('@/features/execution/todays-trip-page')).TodaysTripPage,
+            }),
+          },
           { path: 'stops/:id', element: <ScreenPlaceholder code="D3" name="Next stop" node="185:20107" /> },
           { path: 'stops/:id/record', element: <ScreenPlaceholder code="D4" name="Record stop" node="185:20174" /> },
           { path: 'stops/:id/exception', element: <ScreenPlaceholder code="D5" name="Exception" node="185:20240" /> },

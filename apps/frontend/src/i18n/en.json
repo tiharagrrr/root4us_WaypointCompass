@@ -32,5 +32,22 @@
     "today": "Today",
     "trips": "Trips",
     "account": "Account"
+  },
+  "driver": {
+    "todaysTrip": "Today’s trip",
+    "newTripAssigned": "New trip assigned",
+    "departs": "Departs",
+    "stops": "Stops",
+    "load": "Load",
+    "stopsAndWindows": "Stops & delivery windows",
+    "moreStops": "+ {{count}} more stops",
+    "savedForOffline": "Saved for offline",
+    "savedForOfflineBody": "Stops, items, map and contacts are on this phone.",
+    "saving": "Saving for offline",
+    "startTrip": "Start trip",
+    "startNote": "Start only when safely stopped.",
+    "cantRunLink": "Can’t run this trip?",
+    "noTripTitle": "No trip today",
+    "noTripBody": "Nothing is assigned to you yet. Pull down once you are on depot Wi-Fi."
   }
 }
