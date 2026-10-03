@@ -92,7 +92,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | GET | `/plans/{id}/revisions` | `plan:read` | Change history with reasons |
 | POST | `/plans/{id}/close` | `plan:close` | 21: unfinished stops become deferrals; actual fuel recorded |
 | GET, POST | `/depots/{id}/plans/{date}/reservations` | `plan:read`, `plan:build` | 12, 13: reserve vehicles against the forecast |
-| GET | `/deferrals`, `/deferrals/{id}` | `deferral:read` | 23 for dispatchers, M4 and M7 for stores (scoped). Offset pages, e.g. `?filter[outletId]=…&sort=-createdAt&limit=10` |
+| GET | `/deferrals`, `/deferrals/{id}` | `deferral:read` | 23 for dispatchers, M4 and M7 for stores (scoped: a store sees only its outlet's CONFIRMED or REVERSED deferrals on a published or closed plan). Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10` |
 | POST | `/deferrals/{id}/response` | `deferral:respond` | M4: acknowledge, or request priority with a note |
 | POST | `/deferrals/{id}/reverse` | `deferral:decide` | 19c: keep a delivery the device recorded |
 | POST | `/trips/{id}/reassign` | `trip:reassign` | 20: new vehicle or driver, validated, with a reason |
@@ -539,8 +539,8 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-PLN-24 Re-sequencing the stops left
 - [ ] AC-PLN-25 Deferring a stop mid-route
 - [ ] AC-PLN-26 Cancelling a trip before it starts
-- [ ] AC-PLN-27 The store requests priority
-- [ ] AC-PLN-28 Reversing a deferral keeps the delivery
+- [x] AC-PLN-27 The store requests priority
+- [x] AC-PLN-28 Reversing a deferral keeps the delivery
 - [ ] AC-PLN-29 Closing the day
 - [ ] AC-PLN-30 Reserving vehicles ahead
 - [ ] AC-PLN-31 A draft follows order changes
@@ -603,6 +603,10 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-03 Deferral reads, the store's response and reverse are live (AC-PLN-27, AC-PLN-28). The
+  `respond` link shows only while the deferral is CONFIRMED and AWAITING, its plan is published and the
+  order is still DEFERRED. `/deferrals` filters by status, storeResponse, source, plan, order, dates and
+  repeatSkip; there is no outletId filter, because a store is already scoped to its outlet
 - 2026-10-03 Screens 05 to 09 (ROO-30) on the live API: the day's plan with its day strip and stepper, the
   orders on no trip, Add Trip and Auto-suggest from the plan's links, and the 06 → 07 → 08 wizard that
   runs the engine in the browser on `/context` and saves one edit list. `PlanVehicleOptionDto` gains

@@ -76,7 +76,7 @@ export const getDeferralsListUrl = (params?: DeferralsListParams,) => {
 }
 
 /**
- * @summary Offset pages, e.g. `?filter[outletId]=…&sort=-createdAt&limit=10`.
+ * @summary Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10`.
  */
 export const deferralsList = async (params?: DeferralsListParams, options?: Parameters<typeof compassFetch>[1]): Promise<DeferralsList200> => {
 
@@ -147,7 +147,7 @@ export function useDeferralsList<TData = Awaited<ReturnType<typeof deferralsList
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Offset pages, e.g. `?filter[outletId]=…&sort=-createdAt&limit=10`.
+ * @summary Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10`.
  */
 
 export function useDeferralsList<TData = Awaited<ReturnType<typeof deferralsList>>, TError = ErrorType<ProblemDto>>(

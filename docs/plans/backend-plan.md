@@ -628,7 +628,7 @@ the demo day's orders are then already CONFIRMED, and step 1 is only needed for 
 
 Each one needs its own short plan when you reach it. Do not start these in the PRs above.
 
-0. **Deferral reads and respond** (the item 3 work below; do it first, because S4 and S5 need it to
+0. **Deferral reads and respond** (done: branch `feat/roo-29-deferral-reads`, with reverse) (the item 3 work below; do it first, because S4 and S5 need it to
    go live): `/deferrals` list and detail, and `response` (AC-PLN-27).
 1. **ROO-42:** edits after publish become revisions: AC-PLN-21, AC-PLN-22, fuel reversals.
 2. **Trip operations:** reassign, re-sequence, stop defer and cancel (AC-PLN-23 to AC-PLN-26).

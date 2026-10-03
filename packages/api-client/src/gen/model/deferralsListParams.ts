@@ -38,4 +38,36 @@ q?: string;
  * @maxLength 200
  */
 include?: string;
+/**
+ * one of PROPOSED, CONFIRMED, REVERSED, CANCELLED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.
+ */
+'filter[status]'?: string;
+/**
+ * one of AWAITING, ACKNOWLEDGED, PRIORITY_REQUESTED; comma-separated for any of. Also filter[storeResponse][op] with op in eq, ne, null.
+ */
+'filter[storeResponse]'?: string;
+/**
+ * one of ENGINE, PLANNING, LOAD_CHECK, TRACKING; comma-separated for any of. Also filter[source][op] with op in eq, ne, null.
+ */
+'filter[source]'?: string;
+/**
+ * a UUID; comma-separated for any of. Also filter[planId][op] with op in eq, ne, null.
+ */
+'filter[planId]'?: string;
+/**
+ * a UUID; comma-separated for any of. Also filter[orderId][op] with op in eq, ne, null.
+ */
+'filter[orderId]'?: string;
+/**
+ * YYYY-MM-DD; comma-separated for any of. Also filter[fromDate][op] with op in eq, ne, gt, gte, lt, lte, null.
+ */
+'filter[fromDate]'?: string;
+/**
+ * YYYY-MM-DD; comma-separated for any of. Also filter[toDate][op] with op in eq, ne, gt, gte, lt, lte, null.
+ */
+'filter[toDate]'?: string;
+/**
+ * true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.
+ */
+'filter[repeatSkip]'?: string;
 };

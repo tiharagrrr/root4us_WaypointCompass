@@ -1,5 +1,11 @@
 import {
   assertTransition,
+  type DeferralEvent,
+  deferralMachine,
+  type DeferralStatus,
+  type StoreResponse,
+  type StoreResponseEvent,
+  storeResponseMachine,
   type StopEvent,
   stopMachine,
   type StopStatus,
@@ -24,6 +30,20 @@ export function nextTripStatus(from: TripStatus, event: TripEvent): TripStatus {
 
 export function nextStopStatus(from: StopStatus, event: StopEvent): StopStatus {
   return next(() => assertTransition(stopMachine, from, event));
+}
+
+export function nextDeferralStatus(
+  from: DeferralStatus,
+  event: DeferralEvent,
+): DeferralStatus {
+  return next(() => assertTransition(deferralMachine, from, event));
+}
+
+export function nextStoreResponse(
+  from: StoreResponse,
+  event: StoreResponseEvent,
+): StoreResponse {
+  return next(() => assertTransition(storeResponseMachine, from, event));
 }
 
 function next<T>(move: () => T): T {

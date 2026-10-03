@@ -9386,6 +9386,78 @@
               "maxLength": 200,
               "type": "string"
             }
+          },
+          {
+            "name": "filter[status]",
+            "required": false,
+            "in": "query",
+            "description": "one of PROPOSED, CONFIRMED, REVERSED, CANCELLED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[storeResponse]",
+            "required": false,
+            "in": "query",
+            "description": "one of AWAITING, ACKNOWLEDGED, PRIORITY_REQUESTED; comma-separated for any of. Also filter[storeResponse][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[source]",
+            "required": false,
+            "in": "query",
+            "description": "one of ENGINE, PLANNING, LOAD_CHECK, TRACKING; comma-separated for any of. Also filter[source][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[planId]",
+            "required": false,
+            "in": "query",
+            "description": "a UUID; comma-separated for any of. Also filter[planId][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[orderId]",
+            "required": false,
+            "in": "query",
+            "description": "a UUID; comma-separated for any of. Also filter[orderId][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[fromDate]",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD; comma-separated for any of. Also filter[fromDate][op] with op in eq, ne, gt, gte, lt, lte, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[toDate]",
+            "required": false,
+            "in": "query",
+            "description": "YYYY-MM-DD; comma-separated for any of. Also filter[toDate][op] with op in eq, ne, gt, gte, lt, lte, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[repeatSkip]",
+            "required": false,
+            "in": "query",
+            "description": "true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -9452,7 +9524,7 @@
             }
           }
         },
-        "summary": "Offset pages, e.g. `?filter[outletId]=…&sort=-createdAt&limit=10`.",
+        "summary": "Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10`.",
         "tags": [
           "deferrals"
         ]
@@ -9525,7 +9597,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND (also outside your scope)",
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9626,7 +9698,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND (also outside your scope)",
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9748,7 +9820,7 @@
             }
           },
           "404": {
-            "description": "NOT_FOUND (also outside your scope)",
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
             "content": {
               "application/problem+json": {
                 "schema": {

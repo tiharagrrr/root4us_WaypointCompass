@@ -73,9 +73,11 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/alerts" },
   { method: "all", path: "/api/v1/alerts/*" },
   // Planning: plans, the wizard, edits, decisions, publish and engine runs
-  // (ROO-29). /deferrals stays mocked until its service lands.
+  // (ROO-29), and the deferral reads and responses for 23, M4 and M7.
   { method: "all", path: "/api/v1/depots/:id/plans/*" },
   { method: "all", path: "/api/v1/plans/*" },
+  { method: "all", path: "/api/v1/deferrals" },
+  { method: "all", path: "/api/v1/deferrals/*" },
   // Fleet: a vehicle's fuel for a week (ROO-42). The rest of /vehicles is
   // still mocked.
   { method: "get", path: "/api/v1/vehicles/:id/fuel" },

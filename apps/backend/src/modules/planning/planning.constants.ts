@@ -11,6 +11,8 @@ export const PLANNING_AUDIT = {
   engineRunCompleted: 'planning.engine.run_completed',
   deferralConfirmed: 'planning.deferral.confirmed',
   repeatSkipOverridden: 'planning.deferral.repeat_skip_overridden',
+  deferralStoreResponded: 'planning.deferral.store_responded',
+  deferralReversed: 'planning.deferral.reversed',
   orderSwapped: 'planning.order.swapped',
   tripReassigned: 'planning.trip.reassigned',
   tripResequenced: 'planning.trip.resequenced',
@@ -33,6 +35,8 @@ export const PLANNING_EVENTS = {
   engineRunCompleted: 'plan.engine_run.completed',
   engineRunFailed: 'plan.engine_run.failed',
   deferralConfirmed: 'deferral.confirmed',
+  deferralStoreResponded: 'deferral.store_responded',
+  deferralReversed: 'deferral.reversed',
 } as const;
 
 /** Log events that are not also audit actions. */
