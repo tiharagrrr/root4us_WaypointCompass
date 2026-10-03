@@ -130,9 +130,4 @@ describeWithDb('/clock (demo mode)', () => {
     const now = Date.parse(await serverTime(tihara.cookie));
     expect(Math.abs(now - Date.now())).toBeLessThan(5_000);
   });
-
-  it('answers 501 for a demo reset until the S1 seed exists', async () => {
-    const res = await as(rusiru.cookie).post('/api/v1/demo/reset');
-    expect(res.status).toBe(501);
-  });
 });

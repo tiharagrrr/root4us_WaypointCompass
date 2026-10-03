@@ -369,7 +369,7 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [x] AC-IDN-56 Demo mode off disables time travel
 - [x] AC-IDN-57 Engine deferral reasons stay active
 - [x] AC-IDN-58 Admin adds a deferral reason
-- [ ] AC-IDN-59 Demo reset rebuilds the demo day
+- [x] AC-IDN-59 Demo reset rebuilds the demo day
 - [x] AC-IDN-60 Routes match the permission matrix
 
 ```gherkin
@@ -852,8 +852,10 @@ AC-IDN-60  Routes match the permission matrix
   without reading the sessions row. Every request reads the session instead. Turn it back on only with a revocation
   check (for example cookieCache.version). Decides: Nimesha.
 - May an admin change their own role or scope, or deactivate themselves? It signs them out and could leave no admin. Decides: Nimesha.
-- AC-IDN-59 is blocked by ROO-22: POST /demo/reset runs every registered DemoDayBuilder (core/demo/demo-day.ts) in one
-  transaction, clears the demo inbox and audits; with none registered it answers 501. The S1 seed registers one.
+- AC-IDN-59: POST /demo/reset runs every registered DemoDayBuilder (core/demo/demo-day.ts) in one transaction, clears
+  the demo inbox and audits. ROO-22 registers SeedDemoDayBuilder, which runs the seed's own rebuild
+  (src/db/seed/rebuild.ts) from each depot's snapshot in settings (S1 at Peliyagoda, an ordinary day at Kandy), so
+  the API never reads the dataset files.
 - Accept creates the account through BetterAuth on its own connection, before the accept transaction commits. If a
   later write fails, the account exists and the invitation stays PENDING, and a retry gets 409 (account exists).
   Rare; a fix needs BetterAuth to share the transaction. Decides: Nimesha.
@@ -870,6 +872,7 @@ AC-IDN-60  Routes match the permission matrix
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
 
 ## Changelog
+- 2026-10-03 AC-IDN-59 passes: the S1 demo day registers its builder (ROO-22)
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `loader_depots` for loaders who work at more than one depot (merged from the Supabase draft)
 - 2026-09-30 AC-IDN-01, 02, 05, 60 implemented (ROO-8): BetterAuth with the username, admin, phoneNumber,

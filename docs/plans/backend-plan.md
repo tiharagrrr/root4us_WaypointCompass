@@ -271,7 +271,7 @@ Fixes problem 6. Read the ROO-24 ticket and the comments on it first.
    - two relays running at once handle each row once (SKIP LOCKED);
    - `userIds` is stored.
 
-## PR-F `feat(platform): seed catalog, history and the demo day` (rest of ROO-22)
+## PR-F `feat(platform): seed catalog, history and the demo day` (rest of ROO-22) (done: branch `feat/roo-22-demo-day-seed`; code in `src/db/seed/`, D follows the demo clock, plus a Kandy day)
 
 Today `seed.ts` loads only reference data (depots, waves, districts, outlets, vehicles, calendar,
 allowances, deferral reasons) and users. There is a `TODO(ROO-22)` for everything else.

@@ -9,6 +9,7 @@ import { IdempotencyInterceptor } from './http/idempotency.interceptor';
 import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { ClockSync } from './clock/clock-sync.service';
 import { DemoDay } from './demo/demo-day';
+import { SeedDemoDayBuilder } from './demo/seed-demo-day.builder';
 import { KernelModule } from './kernel.module';
 import { EventBus } from './outbox/event-bus';
 import { EventPublisher } from './outbox/event-publisher';
@@ -44,6 +45,7 @@ import { StorageModule } from './storage/storage.module';
     SettingsService,
     ClockSync,
     DemoDay,
+    SeedDemoDayBuilder,
   ],
   exports: [
     KernelModule,
