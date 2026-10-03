@@ -13,6 +13,10 @@ import { DeferralsController } from './controllers/deferrals.controller';
 import { PlanBuildingController } from './controllers/plan-building.controller';
 import { PlansController } from './controllers/plans.controller';
 import { DeferralReasonLinks } from './policies/deferral-reason.links';
+import { DeferralLinks } from './policies/deferral.links';
+import { DeferralScope } from './policies/deferral.scope';
+import { DeferralActions } from './services/deferral-actions.service';
+import { DeferralQueries } from './services/deferral.queries';
 import { DeferralReasonsService } from './services/deferral-reasons.service';
 import { PlanLinks } from './policies/plan.links';
 import { PlanScope } from './policies/plan.scope';
@@ -46,6 +50,10 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
     DeferralReasonsService,
     DeferralReasonLinks,
     DeferralService,
+    DeferralScope,
+    DeferralLinks,
+    DeferralQueries,
+    DeferralActions,
     TripLifecycleService,
     PlanScope,
     PlanLinks,

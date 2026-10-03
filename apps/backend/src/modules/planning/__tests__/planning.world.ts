@@ -40,6 +40,8 @@ export interface World {
   close: () => Promise<void>;
   cookies: Record<Role, string>;
   kandyDepot: string;
+  /** The store manager's outlet, in the Peliyagoda-like anchor depot. */
+  store: { depotId: string; districtId: string; outletId: string };
 }
 
 /** One depot's day, built fresh for a test so no two tests share a plan. */
@@ -93,6 +95,10 @@ export async function buildWorld(): Promise<World> {
 
   const sfx = suffix();
   const anchor = await depotFixture(db, sfx);
+  const storeOutlet = await outletFixture(db, `SM${sfx}`, {
+    depotId: anchor.plg,
+    districtId: anchor.plgDistrict,
+  });
   const roles: Record<
     Role,
     { role: UserRole; depotId?: string | null; outletId?: string }
@@ -101,10 +107,7 @@ export async function buildWorld(): Promise<World> {
     admin: { role: 'admin' },
     store_manager: {
       role: 'store_manager',
-      outletId: await outletFixture(db, `SM${sfx}`, {
-        depotId: anchor.plg,
-        districtId: anchor.plgDistrict,
-      }),
+      outletId: storeOutlet,
     },
     loader: { role: 'loader', depotId: anchor.plg },
     driver: { role: 'driver', depotId: anchor.plg },
@@ -117,7 +120,18 @@ export async function buildWorld(): Promise<World> {
   ][])
     cookies[name] = (await signedInAs(app, db, input)).cookie;
   freezeClock(app, OPEN);
-  return { app, db, close, cookies, kandyDepot: anchor.kdy };
+  return {
+    app,
+    db,
+    close,
+    cookies,
+    kandyDepot: anchor.kdy,
+    store: {
+      depotId: anchor.plg,
+      districtId: anchor.plgDistrict,
+      outletId: storeOutlet,
+    },
+  };
 }
 
 export async function tearDown(w: World): Promise<void> {

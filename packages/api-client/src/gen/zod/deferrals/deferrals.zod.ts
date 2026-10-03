@@ -9,7 +9,7 @@ import * as zod from 'zod';
 
 
 /**
- * @summary Offset pages, e.g. `?filter[outletId]=…&sort=-createdAt&limit=10`.
+ * @summary Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10`.
  */
 export const deferralsListQueryLimitMax = 1000;
 
@@ -31,7 +31,15 @@ export const DeferralsListQueryParams = zod.object({
   "cursor": zod.string().max(deferralsListQueryCursorMax).optional().describe('Feeds: meta.page.nextCursor of the previous page'),
   "sort": zod.string().max(deferralsListQuerySortMax).optional().describe('Comma-separated fields, "-" for descending'),
   "q": zod.string().max(deferralsListQueryQMax).optional().describe('Search text'),
-  "include": zod.string().max(deferralsListQueryIncludeMax).optional().describe('Comma-separated related resources')
+  "include": zod.string().max(deferralsListQueryIncludeMax).optional().describe('Comma-separated related resources'),
+  "filter[status]": zod.string().optional().describe('one of PROPOSED, CONFIRMED, REVERSED, CANCELLED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.'),
+  "filter[storeResponse]": zod.string().optional().describe('one of AWAITING, ACKNOWLEDGED, PRIORITY_REQUESTED; comma-separated for any of. Also filter[storeResponse][op] with op in eq, ne, null.'),
+  "filter[source]": zod.string().optional().describe('one of ENGINE, PLANNING, LOAD_CHECK, TRACKING; comma-separated for any of. Also filter[source][op] with op in eq, ne, null.'),
+  "filter[planId]": zod.string().optional().describe('a UUID; comma-separated for any of. Also filter[planId][op] with op in eq, ne, null.'),
+  "filter[orderId]": zod.string().optional().describe('a UUID; comma-separated for any of. Also filter[orderId][op] with op in eq, ne, null.'),
+  "filter[fromDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[fromDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
+  "filter[toDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[toDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
+  "filter[repeatSkip]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.')
 })
 
 export const DeferralsListResponse = zod.object({
