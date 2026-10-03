@@ -51,7 +51,7 @@ Signing in from the Vite dev server needs `TRUSTED_ORIGINS=http://localhost:5173
 
 ## Judge walkthrough
 
-> Seeded demo day: _YYYY-MM-DD_ at Peliyagoda, where demand exceeds capacity (_n_ orders, _m_ vehicles in the workshop). Set `DEMO_CLOCK` to test the 4 PM cutoff at any time of day.
+> Seeded demo day D: the day after the demo clock's date, at Peliyagoda, from scenario S1 (the seed prints D, its order count and the fleet it checks them against). Every S1 order is CONFIRMED on D; outlets skipped on the run before wait as DEFERRED with a deferral on D−1; the S1 workshop vehicles are out; Fresh Kadawatha has a draft dry order for D+1. Kandy has an ordinary day on D (its orders from the last day of the delivery history, whole fleet in service), and both depots have 14 closed operating days of history before D−1. Set `DEMO_CLOCK` to test the 4 PM cutoff at any time of day, and run `pnpm db:reset-demo` (or POST /demo/reset as admin in demo mode) to start the day again.
 
 1. **Store manager** (phone or desktop): sign in as `storemanager`, place an order before the cutoff and see it confirmed. _…_
 2. **Dispatcher** (desktop): sign in as `dispatcher`, close the cutoff, run allocation, review deferred orders and their reasons, then publish the plan. _…_
@@ -99,7 +99,8 @@ The web dev server proxies `/api` to the API, so both run on one origin, as they
 | `pnpm dev` | Shared package in watch mode, API with hot reload, Vite dev server (start the worker separately with `pnpm --filter api dev:worker`) |
 | `pnpm build` / `lint` / `typecheck` / `test` | Runs across all workspaces |
 | `pnpm db:generate` | Generate a migration from `apps/backend/src/db/schema/<module>.ts`; name it with `pnpm --filter api db:generate --name=<module>_<change>` |
-| `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, open Drizzle Studio |
+| `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, the item catalog, 14 days of history and the demo day, open Drizzle Studio |
+| `pnpm db:reset-demo` | Rebuild D−1 to D+1 of the demo day on your local database (`DEMO_DAY=YYYY-MM-DD` pins D) |
 | `pnpm infra:up` | Start only the backing services in Docker |
 | `pnpm stack:up` / `stack:down` / `stack:reset` | Full Compose stack; reset also wipes volumes |
 
