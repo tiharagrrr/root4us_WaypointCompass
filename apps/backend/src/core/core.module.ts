@@ -10,6 +10,9 @@ import { ProblemDetailsFilter } from './http/problem-details.filter';
 import { ClockSync } from './clock/clock-sync.service';
 import { DemoDay } from './demo/demo-day';
 import { KernelModule } from './kernel.module';
+import { EventBus } from './outbox/event-bus';
+import { EventPublisher } from './outbox/event-publisher';
+import { OutboxRelay } from './outbox/outbox-relay.service';
 import { OutboxService } from './outbox/outbox.service';
 import { SettingsService } from './settings/settings.service';
 import { ActorTransactionInterceptor } from './persistence/actor-transaction.interceptor';
@@ -35,6 +38,9 @@ import { StorageModule } from './storage/storage.module';
     { provide: APP_FILTER, useClass: ProblemDetailsFilter },
     IdempotencyInterceptor,
     OutboxService,
+    EventBus,
+    EventPublisher,
+    OutboxRelay,
     SettingsService,
     ClockSync,
     DemoDay,
@@ -45,6 +51,8 @@ import { StorageModule } from './storage/storage.module';
     AttachmentsModule,
     IdempotencyInterceptor,
     OutboxService,
+    EventBus,
+    OutboxRelay,
     SettingsService,
     ClockSync,
     DemoDay,

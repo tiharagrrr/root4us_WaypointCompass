@@ -54,7 +54,11 @@ description: Record the audit row and the outbox event for a state change in app
    notifications/catalog.ts has an entry, and to webhooks.outbound for subscribed endpoints.
    - A screen must refresh: add a line to INVALIDATES in apps/frontend/src/realtime/use-event-stream.ts.
    - People must hear about it: use the notification-event skill.
-   - A listener: dedupe by event id, because delivery is at least once.
+   - A listener: register it on the `EventBus` (core/outbox/event-bus.ts) in your module's
+     `onModuleInit`, with `consumes(type)` and `handle(event)`. `handle` runs inside the relay's
+     transaction for that one event, so its writes commit with the row being marked published.
+     Dedupe by event id (a receipts table, as alerts and loading do), because delivery is at
+     least once. Add the type to docs/events.md.
 8. Tests. In the use case's e2e test assert exactly one audit_events row with the action for the
    entity and exactly one outbox_events row of the type, and that a refused write (409, 412) leaves
    neither. For a reason-required action, assert 400 on reasonCode and no rows. For a synced event,

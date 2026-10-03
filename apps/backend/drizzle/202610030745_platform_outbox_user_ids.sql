@@ -1,0 +1,1 @@
+ALTER TABLE "outbox_events" ADD COLUMN "userIds" text[] DEFAULT '{}' NOT NULL;

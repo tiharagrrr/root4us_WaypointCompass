@@ -24,6 +24,7 @@ export const outboxEvents = pgTable(
     aggregateId: text().notNull(),
     depotId: text(), // routing for SSE channels
     outletIds: text().array().notNull().default([]),
+    userIds: text().array().notNull().default([]), // routing for one person's channel
     payload: jsonb().notNull(),
     correlationId: text(),
     occurredAt: instant().notNull().defaultNow(),

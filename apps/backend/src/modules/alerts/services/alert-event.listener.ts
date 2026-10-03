@@ -36,12 +36,10 @@ const NOTHING: HandledEvent = {
  * the alerts it closes, and their audit rows and outbox events. Either all of
  * it lands or none of it does.
  *
- * **How it is driven.** The outbox relay (ROO-24) is not built yet, so
- * nothing calls this in production today. It is exported from the module's
- * index.ts for the relay to call once it lands, one row at a time, which is
- * also exactly how the tests drive it. There is deliberately no event
- * emitter, queue or subscription of its own here: the relay owns delivery,
- * and alerts owns what a delivered event means.
+ * **How it is driven.** The module registers it on the `EventBus`, and the
+ * outbox relay (ROO-24) calls it one row at a time, inside that row's
+ * transaction, which is also exactly how the tests drive it. The relay owns
+ * delivery, and alerts owns what a delivered event means.
  *
  * **Why the receipts table.** Delivery is at least once. A replay that
  * arrives while the alert is still open is harmless — the dedupe key's

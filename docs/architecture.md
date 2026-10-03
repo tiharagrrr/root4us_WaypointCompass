@@ -59,7 +59,7 @@ Each module owns its tables and exposes a service. Modules talk through services
 
 ## How the roles connect
 
-Domain events connect the roles. Each state change writes an `audit_event` and an `outbox_event` in the same transaction. The worker relays outbox events to the notifications module and to SSE subscribers.
+Domain events connect the roles. Each state change writes an `audit_event` and an `outbox_event` in the same transaction. The worker relays outbox events every second to the consumers registered on the `EventBus` and to Redis for SSE subscribers (docs/events.md).
 
 ```mermaid
 sequenceDiagram
