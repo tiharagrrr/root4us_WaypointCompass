@@ -199,7 +199,7 @@ Fixes problems 2 and 9, and applies D10. First add two ACs to `specs/ordering/sp
    - the two new ACs;
    - `queueFor` leaves out other depots, other dates, SUBMITTED, PLANNED and CANCELLED orders.
 
-## PR-C `feat(planning): deferral choice and binding rule` (ROO-74)
+## PR-C `feat(planning): deferral choice and binding rule` (ROO-74) (done, on the PR-B branch; additive only: drop `swappedForOrderId` in a follow-up after 4 Oct, and the live index exempts partial deferrals)
 
 Fixes problem 8. Follow the `drizzle-change` skill.
 

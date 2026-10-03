@@ -121,6 +121,14 @@ export const DEFERRAL_SOURCES = [
 ] as const;
 export type DeferralSource = (typeof DEFERRAL_SOURCES)[number];
 
+/**
+ * Why the engine left an order unplanned. UNAVOIDABLE: no feasible place
+ * existed. PRIORITY_CHOICE: a higher-priority order took the space. Null on a
+ * deferral nobody's engine run proposed (a manual or dock deferral).
+ */
+export const DEFERRAL_CHOICES = ["UNAVOIDABLE", "PRIORITY_CHOICE"] as const;
+export type DeferralChoice = (typeof DEFERRAL_CHOICES)[number];
+
 export const STORE_RESPONSES = [
   "AWAITING",
   "ACKNOWLEDGED",

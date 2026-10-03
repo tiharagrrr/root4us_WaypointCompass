@@ -46,8 +46,7 @@ export const BINDING_RULES = [
 export type BindingRule = (typeof BINDING_RULES)[number];
 
 /** UNAVOIDABLE: no feasible place existed. PRIORITY_CHOICE: a higher-priority order took the space. */
-export const DEFERRAL_CHOICES = ['UNAVOIDABLE', 'PRIORITY_CHOICE'] as const;
-export type DeferralChoice = (typeof DEFERRAL_CHOICES)[number];
+export { DEFERRAL_CHOICES, type DeferralChoice } from '@waypoint/shared/domain';
 
 /**
  * Why an order was left out of the plan altogether instead of deferred. Both mean something upstream

@@ -18,6 +18,8 @@ import {
   alerts,
   auditEvents,
   capacityPlans,
+  deferralReasons,
+  deferrals,
   depots,
   districts,
   items,
@@ -531,6 +533,63 @@ suite('database guarantees', () => {
           arrivedLng: 79.92,
           unitsDelivered: 12,
         }),
+      ).toBeUndefined();
+    });
+
+    it('keeps one live whole-order deferral per order and plan', async () => {
+      const reasonCode = `OVER_CAPACITY_${sfx}`;
+      await owner
+        .insert(deferralReasons)
+        .values({ code: reasonCode, label: 'Fleet full', fromEngine: true });
+      const deferral = {
+        orderId: orderA,
+        planId: await planId(),
+        source: 'ENGINE' as const,
+        reasonCode,
+        fromDate: '2026-10-01',
+        toDate: '2026-10-02',
+      };
+      const [first] = await owner
+        .insert(deferrals)
+        .values({
+          ...deferral,
+          choice: 'UNAVOIDABLE',
+          bindingRule: 'CAP_VOLUME',
+        })
+        .returning();
+      expect(first).toMatchObject({
+        choice: 'UNAVOIDABLE',
+        bindingRule: 'CAP_VOLUME',
+      });
+
+      // A second PROPOSED or CONFIRMED one for the same order and plan is refused...
+      expect(await pgCode(owner.insert(deferrals).values(deferral))).toBe(
+        '23505',
+      );
+      expect(
+        await pgCode(
+          owner.insert(deferrals).values({ ...deferral, status: 'CONFIRMED' }),
+        ),
+      ).toBe('23505');
+      // ...but partial deferrals from the dock, one per removed line, sit beside it.
+      for (let i = 0; i < 2; i += 1)
+        expect(
+          await pgCode(
+            owner.insert(deferrals).values({
+              ...deferral,
+              source: 'LOAD_CHECK',
+              status: 'CONFIRMED',
+              partial: true,
+            }),
+          ),
+        ).toBeUndefined();
+      // Once the first is cancelled, a new decision may take its place.
+      await owner
+        .update(deferrals)
+        .set({ status: 'CANCELLED' })
+        .where(eq(deferrals.id, first.id));
+      expect(
+        await pgCode(owner.insert(deferrals).values(deferral)),
       ).toBeUndefined();
     });
 
