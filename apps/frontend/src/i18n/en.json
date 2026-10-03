@@ -90,6 +90,23 @@
     "needReceiver": "Who took the delivery?",
     "needProof": "Add a signature or a photo",
     "needShortNote": "Say what was short and why",
-    "back": "Back"
+    "back": "Back",
+    "exceptionTitle": "Exception · stop {{n}}",
+    "whatHappened": "What happened?",
+    "outcomePartial": "Partial",
+    "outcomeRefused": "Refused",
+    "outcomeDamaged": "Damaged",
+    "outcomeOutletClosed": "Outlet closed",
+    "itemsAffected": "Items affected",
+    "orderedDelivered": "Ordered ×{{qty}} · delivered",
+    "required": "Required",
+    "addPhoto": "Add photo",
+    "note": "Note",
+    "notePlaceholder": "What happened at the outlet?",
+    "saveException": "Save exception",
+    "savedOnPhone": "Saved on the phone if there’s no signal.",
+    "needOutcome": "Why did it fail?",
+    "needNote": "Add a note for the dispatcher",
+    "needPhoto": "Add a photo"
   }
 }
