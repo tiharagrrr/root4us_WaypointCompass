@@ -1,5 +1,6 @@
 // Figma: D1 Today's trip · 185:19938
 import { useMeGet, useMyTripsList, type TripSummaryDto } from '@compass/api-client'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { enqueue, useCachedStops, useCachedTrip, type CachedTrip } from '@/offline'
@@ -7,12 +8,14 @@ import { formatColombo, toColomboDate } from '@/lib/format-colombo'
 import { getLink } from '@/lib/links'
 import { useServerClock } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
+import { Button } from '@/ui/button'
 import { Card, CardContent } from '@/ui/card'
 import { DeliveryWindow } from '@/ui/delivery-window'
 import { Icon } from '@/ui/icon'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
+import { CantRunDialog } from './cant-run-dialog'
 import { DownloadFailedCard } from './download-failed-card'
 import { cachedTripLinks } from './offline-links'
 import { useTripBundle } from './use-trip-bundle'
@@ -31,6 +34,7 @@ export function TodaysTripPage() {
   const { now } = useServerClock(30_000)
   const today = toColomboDate(now)
 
+  const [cantRunOpen, setCantRunOpen] = useState(false)
   const me = useMeGet()
   const trips = useMyTripsList({ date: today })
   const summary: TripSummaryDto | undefined = trips.data?.data[0]
@@ -111,7 +115,21 @@ export function TodaysTripPage() {
           {t('driver.startTrip')}
         </Action>
         <p className="type-caption m-0 text-center text-muted-foreground">{t('driver.startNote')}</p>
+        <Button
+          variant="ghost"
+          className="h-11 w-full text-[15px] text-slate-700"
+          onClick={() => setCantRunOpen(true)}
+        >
+          {t('driver.cantRunLink')}
+        </Button>
       </footer>
+
+      <CantRunDialog
+        trip={cached}
+        serverLinks={summary?._links}
+        open={cantRunOpen}
+        onOpenChange={setCantRunOpen}
+      />
     </>
   )
 }

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, setSyncPoke } from '@/offline'
@@ -145,5 +145,37 @@ describe('D1 Today’s trip', () => {
 
     expect(await screen.findByText('No trip today')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Start trip' })).not.toBeInTheDocument()
+  })
+})
+
+describe('D8 Can’t run this trip', () => {
+  it('AC-EXE-14 sends CANT_RUN with its reason and marks it urgent', async () => {
+    const poke = vi.fn()
+    setSyncPoke(poke)
+    stubApi(routes())
+    renderScreen(<TodaysTripPage />, '/driver')
+
+    await screen.findByText('Fresh Kadawatha')
+    await userEvent.click(screen.getByRole('button', { name: 'Can’t run this trip?' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('REF-07 · Trip 1 · departs 03:45')).toBeInTheDocument()
+
+    // No reason, no send: the server's own message, before the phone has any signal.
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Send to dispatcher' }))
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('A reason is required')
+
+    await userEvent.click(within(dialog).getByRole('radio', { name: 'Vehicle breakdown' }))
+    await userEvent.type(within(dialog).getByLabelText('Note'), 'Alternator gone')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Send to dispatcher' }))
+
+    await waitFor(async () => {
+      const queued = await db.outbox.toArray()
+      expect(queued.map((row) => row.event.type)).toContain('CANT_RUN')
+    })
+    const row = (await db.outbox.toArray()).at(-1)
+    expect(row?.event).toMatchObject({ type: 'CANT_RUN', reasonCode: 'BREAKDOWN', note: 'Alternator gone' })
+    // It leaves at once rather than waiting for the next batch.
+    expect(poke).toHaveBeenLastCalledWith({ urgent: true })
   })
 })

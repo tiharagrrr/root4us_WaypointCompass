@@ -111,6 +111,17 @@
     "downloadBeforeLeaving": "Download before leaving",
     "downloadBeforeLeavingBody": "The trip isn’t fully saved on this phone. Retry on depot Wi-Fi.",
     "retry": "Retry",
-    "lastSaved": "Last saved {{time}}"
+    "lastSaved": "Last saved {{time}}",
+    "cantRunTitle": "Can’t run this trip",
+    "cantRunSubtitle": "{{ref}} · departs {{time}}",
+    "whatsStoppingYou": "What’s stopping you?",
+    "reasonBreakdown": "Vehicle breakdown",
+    "reasonCooling": "Cooling problem",
+    "reasonUnwell": "Unwell",
+    "reasonOther": "Other",
+    "photoOptional": "Photo (optional)",
+    "sendToDispatcher": "Send to dispatcher",
+    "cantRunFooter": "The dispatcher reassigns the trip or the vehicle. Don’t load until you hear back.",
+    "needReason": "A reason is required"
   }
 }
