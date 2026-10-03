@@ -22,3 +22,4 @@ export * from './reference-data/reference-data.zod.ts';
 export * from './root/root.zod.ts';
 export * from './settings/settings.zod.ts';
 export * from './users/users.zod.ts';
+export * from './vehicles/vehicles.zod.ts';

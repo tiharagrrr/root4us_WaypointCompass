@@ -6,6 +6,7 @@ import {
   dowOf,
   instantAt,
   isOperatingDay,
+  isoWeekOf,
   minuteLabel,
   nextOperatingDay,
   nextWeekdayAfter,
@@ -109,5 +110,25 @@ describe("the Style weekly delivery day", () => {
   it("leaves a date already on the delivery day where it is (AC-ORD-08)", () => {
     expect(weekdayOnOrAfter("2026-10-02", 4)).toBe("2026-10-02");
     expect(weekdayOnOrAfter("2026-10-01", 4)).toBe("2026-10-02");
+  });
+});
+
+// The fuel quota is weekly (specs/fleet/spec.md): 2026-10-02 is in ISO week 40,
+// Monday 28 September to Sunday 4 October.
+describe("the ISO week", () => {
+  it("puts the demo week, Monday to Sunday, in week 40 of 2026", () => {
+    for (const date of ["2026-09-28", "2026-10-02", "2026-10-04"])
+      expect(isoWeekOf(date)).toEqual({ isoYear: 2026, isoWeek: 40 });
+    expect(isoWeekOf("2026-10-05")).toEqual({ isoYear: 2026, isoWeek: 41 });
+  });
+
+  it("takes the year of the week's Thursday at a year boundary", () => {
+    expect(isoWeekOf("2027-01-01")).toEqual({ isoYear: 2026, isoWeek: 53 });
+    expect(isoWeekOf("2024-12-30")).toEqual({ isoYear: 2025, isoWeek: 1 });
+    expect(isoWeekOf("2026-01-01")).toEqual({ isoYear: 2026, isoWeek: 1 });
+  });
+
+  it("refuses a date that does not exist", () => {
+    expect(() => isoWeekOf("2026-02-30")).toThrow();
   });
 });
