@@ -10,6 +10,19 @@ export interface Stop {
   effectiveCloseMin: number;
 }
 
+/** The outlet window, narrowed by the mall window at a mall-dock outlet. */
+export function effectiveWindow(outlet: EngineOutlet): { openMin: number; closeMin: number } {
+  const mall =
+    outlet.parkingConstraint === 'MALL_DOCK' &&
+    outlet.mallWindowOpenMin !== null &&
+    outlet.mallWindowCloseMin !== null;
+  if (!mall) return { openMin: outlet.windowOpenMin, closeMin: outlet.windowCloseMin };
+  return {
+    openMin: Math.max(outlet.windowOpenMin, outlet.mallWindowOpenMin ?? 0),
+    closeMin: Math.min(outlet.windowCloseMin, outlet.mallWindowCloseMin ?? 0),
+  };
+}
+
 /**
  * The trip's stops in visiting order. Orders the input does not describe (a released trip's orders
  * in repair mode) are skipped; they were checked when the trip was released.
@@ -20,16 +33,13 @@ export function stopsOf(ctx: RuleContext, trip: Trip): Stop[] {
     const order = ctx.orderById.get(id);
     const outlet = order ? ctx.input.outlets[order.outletId] : undefined;
     if (!order || !outlet) continue;
-    const mall =
-      outlet.parkingConstraint === 'MALL_DOCK' &&
-      outlet.mallWindowOpenMin !== null &&
-      outlet.mallWindowCloseMin !== null;
+    const window = effectiveWindow(outlet);
     stops.push({
       order,
       outlet,
       allowanceMin: allowanceMinutes(ctx.input.allowances, trip.brand, outlet.dockType),
-      effectiveOpenMin: mall ? Math.max(outlet.windowOpenMin, outlet.mallWindowOpenMin ?? 0) : outlet.windowOpenMin,
-      effectiveCloseMin: mall ? Math.min(outlet.windowCloseMin, outlet.mallWindowCloseMin ?? 0) : outlet.windowCloseMin,
+      effectiveOpenMin: window.openMin,
+      effectiveCloseMin: window.closeMin,
     });
   }
   return stops;

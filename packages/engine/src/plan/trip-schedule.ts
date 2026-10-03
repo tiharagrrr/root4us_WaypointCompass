@@ -2,7 +2,17 @@ import { nextTripDepartMin, scheduleTrip, type TripSchedule } from '../time/sche
 import type { RuleContext, Trip } from '../types';
 import { stopsOf, type Stop } from './stops';
 
-function departureOf(ctx: RuleContext, trip: Trip, stops: readonly Stop[], depotToDistrictMin: number): number {
+/**
+ * When the trip leaves the depot. A Fresh trip 1 leaves at the Fresh start and a Fresh trip 2 after
+ * trip 1 returns plus the reload; a Style or Tech trip leaves so that it arrives as its first window
+ * opens. An explicit `departMin` on the trip wins, so a plan can pin its own schedule.
+ */
+export function tripDepartMin(
+  ctx: RuleContext,
+  trip: Trip,
+  stops: readonly Stop[],
+  depotToDistrictMin: number,
+): number {
   if (trip.departMin !== undefined) return trip.departMin;
   if (trip.brand === 'FRESH') {
     const first = ctx.trips.find((t) => t.vehicleId === trip.vehicleId && t.tripNo === 1 && t.key !== trip.key);
@@ -22,7 +32,7 @@ export function scheduleOf(ctx: RuleContext, trip: Trip): { schedule: TripSchedu
   const stops = stopsOf(ctx, trip);
   const district = ctx.input.districts[trip.districtId];
   if (!district) return { schedule: { departMin: 0, stops: [], returnMin: 0 }, stops: [] };
-  const departMin = departureOf(ctx, trip, stops, district.depotToDistrictMin);
+  const departMin = tripDepartMin(ctx, trip, stops, district.depotToDistrictMin);
   const schedule = scheduleTrip({
     departMin,
     district,

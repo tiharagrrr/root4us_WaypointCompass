@@ -16,7 +16,7 @@ Paths are relative to `packages/engine/`. Code lives under `src/`.
 
 ## 1. What the engine is
 
-The engine is a deterministic, explainable greedy allocator with a repair pass, written as pure TypeScript. One `EngineInput` goes in; an `EngineOutput` with trips, unplanned orders, violations and stats comes out. The API, the web plan editor, the tests and the Task 2B export all run this code, so a plan the UI shows as valid is the plan the server accepts.
+The engine is a deterministic, explainable greedy allocator with a repair pass, written as pure TypeScript. One `EngineInput` goes in; an `EngineOutput` with trips, unplanned orders, excluded orders, violations and stats comes out. The API, the web plan editor, the tests and the Task 2B export all run this code, so a plan the UI shows as valid is the plan the server accepts.
 
 It has no Nest, no database, no `Date.now`, no `Math.random` and no network. The plan date comes in as `input.date` (`YYYY-MM-DD`).
 
@@ -28,7 +28,7 @@ It has no Nest, no database, no `Date.now`, no `Math.random` and no network. The
 | `src/rules/` | One file per rule, `index.ts` (registry), `meta.ts` (severity and scope), `codes.ts`, `reason-map.ts` |
 | `validate.ts` | `validate(input, plan)`: measures every trip from its orders, runs every enabled rule over the plan and `input.fixedTrips`, and returns violations sorted by rule, trip, vehicle and order |
 | `src/plan/` | `measure.ts` (trip totals from orders), `stops.ts` (stops with effective windows), `trip-schedule.ts` (departure and arrivals for the window rules) |
-| `src/allocate/` | prescreen, priority, groups, pack, sequence, repair, index |
+| `src/allocate/` | `context.ts`, `prescreen.ts`, `priority.ts`, `groups.ts`, `fits.ts`, `sequence.ts`, `place.ts`, `pack.ts`, `repair.ts`, `reasons.ts`, `stats.ts`, `state.ts`, `index.ts` (`allocate()`) |
 | `src/manual/` | vehicle-options, order-options, suggest-fixes, edits |
 | `src/explain.ts` | Violations and unplanned orders as sentences |
 | `src/export/task2b.ts` | The Datathon Task 2B CSV and policy draft |
@@ -214,7 +214,7 @@ A `Violation` carries `rule`, `severity`, `scope`, and where relevant `tripKey`,
 
 `RuleContext` holds the trip or plan under test, the vehicle, the outlets, the travel and allowance tables, the history, the fuel used this week and the params. `src/types.ts` is the source of truth for its fields. Outlet field names follow the outlets table in Step 1 (`depotId`, `dockType`, `parkingConstraint`, `windowOpenMin`, `windowCloseMin`, `mallWindowOpenMin`, `mallWindowCloseMin`, `styleDeliveryDow`).
 
-The same rule objects answer two questions. `validate()` reports violations on a whole plan. `fits(order, trip)` asks whether one more order can join a trip; the packer and the manual editor both call it. So a dimmed order on screen 07 shows exactly the reason the engine would give.
+The same rule objects answer two questions. `validate()` reports violations on a whole plan. `fits(ctx, current, trip, orderIds)` in `allocate/fits.ts` asks whether one trip may carry those orders: it measures the trip, sequences its stops and runs the thirteen HARD trip and vehicle rules over it, returning either the measured trip or the first rule that refused it. `current` is every trip in the plan as it stands, fixed trips included; the candidate replaces the trip with its key. The packer, the repair pass and the manual editor all call it, so a dimmed order on screen 07 shows exactly the reason the engine would give.
 
 ### Fixture shape
 
@@ -349,17 +349,67 @@ Only rules whose check needs more than a table cell. The table's check column is
 
 The allocator is a deterministic greedy heuristic with a repair pass. It runs on every click (well under a second for about 150 orders and 30 vehicles), explains every order, and never produces a HARD violation.
 
-1. **Pre-screen.** For each order, ask whether any available home-depot vehicle could carry it alone: capacity, temperature, access, a one-stop trip inside its window, the budget and fuel left. If none could, the order is unplanned now, marked `UNAVOIDABLE`, with the rule that ruled out the last candidate as `bindingRule`. A chilled order with every reefer in the workshop gets `NO_REEFER_CAPACITY`.
-2. **Rank.** Score every remaining order with `priority()` and sort by score descending, then earliest effective window close, then order ref.
-3. **Group.** Key orders by brand, district and trip class (chilled or ambient). Van-only outlets stay in their group but mark it as needing a van for any trip that serves them.
-4. **Pack.** Process groups scarcest first, by demand over the capacity of vehicles that could serve them, so reefer and van groups claim scarce vehicles before ambient trucks are spread thin. Within a group, walk orders in priority order (largest dominant share first within a priority band) and place each on the open trip where it fits best. When none fits, open a new trip on the eligible vehicle with the most budget and capacity left. "Fits" is the shared `fits(order, trip)`.
-5. **Sequence.** Inside each trip, order stops by effective window close, then insert each stop where it adds the least waiting while keeping every window. Trip minutes do not change.
-6. **Repair and improve.** Try to place each unplanned order by moving orders between trips of the same group, by opening a second trip on a vehicle with budget left, or by swapping out a lower-priority order that frees exactly enough room. A swapped-out order is `PRIORITY_CHOICE` with `displacedBy`. Stop after `improveIterations` moves.
-7. **Validate.** Every rule runs over the final plan. In tests a HARD violation fails the build; in production it appears on the plan as a violation, never silently.
+`allocate(input, options?)` returns an `EngineOutput`: `version`, `date`, `trips`, `unplanned`, `excluded`, `violations` and `stats`. It is also a `Plan`, so `validate(input, allocate(input))` type-checks and measures the same trips. `output.trips` holds only the plan's own trips, because `validate()` adds `input.fixedTrips` itself; each carries the `departMin` the schedule derives, so the plan keeps its own times.
 
-**Repair mode** runs the same pipeline with `fixedTrips` holding everything released or in progress and only the freed orders (a broken-down vehicle's, for example) as input. The result is shown as a diff before anything changes.
+1. **Pre-screen.** For each order, ask whether any available home-depot vehicle could carry it alone: capacity, temperature, access, a one-stop trip inside its window, the budget and fuel left. If none could, the order is unplanned now, marked `UNAVOIDABLE`, with the rule that ruled out the last candidate as `bindingRule`. A chilled order with every reefer in the workshop gets `NO_REEFER_CAPACITY`. The reefer preference does not apply here: a reefer counts as a place an ambient order could go, so nothing is called unavoidable while a vehicle could take it. A Style order that is not due today is left out altogether (`excluded[]`, `NOT_DUE_TODAY`).
+2. **Rank.** Score every remaining order with `priorityOf()` and sort by score descending, then earliest effective window close, then order ref.
+3. **Group.** Key orders by brand, district and trip class (chilled or ambient). Van-only outlets stay in their group but mark it as needing a van for any trip that serves them; a group of nothing but van-only outlets counts only vans as its capacity.
+4. **Pack.** Process groups scarcest first, by demand over the capacity of vehicles that could serve them, so reefer and van groups claim scarce vehicles before ambient trucks are spread thin. Scarcity is the larger of the weight and volume ratios, counting each preferred vehicle's free trip slots; a group with no capacity at all is the scarcest there is. Within a group, walk orders in priority order (largest dominant share first within a priority band) and place each where it fits best.
+5. **Sequence.** Inside each trip, order stops by effective window close, then insert each stop where it adds the least waiting while keeping every window. With nothing to choose between two positions the stop stays in window-close order. Trip minutes do not change; only when each stop is reached does.
+6. **Repair and improve.** Try each unplanned order again in rank order, now that the plan is fuller: a vehicle may have budget for a second trip, and spare reefer room is open to ambient orders once every chilled order has had its turn. Then try to make room by pushing a strictly lower-priority order off a trip of the same brand and district. The order pushed off goes back in the queue, so it is a move between trips when something else can take it and a swap only when nothing can; then it is `PRIORITY_CHOICE` with `displacedBy`. Stop after `improveIterations` placements.
+7. **Validate.** Every rule runs over the final plan. In tests a HARD violation fails the build; in production it appears on the plan as a violation, never silently. A HARD violation can only come from the input's own fixed or locked trips: everything the allocator places was checked first.
 
-**Plan ahead** uses `reserve(input, forecastGroups)`: it packs placeholder orders (`FC-` refs) sized from the forecast with every vehicle rule. A reservation is a trip with no stops that holds a vehicle's capacity and trip slot.
+**Repair mode** runs the same pipeline with `fixedTrips` holding everything released or in progress and only the freed orders (a broken-down vehicle's, for example) as input. The result is shown as a diff before anything changes. An order already on a fixed trip is never planned again, whether or not the caller left it in `input.orders`.
+
+**Plan ahead** uses `reserve(input, forecastGroups)`: it packs placeholder orders (`FC-` refs) sized from the forecast with every vehicle rule. A reservation is a trip with no stops that holds a vehicle's capacity and trip slot. `reserve()` itself is still to come; `allocate()` already fills reservations handed to it (below).
+
+### Choosing where an order goes
+
+`allocate/place.ts` tries the candidates for one order in a fixed order and stops at the first that fits. Nothing is placed unless `fits` says the whole trip is legal, so a HARD violation cannot reach the plan and then be reported.
+
+- **Candidate vehicles** are the available vehicles based at the order's outlet's depot. `DEPOT_HOME` is therefore never a deferral reason. They are tried in two passes: the vehicles the order prefers (a reefer for a chilled order, an ambient vehicle for an ambient one), then the rest. The rest are tried even when they cannot take the order, because their refusal is the telling one: for a chilled order with no reefer room left, the last vehicle tried is an ambient truck, `TEMP_REEFER` refuses it, and the reason reads "no reefer capacity".
+- **Candidate trips** are the open trips of the same brand and district on those vehicles, reservations first, then the fullest trip the order still fits on (so slack is not scattered), then by trip key. A trip kept from the input is closed: nothing is added to it.
+- **A new trip** opens on the vehicle with the most budget minutes left for the brand's window, then the most volume, then the most weight, then the first vehicle code. Its `tripNo` is the lowest slot the vehicle has free.
+- **`bindingRule`** is the rule that refused the last candidate tried; `tried[]` holds one entry per vehicle, in the order they were tried, with the first rule that refused it. Only a rule in `BINDING_RULES` is recorded, so `DEPOT_HOME` and the structural rules never appear.
+- **Rule order inside `fits`** is eligibility (`DEPOT_HOME`, `VEHICLE_AVAILABLE`, `TEMP_REEFER`, `ACCESS_VAN_ONLY`, `TRIP_BRAND_DISTRICT`), then fullness (`CAP_WEIGHT`, `CAP_VOLUME`, `TRIP_LIMIT`, `BUDGET_FRESH`, `BUDGET_STYLE_TECH`, `FUEL_WEEKLY`), then timing (`WINDOW_OUTLET`, `WINDOW_MALL`). The first violation is the binding rule, so a vehicle that could never serve the order says so instead of reporting it as full.
+- **Knock-on effects.** A Fresh trip 2 leaves after trip 1 returns, so growing trip 1 can push trip 2 past a window. A placement that gives one of the vehicle's other trips a problem it did not already have is refused. A problem the trip already had is left alone: it belongs to the plan, not to this placement, and blocking on it would make the vehicle unusable.
+
+### Reefer preference
+
+`TEMP_REEFER` allows a reefer to carry ambient orders (`reeferCarriesAmbient`, on by default); which of them it should carry is the allocator's. Chilled orders are packed first, because their group is almost always the scarcest. An ambient order may take a reefer when either:
+
+- (a) it scores at least `reeferAmbientMinPriority` (40, a repeat skip's own weight) and no ambient vehicle can take it, or
+- (b) no chilled order is left to place.
+
+(b) is read as "no chilled order is still waiting for its turn", not "every chilled order is planned": a chilled order that no reefer could ever take does not become plannable by keeping a reefer empty, and holding the room back would serve nobody. By the time the repair pass runs, every chilled order has had its turn, so an ambient order is never deferred while reefer room sits idle.
+
+### Re-runs: keepLocked and reservations
+
+Two kinds of trip can come in with the orders they already hold, both as `TripDraft`s whose orders stay in `input.orders`:
+
+- `input.lockedTrips` are the trips a dispatcher built or edited by hand (`trips.locked`). `allocate(input, { keepLocked: true })` keeps each one exactly as it is — vehicle, trip number and stops, unsequenced — and plans the rest of the day around it; its orders leave the pool and nothing is added to it. Without the option they are ignored and their orders planned again, which is the only way the engine may replace a hand-built trip (AC-PLN-10).
+- `input.reservedTrips` are plan-ahead reservations (`trips.isReserved`). They are open trips with no stops, filled before a new trip opens, and one nobody fills stays in the plan with its slot and 0 minutes. They count against `TRIP_LIMIT` either way, so a vehicle holding two reservations has no slot left.
+
+Both come back in `output.trips` with `locked` or `reserved` set, for the columns the API writes.
+
+### Orders left out
+
+`output.excluded[]` is not a deferral: no `deferrals` row, no store notice, and the API raises an alert for it, because the queue should never have held the order.
+
+| Code | When |
+| --- | --- |
+| `NOT_DUE_TODAY` | A Style order whose outlet takes Style on another weekday (see section 9, "Decided 2026-10-01") |
+| `NOT_AN_OPERATING_DAY` | The plan date is not an operating day. Nothing is planned and the plan-level `OPERATING_DAY` violation is returned with it |
+
+### Allocator params
+
+| Param | Default | What it does |
+| --- | --- | --- |
+| `priorityWeights` | the seven weights below | The priority score (settings `planning.priorityWeights`, set in code) |
+| `tightWindowMin` | 120 | An effective window shorter than this scores the tight-window weight |
+| `improveIterations` | 2000 | Placements the repair pass may evaluate before it stops. Never a wall-clock limit |
+| `reeferAmbientMinPriority` | 40 | What an ambient order must score to take a reefer chilled orders could still want |
+| `limitingUtilisationPct` | 90 | Past this, a resource that caused a deferral is a limiting resource |
 
 ### Priority
 
@@ -380,9 +430,10 @@ Weights are `params.priorityWeights`. The maximum is 129. A repeat skip (40 or m
 - `validate(allocate(x))` has no HARD violation.
 - Every order is on exactly one trip or unplanned with a reason.
 - Sorting is stable: priority descending, then earliest window close, then ref for orders; id for everything else.
-- Shuffled input gives byte-identical output.
-- An S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms in the browser.
+- Shuffled input gives byte-identical output: every list reversed and every table's keys reversed changes nothing.
+- An S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms in the browser. Measured on a hand-built 150-order, 30-vehicle day: 54 ms to allocate, 1 ms to validate (ROO-28; the bench itself is ROO-59).
 - The allocator checks a rule before placing an order (`fits` and the pre-screen), not only in the final validate.
+- An order on a fixed or kept trip is never planned twice, so `WHOLE_ORDER` cannot break.
 
 ### Tests
 
@@ -390,16 +441,24 @@ Weights are `params.priorityWeights`. The maximum is 129. A repeat skip (40 or m
 | --- | --- | --- |
 | Rules | A pass and a fail fixture for each of the 18 rules | `fixtures/rules/*.json`, `rules.spec.ts` |
 | Time model | 101, 112 and 213 minutes exactly; a third trip is refused | `time.spec.ts` |
-| Allocator | Grouping, packing, sequencing and repair on small hand-built cases | `allocate/*.spec.ts` |
+| Allocator | Grouping, packing, sequencing, repair, the reefer preference, keepLocked and reservations, the reasons and the numbers, on small hand-built cases | `allocate/__tests__/{allocate,group,pack,sequence,repair,priority,temp-preference,keep-locked,explain}.spec.ts` |
 | Properties (fast-check) | 1 to 6 vehicles, up to 40 orders: no HARD violation; every order on one trip or unplanned with a reason; shuffled input gives identical output | `property.spec.ts` |
 | Golden S1 | Read from `SEED_DATA_DIR` in CI: no HARD violations, `check_allocation.py` passes, served count and output hash match the snapshot | `golden.spec.ts` |
 | Performance | The timings above | `bench/` |
 
 ### explain()
 
-`explain(output)` builds sentences from fixed templates. It never invents numbers. The optional AI panel only rephrases these facts and falls back to the template text.
+`explain(input, output)` builds sentences from fixed templates, out of the numbers `output.stats` already carries. It works nothing out and invents nothing. The optional AI panel only rephrases these facts and falls back to the template text. It takes the input as well, because the sentences name orders by ref, vehicles by code and districts by name, and `EngineOutput` carries ids. It returns `{ plan, resources[], deferrals[], unplanned[] }`.
 
-Plan stats: served and deferred by brand and class; utilisation of each scarce resource (reefer volume, van trips, Fresh minutes, Style-Tech minutes, fuel); limiting resources (over 90% used and whose shortage caused deferrals); repeat skips avoided and incurred; deferrals split into unavoidable and chosen, each with its cost in units, m³ and outlets.
+Plan stats (`allocate/stats.ts`, `PlanStats`): served and deferred by brand and class; utilisation of each scarce resource (reefer volume, van trips, Fresh minutes, Style-Tech minutes, fuel); limiting resources (over `limitingUtilisationPct` and whose shortage caused deferrals); repeat skips avoided and incurred; deferrals split into unavoidable and chosen, each with its cost in units, m³ and outlets.
+
+How those numbers are counted, so two screens never disagree:
+
+- `used` and `total` are over everything the fleet has, not only what it deployed: reefer volume is every available reefer's capacity across its trip slots, Fresh and Style-Tech minutes are every available vehicle's budget, fuel is every available vehicle's weekly quota (what the ISO week already used included), van trips are every van's slots. A resource with slots to spare is therefore never called the limit.
+- `trips` and `fullTrips` are over the trips the plan actually runs. A trip is **full** when no order that is still waiting fits on it, asked through `fits`, which is exactly "it could take no more". With nothing waiting, nothing is full.
+- A resource is **limiting** when it is used past `limitingUtilisationPct` *and* a deferral's `bindingRule` points at it: `TEMP_REEFER` at reefer volume, `ACCESS_VAN_ONLY` at van trips, the two budgets at their minutes, `FUEL_WEEKLY` at fuel, and a capacity or trip-limit refusal at whichever kind of vehicle the order needed. A window conflict and an unavailable vehicle name no resource.
+- Repeat skips avoided counts the orders this plan serves whose outlet was deferred on its last run; incurred counts the unplanned orders whose `repeatSkip` is set. Both use the same `isRepeatSkip()` the `REPEAT_SKIP` rule uses, so the flag and the rule cannot disagree.
+- A deferral's cost counts orders, `orders.units`, m³, kg and distinct outlets.
 
 Plan sentence, as given in Step 5:
 
@@ -411,7 +470,7 @@ Order sentence, as given in Step 5 (`explainUnplanned`, screen 15):
 
 > WF-0171 waits: it needs 1.8 m³ chilled, and the most space left on any Gampaha reefer trip is 0.6 m³ (REF-07 trip 2). Tried REF-03, REF-07, REF-11.
 
-Shape: "{ref} waits: it needs {need} {unit} {class}, and the most space left on any {district} {vehicle kind} trip is {best} {unit} ({code} trip {tripNo}). Tried {codes}." The numbers come from `Unplanned.detail` and `Unplanned.tried`.
+Shape: "{ref} waits: it needs {need} {unit} {class}, and the most space left on any {district} {vehicle kind} trip is {best} {unit} ({code} trip {tripNo}). Tried {codes}." The numbers come from `Unplanned.detail` and `Unplanned.tried`. "The most space left" is over the plan's trips of the order's own brand and district on the kind of vehicle it needs (a reefer when it is chilled, a van when its outlet is van-only, otherwise any truck); when there is no such trip the sentence says so instead. An `Unplanned` with no `detail` (a deferral a dispatcher made by hand) falls back to the reason's label.
 
 Screen M4 uses the store-safe wording from the reason map, never internal numbers.
 
@@ -422,7 +481,9 @@ Every unplanned order records:
 - `reasonCode`: from the reason map below.
 - `bindingRule`: the rule that ruled out the last candidate vehicle tried.
 - `choice`: `UNAVOIDABLE` when no feasible place existed even after repair; `PRIORITY_CHOICE` when a higher-priority order took its place, with `displacedBy` naming that order.
-- `detail` (needed m³, best space left, vehicle tried), `priority`, `repeatSkip`, and `tried[]` as `{ vehicleId, failedRule }`.
+- `detail`: `needUnits`, `needWeightKg`, `needVolumeM3`, and `bestVolumeM3` with `bestTripKey`, `bestVehicleId` and `bestTripNo` for the trip that had the most room left (all null when there was no such trip).
+- `priority`, `repeatSkip`, and `tried[]` as `{ vehicleId, failedRule }`, one entry per vehicle in the order they were tried.
+- `displacedBy` on a `PRIORITY_CHOICE`: the order that took its place.
 
 `src/rules/reason-map.ts`:
 
@@ -438,7 +499,8 @@ Every unplanned order records:
 | Manual only | `ACCESS_ISSUE`, `STORE_REQUEST`, `OTHER` | As chosen | The dispatcher's note |
 
 - `VEHICLE_AVAILABLE` for a workshop vehicle maps to `OVER_CAPACITY`.
-- `DEPOT_HOME` is never a reason: candidates are filtered before packing.
+- `DEPOT_HOME` is never a reason: candidates are filtered to the outlet's depot before packing.
+- With no available vehicle at the depot at all there is no candidate to refuse the order, so the fleet itself is the reason: `VEHICLE_AVAILABLE` with the depot's broken-down vehicle if it has one (`VEHICLE_BREAKDOWN`), else its workshop vehicle (`OVER_CAPACITY`), and with no vehicle on the books `bindingRule` is null and the reason is `OVER_CAPACITY`.
 - `TRIP_BRAND_DISTRICT`, `WHOLE_ORDER` and `OPERATING_DAY` are structural: the allocator never builds a plan that breaks them, so they never bind a deferral.
 - Soft rules never block an order, so they have no reason code.
 - The Task 2B policy draft groups deferrals by `choice`, answering the booklet's question: which deferrals were unavoidable, which were a choice, and what they cost.
@@ -482,9 +544,22 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## 9. Open questions
 
+- The engine's `reeferCarriesAmbient` default is `true` (decided 2026-10-01), but the API's setting `planning.reeferCarriesAmbient` and its row in `specs/planning/spec.md` still default to `false`. Whichever the API passes wins, so the two must agree before an engine run reads settings, or a reefer will refuse ambient orders in the product and take them in the tests. Decides: Tihara with Nimesha (settings registry).
+- `reserve(input, forecastGroups)` is not written yet (forecasting). `allocate()` already fills `input.reservedTrips`, so the two halves can land separately. Decides: Tihara.
 - Soft overrides: the engine reports soft violations; which API field stores the override note? (`deferrals.overrideNote` for REPEAT_SKIP; Tech value and late risk notes are still open.)
 - Fixtures: Step 5 names `fixtures/rules/*.json` but not the folder's place; this file assumes `packages/engine/fixtures/`.
 - Fixed trips whose orders are not in `input.orders` (released trips in repair mode) are measured from their stored totals and skipped by the order-level and window rules. Confirm that is what repair mode needs (ROO-56).
+
+### Decided 2026-10-03 (ROO-28)
+
+- The allocator's own choices, written down in section 5: candidate order (preferred vehicles first so the last refusal is the telling one), best fit (reservations, then the fullest trip with room), a new trip on the vehicle with the most budget then capacity, the rule order inside `fits`, and the knock-on check on a vehicle's other trips.
+- `reeferAmbientMinPriority` is a new param, default 40, for "a high-priority ambient order" in `TEMP_REEFER` case (a). 40 is a repeat skip's own weight, the lowest score the priority table treats as pressing. **Tihara to confirm the number.**
+- `TEMP_REEFER` case (b) is read as "no chilled order is left to place" rather than "every chilled order is planned", so one chilled order nothing can carry does not keep every spare reefer empty all day. **Tihara to confirm the reading.**
+- A deferral's cost is reported in `orders.units`, so `EngineOrder` gained a required `units`. The API fills it from `orders.units`, which the S1 data carries as `order_units`.
+- `EngineOrder` gained nothing else; `EngineDistrict` gained an optional `name`, used only by `explain()` ("any Gampaha reefer trip"), falling back to the id.
+- `improveIterations` counts every placement or move the repair pass evaluates, not only the ones it applies, so the bound holds whatever the instance looks like.
+- `allocate()` pins `departMin` on each trip it returns, after the plan is final, to the value the schedule derives. It changes no check: `validate()` derives the same number.
+- `output.excluded[]` gained `NOT_AN_OPERATING_DAY` beside `NOT_DUE_TODAY`, so every order is accounted for on a non-operating date without inventing deferrals.
 
 ### Decided 2026-10-01
 
@@ -514,6 +589,7 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## Changelog
 
+- 2026-10-03 ROO-28: `allocate()` with the pre-screen, priority, grouping, packing, sequencing and repair, `fits()`, `explain()` and `explainUnplanned()`, `keepLocked` and reservations, `excluded[]`, deferral reasons with their numbers, and 58 allocator specs; new params `priorityWeights`, `tightWindowMin`, `improveIterations`, `reeferAmbientMinPriority` and `limitingUtilisationPct`; `EngineOrder.units` and `EngineDistrict.name`; `ENGINE_VERSION` 0.3.0
 - 2026-10-02 `EngineInputError` carries `code`, `field`, `value` (`INVALID_DATE`, `UNKNOWN_ORDER`, `UNKNOWN_VEHICLE`, `UNKNOWN_DISTRICT`, `UNKNOWN_OUTLET`, `MISSING_ALLOWANCE`); `validate()` checks `input.date` before anything else; the purity test is an allowlist
 - 2026-10-02 the engine uses `@waypoint/shared/domain` and `@waypoint/shared/business-time` instead of its own copies; no output change, so `ENGINE_VERSION` stays 0.2.0
 - 2026-10-02 ROO-14: the 18 rules, `validate()`, the reason map and 36 fixtures; `ENGINE_VERSION` 0.2.0; params for windows, fuel, reefer, Tech value, late risk and repeat skip

@@ -54,6 +54,7 @@ const baseOrder: Omit<EngineOrder, 'id' | 'ref' | 'outletId'> = {
   brand: 'FRESH',
   districtId: 'fx-gampaha',
   tempClass: 'AMBIENT',
+  units: 1,
   weightKg: 10,
   volumeM3: 0.1,
   valueLkr: null,
@@ -102,7 +103,9 @@ export function buildInput(raw: Record<string, unknown>, params: Partial<EngineP
     orders,
     history: asPartials(raw['history']) as EngineInput['history'],
     fuelUsedThisWeek: asPartials(raw['fuelUsedThisWeek']) as Record<string, number>,
-    fixedTrips: [],
+    fixedTrips: (raw['fixedTrips'] as EngineInput['fixedTrips'] | undefined) ?? [],
+    lockedTrips: (raw['lockedTrips'] as EngineInput['lockedTrips'] | undefined) ?? [],
+    reservedTrips: (raw['reservedTrips'] as EngineInput['reservedTrips'] | undefined) ?? [],
     params,
   };
 }
