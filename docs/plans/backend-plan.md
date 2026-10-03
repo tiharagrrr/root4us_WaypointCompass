@@ -173,7 +173,7 @@ Fixes problems 1, 3, 4 and 5.
    MALL_DOCK; a partial deferral on the day before a closed day gets the next open day, and a
    Style order gets its delivery weekday.
 
-## PR-B `feat(ordering): deferred orders stay deferred until planned again`
+## PR-B `feat(ordering): deferred orders stay deferred until planned again` (done: branch `feat/roo-29-deferred-order-queue`; ACs are AC-ORD-38 and 39)
 
 Fixes problems 2 and 9, and applies D10. First add two ACs to `specs/ordering/spec.md`:
 - `AC-ORD-xx A deferred order joins the queue for its new date`;
@@ -199,7 +199,7 @@ Fixes problems 2 and 9, and applies D10. First add two ACs to `specs/ordering/sp
    - the two new ACs;
    - `queueFor` leaves out other depots, other dates, SUBMITTED, PLANNED and CANCELLED orders.
 
-## PR-C `feat(planning): deferral choice and binding rule` (ROO-74)
+## PR-C `feat(planning): deferral choice and binding rule` (ROO-74) (done, on the PR-B branch; additive only: drop `swappedForOrderId` in a follow-up after 4 Oct, and the live index exempts partial deferrals)
 
 Fixes problem 8. Follow the `drizzle-change` skill.
 

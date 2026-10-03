@@ -94,6 +94,13 @@ describe('order machine', () => {
     expect(orderMachine.next('DEFERRED', 'DELIVER')).toBe('DELIVERED');
   });
 
+  // A deferred order waits on its new date's run as DEFERRED: that run plans
+  // it or defers it again, and it never shows the store CONFIRMED in between.
+  it('takes a deferred order straight to PLANNED, or defers it again', () => {
+    expect(orderMachine.next('DEFERRED', 'PLAN')).toBe('PLANNED');
+    expect(orderMachine.next('DEFERRED', 'DEFER')).toBe('DEFERRED');
+  });
+
   it('ends in ISSUE_REPORTED or CANCELLED', () => {
     expect([...orderMachine.terminal].sort()).toEqual([
       'CANCELLED',

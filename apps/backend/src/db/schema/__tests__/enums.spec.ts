@@ -38,6 +38,11 @@ const pairs: [string, readonly string[], readonly string[]][] = [
     shared.DEFERRAL_STATUSES,
   ],
   [
+    'deferral_choice',
+    enums.deferralChoiceEnum.enumValues,
+    shared.DEFERRAL_CHOICES,
+  ],
+  [
     'deferral_source',
     enums.deferralSourceEnum.enumValues,
     shared.DEFERRAL_SOURCES,

@@ -232,7 +232,7 @@ stateDiagram-v2
 | Plan | DRAFT → PUBLISHED → CLOSED | REVISE while PUBLISHED raises `revision` |
 | Trip | RESERVED → PLANNED → LOADING → RELEASED → IN_PROGRESS → COMPLETED | CANCEL before start; REASSIGN keeps the state; a released trip moved to another vehicle goes back to LOADING |
 | Stop | PENDING → ARRIVED → DELIVERED, PARTIAL or FAILED | PENDING → CANCELLED when deferred mid-route or moved; CANCELLED → PENDING (REINSTATE) when a device's delivery is kept |
-| Deferral | PROPOSED → CONFIRMED | PROPOSED → CANCELLED (planned after all, or swapped for another order; the swap is audited as planning.order.swapped); CONFIRMED → REVERSED (19c) |
+| Deferral | PROPOSED → CONFIRMED | PROPOSED → CANCELLED (planned after all, or swapped for another order; the swap is audited as planning.order.swapped); CONFIRMED → REVERSED (19c). One live (PROPOSED or CONFIRMED) whole-order deferral per order and plan (`deferrals_live_uq`); a dock's partial deferrals sit beside it |
 | Store response | AWAITING → ACKNOWLEDGED or PRIORITY_REQUESTED | |
 | Load flag | OPEN → AWAITING_RECHECK → RESOLVED | OPEN → RESOLVED on REMOVE, or on UNDO before the dispatcher decides |
 | Alert | OPEN → ACKNOWLEDGED → RESOLVED | RESOLVE or AUTO_RESOLVE from OPEN too |

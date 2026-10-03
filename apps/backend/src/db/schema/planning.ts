@@ -33,6 +33,7 @@ import {
 import {
   brandEnum,
   cantRunReasonEnum,
+  deferralChoiceEnum,
   deferralSourceEnum,
   deferralStatusEnum,
   deliveryOutcomeEnum,
@@ -284,14 +285,18 @@ export const deferrals = pgTable(
     reasonCode: text()
       .notNull()
       .references(() => deferralReasons.code),
-    reasonDetail: jsonb().$type<Record<string, unknown>>(), // the engine's why-not
+    choice: deferralChoiceEnum(), // engine runs only: UNAVOIDABLE or PRIORITY_CHOICE
+    bindingRule: text(), // engine runs only: the rule that refused the last candidate vehicle
+    reasonDetail: jsonb().$type<Record<string, unknown>>(), // the engine's why-not: tried[], numbers, displacedBy
     note: text(), // dispatcher's note, shown to the store
     fromDate: businessDate().notNull(),
     toDate: businessDate().notNull(),
     priorityScore: doublePrecision(),
     repeatSkip: boolean().notNull().default(false),
     overrideNote: text(), // required to override a repeat skip
-    swappedForOrderId: uuid().references((): AnyPgColumn => orders.id), // 16 Swap: the order served instead
+    // Unused: a swap (16) is recorded in the audit trail as planning.order.swapped.
+    // Dropped in a follow-up once the schema freeze allows drops (ROO-74).
+    swappedForOrderId: uuid().references((): AnyPgColumn => orders.id),
     partial: boolean().notNull().default(false), // from a load-check removal
     decidedById: text(),
     decidedAt: instant(),
@@ -307,6 +312,11 @@ export const deferrals = pgTable(
   (t) => [
     index('deferrals_order_idx').on(t.orderId, t.createdAt),
     index('deferrals_plan_status_idx').on(t.planId, t.status),
+    // One live decision per order and plan; a dock's partial deferrals (one
+    // per removed line) sit beside it.
+    uniqueIndex('deferrals_live_uq')
+      .on(t.orderId, t.planId)
+      .where(sql`status IN ('PROPOSED', 'CONFIRMED') AND partial = false`),
     check('deferrals_dates_chk', sql`${t.toDate} >= ${t.fromDate}`),
     pgPolicy('deferrals_app_scope', {
       for: 'all',

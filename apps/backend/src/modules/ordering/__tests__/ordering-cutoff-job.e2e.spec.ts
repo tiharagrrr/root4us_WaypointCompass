@@ -6,6 +6,7 @@ import { describeWithDb } from '../../../../test/create-test-app';
 import { outletFixture } from '../../../../test/fixtures';
 import { expectProblem, freezeClock } from '../../../../test/kernel';
 import { OrderLifecycleService } from '../services/order-lifecycle.service';
+import { OrderQueries } from '../services/order.queries';
 import { ORDER_AUDIT, ORDER_EVENTS } from '../ordering.constants';
 import {
   auditRows,
@@ -341,6 +342,88 @@ describeWithDb('ordering cutoff job, day summary and lifecycle', () => {
     expect(
       await auditRows(w, ORDER_AUDIT.statusChanged, confirmed.id),
     ).toHaveLength(1);
+  });
+
+  it('AC-ORD-38 a deferred order joins the queue for its new date', async () => {
+    const seed = (
+      outletId: string,
+      status: Parameters<typeof seedOrder>[1]['status'],
+      deliveryDate: string,
+      orderNo: string,
+    ) =>
+      seedOrder(w, {
+        outletId,
+        status,
+        requestedDate: FRIDAY,
+        deliveryDate,
+        orderNo,
+        // One order per outlet, date and class: the rest are backorders.
+        source: 'backorder',
+      });
+    const { kadawatha, otherFresh, kandy } = w.outlets;
+    const confirmed = await seed(
+      kadawatha,
+      'CONFIRMED',
+      SATURDAY,
+      `Q1${w.sfx}`,
+    );
+    const deferred = await seed(otherFresh, 'DEFERRED', SATURDAY, `Q2${w.sfx}`);
+    // None of these is in Saturday's PLG queue.
+    await seed(kadawatha, 'DEFERRED', '2026-10-05', `Q3${w.sfx}`);
+    await seed(kadawatha, 'SUBMITTED', SATURDAY, `Q4${w.sfx}`);
+    await seed(kadawatha, 'PLANNED', SATURDAY, `Q5${w.sfx}`);
+    await seed(kadawatha, 'CANCELLED', SATURDAY, `Q6${w.sfx}`);
+    await seed(kandy, 'CONFIRMED', SATURDAY, `Q7${w.sfx}`);
+
+    const queries = w.app.get(OrderQueries);
+    const jobs = w.app.get(JobContextRunner);
+    const txHost = w.app.get<TransactionHost>(TransactionHost);
+    const queue = await jobs.run({ id: 'test:queue' }, () =>
+      txHost.withTransaction(() => queries.queueFor(w.depot.plg, SATURDAY)),
+    );
+
+    expect(queue.map((o) => o.id)).toEqual([confirmed.id, deferred.id]);
+  });
+
+  it('AC-ORD-39 a deferred order is planned or deferred again without returning to CONFIRMED', async () => {
+    const planned = await seedOrder(w, {
+      outletId: w.outlets.kadawatha,
+      status: 'DEFERRED',
+      requestedDate: FRIDAY,
+      deliveryDate: SATURDAY,
+    });
+    const again = await seedOrder(w, {
+      outletId: w.outlets.otherFresh,
+      status: 'DEFERRED',
+      requestedDate: FRIDAY,
+      deliveryDate: SATURDAY,
+    });
+    const lifecycle = w.app.get(OrderLifecycleService);
+    const jobs = w.app.get(JobContextRunner);
+    const txHost = w.app.get<TransactionHost>(TransactionHost);
+
+    // Saturday's plan carries the first order: straight to PLANNED.
+    await jobs.run({ id: 'test:plan-deferred' }, () =>
+      txHost.withTransaction(() => lifecycle.markPlanned(planned.id)),
+    );
+    expect((await orderRow(w, planned.id)).status).toBe('PLANNED');
+    expect(
+      await auditRows(w, ORDER_AUDIT.statusChanged, planned.id),
+    ).toHaveLength(1);
+
+    // Saturday's plan defers the second one again: it stays DEFERRED, moves
+    // to Monday's run and counts one more deferral.
+    const before = await orderRow(w, again.id);
+    await jobs.run({ id: 'test:defer-again' }, () =>
+      txHost.withTransaction(() =>
+        lifecycle.markDeferred(again.id, '2026-10-05'),
+      ),
+    );
+    expect(await orderRow(w, again.id)).toMatchObject({
+      status: 'DEFERRED',
+      deliveryDate: '2026-10-05',
+      deferredCount: before.deferredCount + 1,
+    });
   });
 
   it('refuses close-cutoff outside demo mode', async () => {

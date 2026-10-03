@@ -50,7 +50,7 @@ strings in Asia/Colombo; instants are `timestamptz`.
 | `trips` | `planId`, `depotId`, `vehicleId`, `driverId`, `tripNo`, `brand`, `districtId`, `tempClass`, `status`, `isReserved`, `locked`, `waveId`, `plannedDepartAt`, `plannedReturnAt`, `budgetMinutes`, `plannedKm`, `plannedFuelL`, `loadWeightKg`, `loadVolumeM3`, `releasedAt`, `releasedById`, `releaseTempC`, `downloadedAt`, `startedAt`, `completedAt`, `cantRunReason` (BREAKDOWN, COOLING, UNWELL, OTHER; projected from execution's CANT_RUN event), `cancelReason`, `version` | `(planId, depotId)` references plans and `(vehicleId, depotId)` references vehicles, so a vehicle serves only its home depot. `tripNo` is 1 or 2, null once cancelled (which frees the slot); unique `(planId, vehicleId, tripNo)` caps a vehicle at two trips a day. `locked` marks trips built or edited by hand. `isReserved` marks a plan-ahead reservation with no stops |
 | `stops` | `tripId`, `orderId`, `outletId`, `depotId`, `brand`, `districtId`, `seq`, `status`, `plannedArrivalAt`, `plannedTravelMin` (the leg into this stop), `plannedServiceMin`, `predictedServiceMin` (service-time model, informational), `windowOpenMin`, `windowCloseMin`, `etaAt`, `etaUpdatedAt`, `lateRiskProb` (0 to 1), `arrivedAt`, `arrivedLat`, `arrivedLng`, `completedAt`, `outcome`, `unitsDelivered` (>= 0), `receiverName`, `exceptionNote`, `cancelledReason`, `version` | Composite keys to trips and outlets on `(depotId, brand, districtId)`: one brand and one district per trip. Unique `(tripId, seq)`; `seq` is null once cancelled; re-sequencing writes negative values first, then the final ones, in one transaction. The window columns snapshot the effective window |
 | `deferral_reasons` | `code` (key), `label`, `description`, `fromEngine`, `active`, `sortOrder` | Seeded from the engine's `DEFERRAL_REASONS` (`packages/engine/src/rules/reason-map.ts`), so every code an engine run writes exists; `description` is the store wording M4 shows, null for a manual reason. A re-seed keeps an admin's label and description. Engine reasons (`fromEngine`) cannot be deleted on A6. Codes and store wording: `specs/engine/rules.md` |
-| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
+| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. At most one live (PROPOSED or CONFIRMED) whole-order deferral per order and plan (`deferrals_live_uq`, partial unique index); partial deferrals from the dock are exempt, one per removed line. `swappedForOrderId` is unused and is dropped once the schema freeze allows drops Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
 
 Other invariants:
 - Whole orders on one trip each: `orders.activeStopId` is unique (owned by ordering).
@@ -151,7 +151,9 @@ Shared helpers (`packages/shared`): `publishOpensAt(date)`, `cutoffFor(depot, de
 `nextOperatingDay(date)`, `isoWeekOf(date)`, the plan, trip, stop and deferral machines.
 
 Cross-module calls inside the transaction: `OrderLifecycleService` (`markPlanned`, `markDeferred`,
-`requeue`) from ordering; `FuelLedgerService` from fleet (planned entries on publish, reversals on
+`requeue`) from ordering; the day's queue is `OrderQueries.queueFor(depotId, date)`, CONFIRMED orders
+plus DEFERRED ones an earlier plan moved to this date (a deferred order is never requeued to
+CONFIRMED; AC-ORD-38, AC-ORD-39); `FuelLedgerService` from fleet (planned entries on publish, reversals on
 revision, actuals at close).
 
 Settings read: `planning.reeferCarriesAmbient` (true), `planning.enforceWindows` (true),
@@ -588,6 +590,14 @@ Checklist (tick in the PR that adds the passing test):
   the plan is published) or at publish? Decides: Tihara with Harini.
 
 ## Changelog
+- 2026-10-03 ROO-74: `deferrals.choice` (enum `deferral_choice`) and `deferrals.bindingRule` added,
+  and `deferrals_live_uq` keeps one live whole-order deferral per order and plan. Additive only
+  (the freeze allows no drops before 4 Oct): `swappedForOrderId` stays, unused, until a follow-up
+  drops it. `DEFERRAL_CHOICES` moved to `packages/shared` so the database enum and the engine share
+  one list
+- 2026-10-03 The plan's queue is `OrderQueries.queueFor`: CONFIRMED and DEFERRED orders for the
+  depot and date. A deferred order waits as DEFERRED and goes straight to PLANNED (or is deferred
+  again) when a later plan is published
 - 2026-10-03 `deferral_reasons` is seeded from the engine's reason map; the old seed used codes the
   engine never emits (`REEFER_CAPACITY`, `VEHICLE_CAPACITY`, `MANUAL`), so an engine run's deferral
   would have failed its foreign key, and the store wording was never stored. A re-seed retires an

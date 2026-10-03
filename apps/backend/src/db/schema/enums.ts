@@ -93,6 +93,11 @@ export const deferralSourceEnum = pgEnum('deferral_source', [
   'LOAD_CHECK',
   'TRACKING',
 ]);
+/** Why the engine left an order unplanned (packages/shared DEFERRAL_CHOICES). */
+export const deferralChoiceEnum = pgEnum('deferral_choice', [
+  'UNAVOIDABLE',
+  'PRIORITY_CHOICE',
+]);
 export const storeResponseEnum = pgEnum('store_response', [
   'AWAITING',
   'ACKNOWLEDGED',
