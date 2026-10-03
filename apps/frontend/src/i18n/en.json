@@ -64,6 +64,14 @@
     "outOfSequence": "Out of sequence",
     "otherTripTitle": "That stop is not on this trip",
     "otherTripBody": "Only the stops on the trip you are running can be recorded. Go back to your trip.",
-    "backToTrip": "Back to my trip"
+    "backToTrip": "Back to my trip",
+    "dockAndAccessTitle": "Dock & access",
+    "stopNamed": "Stop {{n}} · {{name}}",
+    "receivingContact": "Receiving contact",
+    "call": "Call",
+    "accessNotes": "Access notes",
+    "noAccessNotes": "The store has not added access notes for this outlet.",
+    "noContact": "No receiving contact on file.",
+    "backToStop": "Back to stop"
   }
 }

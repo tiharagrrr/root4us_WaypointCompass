@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -153,5 +153,39 @@ describe('D3 Next stop', () => {
     renderStop(STOP_IDS[0])
 
     expect(await screen.findByText('That stop is not on this trip')).toBeInTheDocument()
+  })
+})
+
+describe('D9 Dock & access', () => {
+  it('AC-EXE-04 shows the access notes and the contact from the bundle, with the network off', async () => {
+    await running()
+    stubApi({})
+    vi.stubGlobal('navigator', { ...navigator, onLine: false })
+    renderStop(STOP_IDS[0])
+
+    await screen.findByText('Fresh Kadawatha')
+    await userEvent.click(screen.getByRole('button', { name: 'Dock & access notes' }))
+
+    const sheet = await screen.findByRole('dialog')
+    expect(within(sheet).getByText('Dock & access')).toBeInTheDocument()
+    expect(within(sheet).getByText('Stop 1 · Fresh Kadawatha')).toBeInTheDocument()
+    expect(within(sheet).getByText('Nimesha Periyapperuma')).toBeInTheDocument()
+    expect(within(sheet).getByText(/Rear dock off Kandy Road/)).toBeInTheDocument()
+    // Tap to call: the number is a tel: link, not text to copy.
+    expect(within(sheet).getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+94711234567')
+  })
+
+  it('says so when the store has added no notes', async () => {
+    await running()
+    await db.stops.update(STOP_IDS[1], { accessNote: null, contactName: null, contactPhone: null })
+    stubApi({})
+    renderStop(STOP_IDS[1])
+
+    await screen.findByText('Fresh Ja-Ela')
+    await userEvent.click(screen.getByRole('button', { name: 'Dock & access notes' }))
+
+    const sheet = await screen.findByRole('dialog')
+    expect(within(sheet).getByText('The store has not added access notes for this outlet.')).toBeInTheDocument()
+    expect(within(sheet).queryByRole('link', { name: 'Call' })).not.toBeInTheDocument()
   })
 })

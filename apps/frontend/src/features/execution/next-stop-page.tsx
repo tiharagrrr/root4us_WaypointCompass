@@ -1,6 +1,6 @@
 // Figma: D3 Next stop · 185:20107
 import { useStopsGet } from '@compass/api-client'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams, Link as RouterLink } from 'react-router'
@@ -15,6 +15,7 @@ import { Skeleton } from '@/ui/skeleton'
 import { EmptyState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
 import { devicePosition } from './device-position'
+import { DockAccessSheet } from './dock-access-sheet'
 import { cachedStopLinks } from './offline-links'
 
 /** The frame shows the two stops after this one. */
@@ -29,6 +30,7 @@ export function NextStopPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id = '' } = useParams()
+  const [dockOpen, setDockOpen] = useState(false)
 
   // `null` is a stop this phone does not hold; `undefined` is Dexie still looking.
   const stop = useLiveQuery(async () => (await db.stops.get(id)) ?? null, [id], undefined)
@@ -116,6 +118,16 @@ export function NextStopPage() {
           </dl>
         </CardContent>
       </Card>
+
+      <button
+        type="button"
+        onClick={() => setDockOpen(true)}
+        className="flex min-h-(--compass-size-touch-target) w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-background px-[15px] py-[13px] text-left outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring/40"
+      >
+        <span className="type-field-label text-foreground">{t('driver.dockAndAccess')}</span>
+        <Icon name="chevron-down" size={18} className="-rotate-90 text-slate-700" />
+      </button>
+      <DockAccessSheet stop={stop} seq={index + 1} open={dockOpen} onOpenChange={setDockOpen} />
 
       <section className="flex w-full flex-col">
         <p className="type-label m-0 pb-1 uppercase text-muted-foreground">{t('driver.then')}</p>
