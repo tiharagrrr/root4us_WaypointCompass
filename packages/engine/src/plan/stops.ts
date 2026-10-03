@@ -11,6 +11,7 @@ export interface Stop {
   effectiveCloseMin: number;
 }
 
+
 /**
  * The trip's stops in visiting order. Orders the input does not describe (a released trip's orders
  * in repair mode) are skipped; they were checked when the trip was released.

@@ -1,8 +1,10 @@
-import { getMeGetQueryOptions } from '@compass/api-client'
+import { getMeGetQueryOptions, getTripLoadingLoadListQueryOptions, getTripLoadingReleaseChecksQueryOptions } from '@compass/api-client'
 import type { RouteObject } from 'react-router'
+import { LoadListPage } from '@/features/loading/load-list-page'
+import { ReleaseTripPage } from '@/features/loading/release-trip-page'
+import { RunsPage } from '@/features/loading/runs-page'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
-import { ScreenPlaceholder } from '../screen-placeholder'
 
 /**
  * Loader shell (frames L1 to L5 and the phone variants). The same routes serve the dock tablet
@@ -17,9 +19,21 @@ export const dockRoutes: RouteObject[] = [
       {
         lazy: async () => ({ Component: (await import('../layouts/dock-shell')).DockShell }),
         children: [
-          { index: true, element: <ScreenPlaceholder code="L2m-a" name="Runs" node="254:1306" /> },
-          { path: 'trips/:id', element: <ScreenPlaceholder code="L2" name="Loading list" node="185:19377" /> },
-          { path: 'trips/:id/release', element: <ScreenPlaceholder code="L4" name="Release trip" node="185:19748" /> },
+          { index: true, element: <RunsPage /> },
+          {
+            path: 'trips/:id',
+            element: <LoadListPage />,
+            loader: prefetchLoader((qc, params) =>
+              params.id ? qc.prefetchQuery(getTripLoadingLoadListQueryOptions(params.id)) : Promise.resolve(null),
+            ),
+          },
+          {
+            path: 'trips/:id/release',
+            element: <ReleaseTripPage />,
+            loader: prefetchLoader((qc, params) =>
+              params.id ? qc.prefetchQuery(getTripLoadingReleaseChecksQueryOptions(params.id)) : Promise.resolve(null),
+            ),
+          },
         ],
       },
     ],

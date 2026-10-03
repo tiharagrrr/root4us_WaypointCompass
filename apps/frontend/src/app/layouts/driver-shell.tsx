@@ -4,6 +4,7 @@ import { useMeGet } from '@compass/api-client'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
+import { useRouteHandle } from '../route-handle'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { Avatar } from '@/ui/avatar'
 import { Icon, type IconName } from '@/ui/icon'
@@ -22,6 +23,9 @@ const TABS: readonly { to: string; labelKey: string; icon: IconName; deep?: bool
  */
 export function DriverShell() {
   const { t } = useTranslation()
+  // Home-level screens carry the tab bar; a live trip (D3 to D7) hides it so the next tap is the
+  // one the stop needs (the Figma component's own note).
+  const { tabBar = true } = useRouteHandle()
   useEventStream()
   const me = useMeGet()
   const person = me.data?.data
@@ -40,6 +44,7 @@ export function DriverShell() {
         <Outlet />
       </main>
 
+      {tabBar ? (
       <nav aria-label={t('shell.driver')} className="sticky bottom-0 flex border-t border-border bg-background">
         {TABS.map((tab) => (
           <NavLink
@@ -62,6 +67,7 @@ export function DriverShell() {
           </NavLink>
         ))}
       </nav>
+      ) : null}
     </div>
   )
 }

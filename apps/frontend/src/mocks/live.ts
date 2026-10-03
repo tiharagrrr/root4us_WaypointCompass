@@ -58,9 +58,9 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: 'all', path: '/api/v1/stops/*' },
   { method: 'all', path: '/api/v1/attachments/*' },
   // Loading: the dock's boards, the load list, checks, flags, the release
-  // checks and the release (ROO-33). `/api/v1/trips/*` and
-  // `/api/v1/depots/*` above already cover the trip and depot paths, so what
-  // is left is the two resources of its own.
+  // checks and the release (ROO-33, wired to the screens in ROO-34).
+  // `/api/v1/trips/*` and `/api/v1/depots/*` above already cover the trip and
+  // depot paths, so what is left is the two resources of its own.
   { method: 'all', path: '/api/v1/load-flags' },
   { method: 'all', path: '/api/v1/load-flags/*' },
   { method: 'all', path: '/api/v1/load-lines/*' },

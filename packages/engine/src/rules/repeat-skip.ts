@@ -1,6 +1,7 @@
 import { isRepeatSkip } from '../plan/repeat-skip';
 import { defineRule, violation } from './types';
 
+
 export const REPEAT_SKIP = defineRule('REPEAT_SKIP', {
   check: ({ unplannedOrder, orderById, input, params }) => {
     if (!unplannedOrder) return [];

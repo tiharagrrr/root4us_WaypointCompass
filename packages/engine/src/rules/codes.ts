@@ -48,3 +48,20 @@ export type BindingRule = (typeof BINDING_RULES)[number];
 /** UNAVOIDABLE: no feasible place existed. PRIORITY_CHOICE: a higher-priority order took the space. */
 export const DEFERRAL_CHOICES = ['UNAVOIDABLE', 'PRIORITY_CHOICE'] as const;
 export type DeferralChoice = (typeof DEFERRAL_CHOICES)[number];
+
+/**
+ * Why an order was left out of the plan altogether instead of deferred. Both mean something upstream
+ * went wrong: the API queues only orders that are due on an operating day.
+ */
+export const EXCLUSION_CODES = ['NOT_DUE_TODAY', 'NOT_AN_OPERATING_DAY'] as const;
+export type ExclusionCode = (typeof EXCLUSION_CODES)[number];
+
+/** The resources a plan runs out of. explain() reports how much of each the plan used. */
+export const SCARCE_RESOURCES = [
+  'REEFER_VOLUME',
+  'VAN_TRIPS',
+  'FRESH_MINUTES',
+  'STYLE_TECH_MINUTES',
+  'FUEL',
+] as const;
+export type ScarceResource = (typeof SCARCE_RESOURCES)[number];

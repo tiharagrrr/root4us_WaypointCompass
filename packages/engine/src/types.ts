@@ -7,11 +7,22 @@ import type {
   VehicleType,
 } from '@waypoint/shared/domain';
 import type { EngineParams } from './params';
-import type { BindingRule, DeferralChoice, RuleCode, RuleScope, Severity } from './rules/codes';
+import type {
+  BindingRule,
+  DeferralChoice,
+  ExclusionCode,
+  ScarceResource,
+  RuleCode,
+  RuleScope,
+  Severity,
+} from './rules/codes';
+import type { DeferralReasonCode } from './rules/reason-map';
 
 /** Times are minutes after midnight, Asia/Colombo. Weight kg, volume m3, distance km, fuel litres. */
 export interface EngineDistrict {
   id: string;
+  /** For the sentences explain() writes; the id is used when it is absent. */
+  name?: string;
   depotToDistrictMin: number;
   interStopMin: number;
   depotToDistrictKm: number;
@@ -55,6 +66,8 @@ export interface EngineOrder {
   brand: Brand;
   districtId: string;
   tempClass: TempClass;
+  /** Items or cases, as the orders data counts them. Deferral cost is reported in units. */
+  units: number;
   weightKg: number;
   volumeM3: number;
   valueLkr: number | null;
@@ -86,6 +99,10 @@ export interface Trip {
   volumeM3: number;
   /** Minutes after midnight. When absent the schedule derives it. */
   departMin?: number;
+  /** Built or edited by hand (trips.locked). allocate() keeps these only in keepLocked mode. */
+  locked?: boolean;
+  /** A plan-ahead reservation (trips.isReserved): it holds a slot and is filled before a new trip opens. */
+  reserved?: boolean;
 }
 
 /** A trip as the allocator or the plan editor proposes it; validate() measures it. */
@@ -97,6 +114,26 @@ export interface TripDraft {
   districtId: string;
   orderIds: readonly string[];
   departMin?: number;
+  locked?: boolean;
+  reserved?: boolean;
+}
+
+/** One vehicle the allocator tried for an order, and the rule that ruled it out. */
+export interface TriedVehicle {
+  vehicleId: string;
+  failedRule: BindingRule;
+}
+
+/** The numbers behind a deferral: what the order needed and the most room any legal trip had left. */
+export interface UnplannedDetail {
+  needUnits: number;
+  needWeightKg: number;
+  needVolumeM3: number;
+  /** The most volume left on any trip the order could legally have joined; null when there was none. */
+  bestVolumeM3: number | null;
+  bestTripKey: string | null;
+  bestVehicleId: string | null;
+  bestTripNo: number | null;
 }
 
 /**
@@ -115,6 +152,22 @@ export interface Unplanned {
   bindingRule: BindingRule | null;
   /** UNAVOIDABLE or PRIORITY_CHOICE for an engine decision. Null for a manual removal. */
   choice: DeferralChoice | null;
+  /** What it needed and the most room any trip could have given it. Absent on a manual removal. */
+  detail?: UnplannedDetail;
+  /** Every vehicle tried, in the order they were tried. Absent on a manual removal. */
+  tried?: readonly TriedVehicle[];
+  /** The order that took its place, when repair pushed this one off: a PRIORITY_CHOICE swap. */
+  displacedBy?: string;
+}
+
+/**
+ * An order that should never have reached the engine, settled before packing. Not a deferral: it
+ * gets no reason code and the store is not told, because nothing was decided about it.
+ */
+export interface Excluded {
+  orderId: string;
+  code: string;
+  message: string;
 }
 
 export interface Plan {
@@ -137,6 +190,13 @@ export interface EngineInput {
   fuelUsedThisWeek: Readonly<Record<string, number>>;
   /** Released or in-progress trips that repair mode must not touch. */
   fixedTrips: readonly Trip[];
+  /**
+   * Trips built or edited by hand. With keepLocked they are kept as they are and planned around;
+   * without it they are ignored and their orders planned again, so their orders stay in `orders`.
+   */
+  lockedTrips?: readonly TripDraft[];
+  /** Plan-ahead reservations: trips with no stops that hold a vehicle's capacity and trip slot. */
+  reservedTrips?: readonly TripDraft[];
   /** Overrides of DEFAULT_PARAMS. */
   params?: Partial<EngineParams>;
 }
@@ -167,4 +227,73 @@ export interface RuleContext {
   readonly vehicle?: EngineVehicle;
   readonly vehicleTrips?: readonly Trip[];
   readonly unplannedOrder?: Unplanned;
+}
+
+/** How much of one scarce resource the plan used, and whether it is what held the plan back. */
+export interface ResourceUse {
+  resource: ScarceResource;
+  /** Minutes, m³ or litres, depending on the resource. */
+  used: number;
+  total: number;
+  /** round(used / total × 100); 0 when the fleet has none of this resource. */
+  pct: number;
+  /** What `used` and `total` count, for the sentence: "volume", "trips", "minutes", "litres". */
+  measure: string;
+  /** The unit those numbers are in: "m³", "trips", "min", "L". */
+  unit: string;
+  /** Trips of this kind that could take no more of it, and how many there are in all. */
+  fullTrips: number;
+  trips: number;
+  /** A deferral's binding rule points at this resource. */
+  causedDeferrals: boolean;
+  /** Used past params.limitingUtilisationPct and the cause of at least one deferral. */
+  limiting: boolean;
+}
+
+/** What a set of deferrals costs: the booklet asks for units, m³ and outlets. */
+export interface DeferralCost {
+  orders: number;
+  units: number;
+  volumeM3: number;
+  weightKg: number;
+  outlets: number;
+}
+
+export interface ServedCount {
+  served: number;
+  deferred: number;
+}
+
+export interface PlanStats {
+  orders: number;
+  served: number;
+  deferred: number;
+  excluded: number;
+  trips: number;
+  byBrand: Readonly<Record<Brand, ServedCount>>;
+  byTempClass: Readonly<Record<TempClass, ServedCount>>;
+  /** In SCARCE_RESOURCES order. */
+  resources: readonly ResourceUse[];
+  /** The resources that held the plan back, most used first. */
+  limiting: readonly ResourceUse[];
+  /** Outlets deferred on their last run that this plan serves, and that it defers again. */
+  repeatSkipsAvoided: number;
+  repeatSkipsIncurred: number;
+  unavoidable: DeferralCost;
+  chosen: DeferralCost;
+}
+
+/**
+ * What allocate() returns. It is also a Plan, so `validate(input, allocate(input))` type-checks and
+ * measures the same trips. Fixed trips are not repeated here; validate() adds them from the input.
+ */
+export interface EngineOutput {
+  version: string;
+  date: string;
+  trips: readonly Trip[];
+  unplanned: readonly Unplanned[];
+  excluded: readonly Excluded[];
+  /** Every rule over the finished plan. HARD violations can only come from fixed or locked trips. */
+  violations: readonly Violation[];
+  stats: PlanStats;
 }
