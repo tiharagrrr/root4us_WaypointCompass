@@ -224,7 +224,7 @@ Scope (`ScopePolicy`; out of scope is 404, a missing permission is 403):
 - [x] AC-EXE-02 Other drivers' and old trips are not found
 - [x] AC-EXE-03 Field writes need stop:record
 - [x] AC-EXE-04 The offline bundle is versioned and hashed
-- [ ] AC-EXE-05 A failed download shows D2
+- [x] AC-EXE-05 A failed download shows D2
 - [x] AC-EXE-06 Start a released trip
 - [x] AC-EXE-07 A trip starts only when released
 - [x] AC-EXE-08 Arrive out of sequence
@@ -548,6 +548,11 @@ say so in the spec if you change one.
 - Does ISSUE_REPORTED from D5 create a receipt issue row, and through which call? (Harini)
 
 ## Changelog
+- 2026-10-03 D1, D2, D3, D4, D5, D8 and D9 built on the offline bundle writer (ROO-32): the phone
+  saves the bundle into Dexie and records it with TRIP_DOWNLOADED, and every driver write after that
+  is a queued event, never a POST. AC-EXE-05 now passes end to end; AC-EXE-02 and AC-EXE-06 to
+  AC-EXE-14 have screen tests beside their API ones. D6, D7, D10 to D14 are still placeholders, and
+  what the frames show but the bundle does not carry is listed in docs/departures.md
 - 2026-10-02 AC-EXE-01 to AC-EXE-04 and AC-EXE-06 to AC-EXE-16 built and passing (ROO-31): my trips,
   the offline bundle, `StopEventService`, the online shortcuts and proof of delivery. Ten decisions
   recorded above; AC-EXE-16 answers 200 with a link rather than 302
