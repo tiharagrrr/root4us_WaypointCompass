@@ -12,7 +12,7 @@ export const DeferralReasonsListResponse = zod.object({
   "data": zod.array(zod.object({
   "code": zod.string(),
   "label": zod.string(),
-  "description": zod.string().nullable(),
+  "description": zod.string().nullable().describe('What the store reads on M4; null for a manual reason.'),
   "fromEngine": zod.boolean().describe('Given by the engine; can be relabelled, never switched off'),
   "active": zod.boolean(),
   "sortOrder": zod.number(),
@@ -68,7 +68,7 @@ export const DeferralReasonsCreateResponse = zod.object({
   "data": zod.object({
   "code": zod.string(),
   "label": zod.string(),
-  "description": zod.string().nullable(),
+  "description": zod.string().nullable().describe('What the store reads on M4; null for a manual reason.'),
   "fromEngine": zod.boolean().describe('Given by the engine; can be relabelled, never switched off'),
   "active": zod.boolean(),
   "sortOrder": zod.number(),
@@ -99,7 +99,7 @@ export const DeferralReasonsGetResponse = zod.object({
   "data": zod.object({
   "code": zod.string(),
   "label": zod.string(),
-  "description": zod.string().nullable(),
+  "description": zod.string().nullable().describe('What the store reads on M4; null for a manual reason.'),
   "fromEngine": zod.boolean().describe('Given by the engine; can be relabelled, never switched off'),
   "active": zod.boolean(),
   "sortOrder": zod.number(),
@@ -149,7 +149,7 @@ export const DeferralReasonsUpdateResponse = zod.object({
   "data": zod.object({
   "code": zod.string(),
   "label": zod.string(),
-  "description": zod.string().nullable(),
+  "description": zod.string().nullable().describe('What the store reads on M4; null for a manual reason.'),
   "fromEngine": zod.boolean().describe('Given by the engine; can be relabelled, never switched off'),
   "active": zod.boolean(),
   "sortOrder": zod.number(),

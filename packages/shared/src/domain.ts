@@ -128,21 +128,6 @@ export const STORE_RESPONSES = [
 ] as const;
 export type StoreResponse = (typeof STORE_RESPONSES)[number];
 
-/**
- * Reason codes the engine produces. Deferral reasons are a table
- * (deferral_reasons) because admins add their own in A6; these rows are
- * seeded with fromEngine = true and can't be removed.
- */
-export const ENGINE_DEFERRAL_REASONS = [
-  "REEFER_CAPACITY",
-  "VAN_SHORTAGE",
-  "VEHICLE_CAPACITY",
-  "TIME_BUDGET",
-  "FUEL_QUOTA",
-  "WINDOW_CONFLICT",
-] as const;
-export type EngineDeferralReason = (typeof ENGINE_DEFERRAL_REASONS)[number];
-
 export const LOAD_LINE_STATUSES = [
   "PENDING",
   "OK",

@@ -604,16 +604,11 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 - The planning spec puts the `EditOp` zod union in `packages/shared`. It is defined in the engine instead (`src/manual/edit-ops.ts`), because the engine cannot import the shared root and the web gets the full union, with `SET_DRIVER` and `SET_WAVE`, from the generated api-client.
 
 - The Build Spec's Step 3 text for the engine `CLAUDE.md` lists the allocator as group, rank, pack, sequence, repair and the sort key as priority then id. Step 5 ranks before grouping, adds a pre-screen and a validate step, and breaks ties on window close before ref. This file and `packages/engine/CLAUDE.md` follow Step 5.
-- The draft in `packages/shared/src/rules` (`trip-time.ts`, `allocation-validator.ts`) predates Step 5:
-  - It has 9 lower-case rule ids. They map to `TRIP_BRAND_DISTRICT` (`brand_district`), `TEMP_REEFER` (`refrigeration`), `ACCESS_VAN_ONLY` (`vehicle_access`), `DEPOT_HOME` (`home_depot`), `CAP_WEIGHT` and `CAP_VOLUME` (`capacity_*`), `TRIP_LIMIT` (`max_trips`), `BUDGET_FRESH` and `BUDGET_STYLE_TECH` (`time_budget`), and `VEHICLE_AVAILABLE` (`vehicle_unavailable`).
-  - It has no windows, fuel, whole-order, operating-day or soft rules, and no reason map.
-  - `refrigeration` allows a reefer to carry ambient orders, as the engine now does by default (with a preference order in the allocator).
-  - It compares floats with `>` instead of `lte`.
-  - It picks a trip's budget window from its first order's brand, and compares with `'Fresh'` while `domain.ts` now uses `'FRESH'`.
-  - `tripMinutes` takes precomputed handling minutes; Step 5's takes the district, brand, dock types and allowances. The formula and the 101 and 112 results agree.
+- An earlier draft in `packages/shared/src/rules` (`trip-time.ts`, `allocation-validator.ts`) predated Step 5, with nine lower-case rule ids, no windows, fuel or soft rules and no reason map. Nothing used it, so it was deleted on 2026-10-03; the engine is the only home of the rules (architecture rule 8).
 
 ## Changelog
 
+- 2026-10-03 Deleted shared's unused draft time model and validator; `deferral_reasons` is now seeded from `DEFERRAL_REASONS` in the reason map
 - 2026-10-02 ROO-75: one concept for "on no trip": `applyEdits` adds orders it takes off a trip to `plan.unplanned` (an `Unplanned` entry with no reason yet), `unplannedOrders()` and `isRepeatSkip()` are the shared definitions, and "unassigned" is no longer a separate term
 - 2026-10-02 ROO-75: the manual plan helpers (`applyEdits`, `fits`, `optionsForTrip`, `vehicleOptions`, `suggestFixes`), the `EditOp` union, `priorityOf()` with `params.priorityWeights`, and eight edit error codes; `ENGINE_VERSION` 0.3.0
 - 2026-10-02 `EngineInputError` carries `code`, `field`, `value` (`INVALID_DATE`, `UNKNOWN_ORDER`, `UNKNOWN_VEHICLE`, `UNKNOWN_DISTRICT`, `UNKNOWN_OUTLET`, `MISSING_ALLOWANCE`); `validate()` checks `input.date` before anything else; the purity test is an allowlist

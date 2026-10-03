@@ -8,11 +8,14 @@ import type { StampedDrizzleAdapter } from '../../../core/persistence/transactio
 import {
   deferralReasons,
   deferrals,
+  orders,
+  outlets,
   planRevisions,
   plans,
   trips,
 } from '../../../db/schema';
 import { AuditService } from '../../audit';
+import { CutoffService } from '../../ordering';
 import { PLANNING_AUDIT } from '../planning.constants';
 
 export type DeferralRow = typeof deferrals.$inferSelect;
@@ -71,6 +74,7 @@ export class DeferralService {
     private readonly txHost: TransactionHost<StampedDrizzleAdapter>,
     private readonly clock: ClockService,
     private readonly audit: AuditService,
+    private readonly cutoff: CutoffService,
     private readonly log: PinoLogger,
   ) {
     this.log.setContext(DeferralService.name);
@@ -86,7 +90,7 @@ export class DeferralService {
   async deferPartially(input: PartialDeferralInput): Promise<PartialDeferral> {
     await this.assertReason(input.reasonCode);
     const plan = await this.planOf(input.tripId);
-    const toDate = this.nextDateAfter(plan.date);
+    const toDate = await this.deferralDate(input.orderId, plan.date);
 
     const [deferral] = await this.txHost.tx
       .insert(deferrals)
@@ -202,15 +206,25 @@ export class DeferralService {
   }
 
   /**
-   * The day after the plan's. The next *operating* day is the calendar's to
-   * say and ordering's cutoff service already answers it for a new order;
-   * this is the date the deferral is recorded against, which the store sees
-   * as "due next run" and which the backorder then re-dates if the day it
-   * lands on does not operate.
+   * The run deferred goods are due on: the next run after the plan's date,
+   * which is the next operating day, or for a Style outlet its next weekly
+   * delivery day (ordering's `nextRun`, the same answer a late order gets).
+   * Any other date would put the goods on a day with no run for them, and
+   * the engine would leave them out as not due.
    */
-  private nextDateAfter(date: string): string {
-    const next = new Date(`${date}T00:00:00Z`);
-    next.setUTCDate(next.getUTCDate() + 1);
-    return next.toISOString().slice(0, 10);
+  private async deferralDate(
+    orderId: string,
+    planDate: string,
+  ): Promise<string> {
+    const [row] = await this.txHost.tx
+      .select({
+        brand: orders.brand,
+        styleDeliveryDow: outlets.styleDeliveryDow,
+      })
+      .from(orders)
+      .innerJoin(outlets, eq(outlets.id, orders.outletId))
+      .where(eq(orders.id, orderId));
+    if (!row) throw new NotFoundError('order');
+    return this.cutoff.nextRun(planDate, row);
   }
 }

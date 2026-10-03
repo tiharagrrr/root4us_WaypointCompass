@@ -10,7 +10,10 @@ import type { _DeferralReasonDtoLinks } from './_deferralReasonDtoLinks.ts';
 export interface DeferralReasonDto {
   code: string;
   label: string;
-  /** @nullable */
+  /**
+     * What the store reads on M4; null for a manual reason.
+     * @nullable
+     */
   description: string | null;
   /** Given by the engine; can be relabelled, never switched off */
   fromEngine: boolean;

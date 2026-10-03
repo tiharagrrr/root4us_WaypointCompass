@@ -8,10 +8,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parse } from 'csv-parse/sync';
-import { getTableColumns, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  getTableColumns,
+  notInArray,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
-import { ENGINE_DEFERRAL_REASONS } from '@waypoint/shared';
 import { createDatabase, createPool, type Database } from './client';
+import { deferralReasonRows } from './deferral-reasons.seed';
 import { loadEnv, ownerUrl, REPO_ROOT } from './env';
 import { seedUsers } from './seed-users';
 import {
@@ -35,16 +42,6 @@ type Row = Record<string, string>;
 
 /** Dataset depot name -> depot id. */
 const DEPOT_IDS: Record<string, string> = { Peliyagoda: 'PLG', Kandy: 'KDY' };
-
-const DEFERRAL_REASON_LABELS: Record<string, string> = {
-  REEFER_CAPACITY: 'No reefer capacity',
-  VAN_SHORTAGE: 'No van for a van-only outlet',
-  VEHICLE_CAPACITY: 'Over vehicle capacity',
-  TIME_BUDGET: 'Over the daily time budget',
-  FUEL_QUOTA: 'Weekly fuel quota reached',
-  WINDOW_CONFLICT: 'Delivery window cannot be met',
-  MANUAL: 'Dispatcher decision',
-};
 
 /** A4: Run 1 and Run 2 departure bands, in minutes after midnight. */
 const WAVES = [
@@ -356,18 +353,35 @@ async function seedReferenceData(db: Database, dir: string) {
     }
 
     // Engine reasons can't be removed in A6; admins add their own beside them.
-    const reasons = [...ENGINE_DEFERRAL_REASONS, 'MANUAL'];
+    // The label and description are left alone on a re-run, so an admin's
+    // relabel survives; only what the engine decides is brought up to date.
+    const reasons = deferralReasonRows();
     await tx
       .insert(deferralReasons)
-      .values(
-        reasons.map((code, i) => ({
-          code,
-          label: DEFERRAL_REASON_LABELS[code] ?? code,
-          fromEngine: code !== 'MANUAL',
-          sortOrder: i,
-        })),
-      )
-      .onConflictDoNothing({ target: deferralReasons.code });
+      .values(reasons)
+      .onConflictDoUpdate({
+        target: deferralReasons.code,
+        set: excludedSet(deferralReasons, [
+          'code',
+          'label',
+          'description',
+          'active',
+        ]),
+      });
+    // A code the engine no longer emits (from an older seed) becomes an
+    // inactive admin reason, so A6 can retire it and nothing picks it again.
+    await tx
+      .update(deferralReasons)
+      .set({ fromEngine: false, active: false })
+      .where(
+        and(
+          eq(deferralReasons.fromEngine, true),
+          notInArray(
+            deferralReasons.code,
+            reasons.map((r) => r.code),
+          ),
+        ),
+      );
   });
 
   console.log(

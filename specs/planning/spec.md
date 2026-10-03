@@ -49,7 +49,7 @@ strings in Asia/Colombo; instants are `timestamptz`.
 | `engine_runs` | `planId`, `mode` (AUTO_SUGGEST, REPAIR), `status` (RUNNING, SUCCEEDED, FAILED), `engineVersion`, `params`, `inputHash`, `servedCount`, `deferredCount`, `stats`, `error`, `triggeredById`, `startedAt`, `finishedAt` | `inputHash` is the sha256 of the canonical engine input; `stats` holds limiting resources, utilisation and budget use |
 | `trips` | `planId`, `depotId`, `vehicleId`, `driverId`, `tripNo`, `brand`, `districtId`, `tempClass`, `status`, `isReserved`, `locked`, `waveId`, `plannedDepartAt`, `plannedReturnAt`, `budgetMinutes`, `plannedKm`, `plannedFuelL`, `loadWeightKg`, `loadVolumeM3`, `releasedAt`, `releasedById`, `releaseTempC`, `downloadedAt`, `startedAt`, `completedAt`, `cantRunReason` (BREAKDOWN, COOLING, UNWELL, OTHER; projected from execution's CANT_RUN event), `cancelReason`, `version` | `(planId, depotId)` references plans and `(vehicleId, depotId)` references vehicles, so a vehicle serves only its home depot. `tripNo` is 1 or 2, null once cancelled (which frees the slot); unique `(planId, vehicleId, tripNo)` caps a vehicle at two trips a day. `locked` marks trips built or edited by hand. `isReserved` marks a plan-ahead reservation with no stops |
 | `stops` | `tripId`, `orderId`, `outletId`, `depotId`, `brand`, `districtId`, `seq`, `status`, `plannedArrivalAt`, `plannedTravelMin` (the leg into this stop), `plannedServiceMin`, `predictedServiceMin` (service-time model, informational), `windowOpenMin`, `windowCloseMin`, `etaAt`, `etaUpdatedAt`, `lateRiskProb` (0 to 1), `arrivedAt`, `arrivedLat`, `arrivedLng`, `completedAt`, `outcome`, `unitsDelivered` (>= 0), `receiverName`, `exceptionNote`, `cancelledReason`, `version` | Composite keys to trips and outlets on `(depotId, brand, districtId)`: one brand and one district per trip. Unique `(tripId, seq)`; `seq` is null once cancelled; re-sequencing writes negative values first, then the final ones, in one transaction. The window columns snapshot the effective window |
-| `deferral_reasons` | `code` (key), `label`, `description`, `fromEngine`, `active`, `sortOrder` | Seeded. Engine reasons (`fromEngine`) cannot be deleted on A6. Codes and store wording: `specs/engine/rules.md` |
+| `deferral_reasons` | `code` (key), `label`, `description`, `fromEngine`, `active`, `sortOrder` | Seeded from the engine's `DEFERRAL_REASONS` (`packages/engine/src/rules/reason-map.ts`), so every code an engine run writes exists; `description` is the store wording M4 shows, null for a manual reason. A re-seed keeps an admin's label and description. Engine reasons (`fromEngine`) cannot be deleted on A6. Codes and store wording: `specs/engine/rules.md` |
 | `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
 
 Other invariants:
@@ -113,7 +113,8 @@ Command services (`services/`, each method `@Transactional()`, audited, one outb
   bulk inserts and finishes fast.
 - `DeferralService`: `decide`, `respond`, `reverse`, and `deferPartially` (ROO-33, exported in
   `index.ts`), which loading's `LoadFlagService` calls on a REMOVE decision. `deferPartially`
-  writes one CONFIRMED deferral with `partial` true and `source` LOAD_CHECK — nobody is being
+  dates the goods to the next run after the plan's date (ordering's `CutoffService.nextRun`: the
+  next operating day, or a Style outlet's weekly delivery day), and writes one CONFIRMED deferral with `partial` true and `source` LOAD_CHECK — nobody is being
   asked, the goods are already off the vehicle — bumps the plan's `revision` in one statement and
   writes the matching `plan_revisions` row with the decision's reason code, so the dock's list and
   the driver's bundle both learn the plan moved. It refuses a reason code that is missing or
@@ -587,6 +588,12 @@ Checklist (tick in the PR that adds the passing test):
   the plan is published) or at publish? Decides: Tihara with Harini.
 
 ## Changelog
+- 2026-10-03 `deferral_reasons` is seeded from the engine's reason map; the old seed used codes the
+  engine never emits (`REEFER_CAPACITY`, `VEHICLE_CAPACITY`, `MANUAL`), so an engine run's deferral
+  would have failed its foreign key, and the store wording was never stored. A re-seed retires an
+  engine code the engine no longer emits (inactive, `fromEngine` false). `deferPartially` now dates
+  deferred goods to the next run instead of the next calendar day (a Saturday removal is due on
+  Monday when Sunday does not operate), so planning imports ordering's `CutoffService`
 - 2026-10-02 `TripLifecycleService` added for execution's driver events (ROO-31), with
   `markDownloaded` and `markCantRun` beyond the methods listed above; planning's own moves
   (`markLoading`, `markReleased`, `cancel`) are still to come

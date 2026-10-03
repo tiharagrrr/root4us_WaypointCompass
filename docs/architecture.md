@@ -106,7 +106,7 @@ The engine is deterministic and explainable: feasible and well-reasoned rather t
 3. Score priority: deferred yesterday, days since last served, chilled Fresh, tight or mall windows, order age.
 4. Pack each group first-fit decreasing into compatible vehicles (reefer for chilled, van for `van_only`, weight *and* volume caps).
 5. Compute trip minutes (`tripMinutes()` in `@waypoint/shared`). Check the Fresh 270-minute and Style + Tech 480-minute budgets, the two-trip limit, and the fuel quota.
-6. Anything that does not fit becomes a deferral with a reason code (`REEFER_CAPACITY`, `VAN_SHORTAGE`, `VEHICLE_CAPACITY`, `TIME_BUDGET`, `FUEL_QUOTA`, `WINDOW_CONFLICT`; admins add their own in `deferral_reasons`).
+6. Anything that does not fit becomes a deferral with a reason code (`NO_REEFER_CAPACITY`, `VAN_SHORTAGE`, `OVER_CAPACITY`, `TIME_BUDGET`, `WINDOW_CONFLICT`, `FUEL_QUOTA`, `VEHICLE_BREAKDOWN`, from the engine's reason map in `packages/engine/src/rules/reason-map.ts`; admins add their own in `deferral_reasons`).
 7. The dispatcher can move orders between trips. The shared validator rejects any move that breaks a rule and names the rule.
 
 ## Observability

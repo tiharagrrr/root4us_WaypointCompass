@@ -3,6 +3,7 @@
 // Spec: specs/planning/spec.md. Tables: src/db/schema/planning.ts.
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit';
+import { OrderingModule } from '../ordering';
 import { DeferralReasonsController } from './controllers/deferral-reasons.controller';
 import { DeferralReasonLinks } from './policies/deferral-reason.links';
 import { DeferralReasonsService } from './services/deferral-reasons.service';
@@ -10,7 +11,7 @@ import { DeferralService } from './services/deferral.service';
 import { TripLifecycleService } from './services/trip-lifecycle.service';
 
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, OrderingModule],
   controllers: [DeferralReasonsController],
   providers: [
     DeferralReasonsService,
