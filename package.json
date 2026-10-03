@@ -7,7 +7,7 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "pnpm --filter @waypoint/shared build && pnpm --parallel --filter @waypoint/shared --filter @waypoint/api --filter @waypoint/frontend dev",
+    "dev": "pnpm --filter @waypoint/shared build && pnpm --filter @waypoint/engine build && pnpm --parallel --filter @waypoint/shared --filter @waypoint/api --filter @waypoint/frontend dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",

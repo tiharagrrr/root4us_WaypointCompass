@@ -68,13 +68,18 @@ export class UpdateDeferralReasonDto {
 }
 
 export class DeferralReasonDto {
-  @ApiProperty({ example: 'REEFER_CAPACITY' })
+  @ApiProperty({ example: 'OVER_CAPACITY' })
   code!: string;
 
-  @ApiProperty({ example: 'No reefer capacity' })
+  @ApiProperty({ example: 'Fleet full' })
   label!: string;
 
-  @ApiProperty({ nullable: true, type: String })
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'What the store reads on M4; null for a manual reason.',
+    example: 'Every suitable vehicle was full for this run.',
+  })
   description!: string | null;
 
   @ApiProperty({

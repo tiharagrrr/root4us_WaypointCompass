@@ -480,6 +480,51 @@ describeWithDb('loading: flags and decisions (ROO-33)', () => {
     }
   });
 
+  it('AC-LOD-12 a removal before a closed day defers to the next operating day', async () => {
+    // Saturday 3 Oct; Sunday 4 Oct does not operate (DEMO_DAYS), so the
+    // goods are due on Monday's run, not on a day with no run at all.
+    const trip = await seedTrip(w, {
+      date: '2026-10-03',
+      stops: 1,
+      lines: 1,
+      qty: 12,
+    });
+    await publish(w, trip);
+    const [line] = await lineRows(w, trip.tripId);
+    const raised = await call(
+      w,
+      'harini',
+      'post',
+      `/trips/${trip.tripId}/load-flags`,
+      {
+        loadLineId: line.id,
+        reason: 'MISSING',
+        qtyAffected: 2,
+        raisedByName: 'Harini De Mel',
+        clientUuid: tapUuid(w, 355),
+      },
+    );
+    expect(raised.status).toBe(201);
+    const flag = data<LoadFlagDto>(raised);
+
+    const res = await call(
+      w,
+      'tihara',
+      'post',
+      `/load-flags/${flag.id}/decision`,
+      { decision: 'REMOVE', reasonCode: w.reasons.capacity },
+    );
+    expect(res.status).toBe(200);
+
+    const [deferral] = await deferralRows(w, line.orderId);
+    expect(deferral).toMatchObject({
+      fromDate: '2026-10-03',
+      toDate: '2026-10-05',
+    });
+    const [backorder] = await backorderRows(w, line.orderId);
+    expect(backorder).toMatchObject({ deliveryDate: '2026-10-05' });
+  });
+
   it('refuses a reason code nobody registered', async () => {
     const { flag } = await aMissingFlag(360);
     const res = await call(

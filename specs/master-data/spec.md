@@ -260,13 +260,14 @@ AC-MD-12  A missing permission is 403
     | driver        | GET /items                 | catalog:read       |
 
 AC-MD-13  Effective window meets the mall window
-  Given an outlet with windowOpenMin 360 and windowCloseMin 600
+  Given a MALL_DOCK outlet with windowOpenMin 360 and windowCloseMin 600
   When effectiveWindow runs with a mall window 420 to 540
   Then it returns 420 to 540
   When effectiveWindow runs with a mall window 300 to 480
   Then it returns 360 to 480
   When effectiveWindow runs with no mall window
   Then it returns 360 to 600
+  And for a NORMAL or VAN_ONLY outlet with a mall window 420 to 540 it returns 360 to 600, as the engine does
 
 AC-MD-14  The seed is repeatable and checks rows
   Given hand-built fixture CSVs in a temporary SEED_DATA_DIR
@@ -343,6 +344,9 @@ each criterion in the checklist above.
   open: `departFromMin` before `departToMin`, when the waves land. (Harini)
 
 ## Changelog
+- 2026-10-03 AC-MD-13: `effectiveWindow` narrows by the mall window only at a MALL_DOCK outlet,
+  matching the engine (`packages/engine/src/plan/window.ts`) and `specs/engine/rules.md`; before,
+  mall times on any other outlet narrowed the window the order showed
 - 2026-10-02 ROO-19: the reads ordering needs are built — `/depots`, `/districts`, `/outlets`,
   `/items`, `/calendar`, `/service-allowances`, `/traffic-speeds` and `/road-conditions`, plus the
   A3 outlet edit and the A4 depot edit, with `CalendarService` and `effectiveWindow` exported for

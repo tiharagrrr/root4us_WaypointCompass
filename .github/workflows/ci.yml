@@ -22,6 +22,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @waypoint/shared build
+      - run: pnpm --filter @waypoint/engine build
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm check:boundaries
@@ -65,6 +66,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @waypoint/shared build
+      - run: pnpm --filter @waypoint/engine build
       - name: Create the three database roles
         run: >-
           psql "postgres://postgres:postgres@localhost:5432/waypoint" -v ON_ERROR_STOP=1

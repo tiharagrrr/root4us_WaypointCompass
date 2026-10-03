@@ -13752,15 +13752,17 @@
         "properties": {
           "code": {
             "type": "string",
-            "example": "REEFER_CAPACITY"
+            "example": "OVER_CAPACITY"
           },
           "label": {
             "type": "string",
-            "example": "No reefer capacity"
+            "example": "Fleet full"
           },
           "description": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "description": "What the store reads on M4; null for a manual reason.",
+            "example": "Every suitable vehicle was full for this run."
           },
           "fromEngine": {
             "type": "boolean",

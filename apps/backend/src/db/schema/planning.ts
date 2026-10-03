@@ -259,8 +259,8 @@ export const stops = pgTable(
 
 /** Admin-editable in A6; engine reasons can't be removed. */
 export const deferralReasons = pgTable('deferral_reasons', {
-  code: text().primaryKey(), // "REEFER_CAPACITY"
-  label: text().notNull(), // "No reefer capacity"
+  code: text().primaryKey(), // "OVER_CAPACITY"; the engine's codes come from its reason map
+  label: text().notNull(), // "Fleet full"
   description: text(),
   fromEngine: boolean().notNull().default(false),
   active: boolean().notNull().default(true),

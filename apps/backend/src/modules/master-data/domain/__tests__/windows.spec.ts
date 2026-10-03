@@ -1,10 +1,15 @@
+import type { ParkingConstraint } from '@waypoint/shared';
 import { effectiveWindow } from '../windows';
 
-const outlet = (mall: [number, number] | null) => ({
+const outlet = (
+  mall: [number, number] | null,
+  parkingConstraint: ParkingConstraint = 'MALL_DOCK',
+) => ({
   windowOpenMin: 360,
   windowCloseMin: 600,
   mallWindowOpenMin: mall?.[0] ?? null,
   mallWindowCloseMin: mall?.[1] ?? null,
+  parkingConstraint,
 });
 
 describe('effectiveWindow', () => {
@@ -22,4 +27,16 @@ describe('effectiveWindow', () => {
       closeMin: 600,
     });
   });
+
+  // The engine narrows by the mall window only at a MALL_DOCK outlet
+  // (packages/engine/src/plan/window.ts), so the order's window must too.
+  it.each<ParkingConstraint>(['NORMAL', 'VAN_ONLY'])(
+    'ignores mall times at a %s outlet, as the engine does',
+    (parking) => {
+      expect(effectiveWindow(outlet([420, 540], parking))).toEqual({
+        openMin: 360,
+        closeMin: 600,
+      });
+    },
+  );
 });
