@@ -33,6 +33,15 @@ errors.spec.ts pins that so a weaker shared fails an engine test.
 
 The rule reference, with codes, checks, messages and reasons, is specs/engine/rules.md.
 
+## Allocator
+allocate() never places an order a rule would refuse: every candidate goes through fits(), which runs
+the thirteen HARD trip and vehicle rules over the measured, sequenced trip. Nothing is "placed then
+checked", and a HARD violation in the output can only come from a fixed or locked trip the input
+brought in. Candidates are tried from the vehicle the order prefers to the one it does not, because
+the last refusal becomes the deferral's reason (a chilled order's last try is an ambient truck, which
+reads as "no reefer capacity"). The reefer preference, the keepLocked and reservation rules, and what
+every stat counts are all in specs/engine/rules.md section 5; change them there in the same commit.
+
 ## Rules
 - Sort every collection by a stable key before iterating: orders by priority descending, then
   earliest window close, then order ref; everything else by id.
