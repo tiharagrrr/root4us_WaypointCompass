@@ -37,3 +37,26 @@ row for every intended difference; anything else that differs is a bug.
 | 19 Alerts column | Four fix buttons on the open alert (Re-sequence, Reassign, Update ETA, Defer stop) | Only the fixes the server sent for that alert type, and only those the viewer may take | The affordance rule (AC-ALR-07): a fix link appears only with the matching permission, so the button set is per alert and per viewer, not fixed |
 | 19 Alerts column | Every fix button is pressable | A fix whose screen is not built yet is disabled and names the screen it waits on | The server correctly says the dispatcher may take the action; hiding the button would misreport what they can do, and L3b, 19b, 19c and the issue view are not built |
 | 01 Dashboard, 19, 19a | Full frames | Only the alert regions are built; the KPI row, today's runs, tomorrow's cutoff, the trip list, the map and the stop timeline are dashed placeholders naming their module | Those regions belong to planning, ordering and execution (specs/frontend/screens.md lists 01 under alerts and planning, 19 and 19a under execution and alerts); ROO-50 is the alerts half |
+| D1 Today's trip | "WP CBA-1234" beside the REEFER chip | The vehicle code (REF-07) | The offline bundle carries `vehicle.code` and its temperature class, not the plate |
+| D1 Today's trip | Departs "05:45 · Peliyagoda" | "05:45 · PLG" | The bundle carries `depotId`, not the depot's name |
+| D1 Today's trip | Load "Fresh · chilled + dry" | The trip's temperature class ("Chilled") | A trip has one `tempClass` and the bundle carries no brand, so "chilled + dry" has no source |
+| D1 Today's trip | Stops listed by area ("Wattala", "Kandana") | The outlet's name ("Fresh Kadawatha") | The bundle names the outlet and puts the district on the trip; there is no per-stop area name |
+| D1 Today's trip | A leaf on each chilled stop | The leaf follows the trip's temperature class | Nothing per stop in the bundle says chilled; the trip is chilled or it is not |
+| D1 Today's trip | No empty state drawn | Compass empty state when `/me/trips` returns nothing | D14 No trip (247:924) is its own frame and its own issue; this is a stand-in, not a guess at that design |
+| D2 Download failed | Retry and the red card | The same, plus "Last saved 03:05" | AC-EXE-05 asks for the last successful download time; the frame does not draw it |
+| D2 Download failed | Start trip drawn as a normal button | Start trip disabled until the bundle is saved | A trip the phone does not hold cannot be run; the frame marks the state but not the control |
+| D3 Next stop | A route map with the driver and the stop on tiles | The panel, its ROUTE MAP chip and the stop's pin, with no tiles | No map tiles or tile provider are in the app yet; the frame's own map is a flat stand-in |
+| D3 Next stop | ETA 07:18 | The planned arrival from `GET /stops/{id}`, or "—" with no signal | ETA is tracking's, and tracking reads need `tracking:read`, which a driver does not hold |
+| D3 Next stop | "Mall window 06:30–09:30" | Not shown | The mall window is on the outlet; the offline bundle does not carry it |
+| D3 Next stop | Street address under the outlet | Not shown | `CachedStop` holds no address, so it is not on the phone |
+| D3 Next stop | "Then" rows show a planned time (07:41) | They show the stop's delivery window | The planned arrival is not in the bundle; the window is, and it is what decides lateness |
+| D4 Record stop | "Fresh Ja-Ela · Order #WF-0171" | The outlet's name alone | The bundle's stop has no order number on the phone |
+| D4 Record stop | A tick per line and nothing else | Unticking a line opens its quantity stepper | screens.md asks for quantities per line (AC-EXE-11); the frame draws the full-delivery case only |
+| D4 Record stop | No note field | A note appears as soon as a line is short | The server refuses a PARTIAL without one ("Say what was short and why") |
+| D5 Exception | Four outcomes, no receiver field | A receiver name appears when Partial is chosen | PARTIAL is a delivery: the server requires the name of whoever took it |
+| D5 Exception | Per-line condition implied by the outcome | Lines carry the quantity handed over, condition `ok` | D5 has no per-line reason control; guessing between damaged and refused would put a claim in the record that nobody made |
+| D8 Can't run this trip | "Tihara Egodage reassigns the trip or the vehicle." | "The dispatcher reassigns the trip or the vehicle." | The phone's bundle does not say who is on dispatch today |
+| D9 Dock & access | Four typed sections: Entrance, Parking, Gate, Chilled | One "Access notes" block | `outlets.accessNotes` is a single free-text field (specs/master-data), not four |
+| D9 Dock & access | "Chathura · store staff" and "Added by the store manager · updated 12 Sep" | The contact's name and number alone | The bundle carries the contact's name and phone; the role and `accessNotesUpdatedAt` are not in it |
+| D9 Dock & access | A full screen with a back button | A bottom sheet over D3 | specs/frontend/screens.md lists D9 as a sheet on the stop |
+| D3 to D5 | Tab bar drawn on every frame | Hidden from D3 onwards | The Tab bar component's own note in Figma (243:743): home-level screens only, hidden during a live trip |
