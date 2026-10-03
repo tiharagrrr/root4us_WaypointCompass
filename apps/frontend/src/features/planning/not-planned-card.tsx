@@ -15,10 +15,12 @@ export interface NotPlannedCardProps {
   input: EngineInput | undefined
   /** 09 says why each order is left; 05 has not planned anything yet. */
   withReasons: boolean
+  /** 14 calls it "Unplanned" with its own line under the title. */
+  heading?: { title: string; caption: string }
 }
 
 /** The orders on no trip, filterable by brand and district, heaviest decisions first. */
-export function NotPlannedCard({ orders, input, withReasons }: NotPlannedCardProps) {
+export function NotPlannedCard({ orders, input, withReasons, heading }: NotPlannedCardProps) {
   const [brand, setBrand] = useState(ALL)
   const [district, setDistrict] = useState(ALL)
   const list = useMemo(() => orders ?? [], [orders])
@@ -31,17 +33,17 @@ export function NotPlannedCard({ orders, input, withReasons }: NotPlannedCardPro
 
   return (
     <section
-      aria-label="Not planned yet"
+      aria-label={heading?.title ?? 'Not planned yet'}
       className="flex h-full w-[320px] shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-background p-px shadow-sm"
     >
       <header className="flex flex-col gap-2 border-b border-border px-3.5 pb-[13px] pt-3">
         <div className="flex items-center justify-between">
-          <h2 className="type-card-title m-0 text-foreground">Not planned yet</h2>
+          <h2 className="type-card-title m-0 text-foreground">{heading?.title ?? 'Not planned yet'}</h2>
           <span className="font-mono text-[12px] font-bold leading-auto text-muted-foreground">{list.length}</span>
         </div>
         {withReasons ? (
           <p className="type-caption m-0 leading-[17.4px] text-muted-foreground">
-            Pick the next vehicle to fit these. Anything left goes to step 3 with its reason.
+            {heading?.caption ?? 'Pick the next vehicle to fit these. Anything left goes to step 3 with its reason.'}
           </p>
         ) : (
           <p className="type-caption m-0 leading-[17.4px] text-muted-foreground">

@@ -66,28 +66,44 @@ export function DayStrip({ date, tomorrow, now, status }: DayStripProps) {
 
 const STEPS = ['Build plan', 'Confirm trips', 'Unplanned orders', 'Publish'] as const
 
-/** The four planning steps (05 to 18); 05 to 11 are step 1. */
-export function PlanStepper({ step }: { step: 1 | 2 | 3 | 4 }) {
+/**
+ * The four planning steps (05 to 18); 05 to 11 are step 1. Done steps are a small blue dot joined
+ * by a solid line; the current one is ringed; later ones are grey and dashed (14, 15, 17).
+ */
+export function PlanStepper({ step, unplanned }: { step: 1 | 2 | 3 | 4; unplanned?: number }) {
   return (
     <ol data-slot="plan-stepper" className="m-0 flex list-none items-center gap-3 border-b border-slate-200 px-6 pb-[13px] pt-3">
       {STEPS.map((label, i) => {
-        const current = i + 1 === step
+        const n = i + 1
+        const current = n === step
+        const done = n < step
         return (
           <li key={label} className="flex items-center gap-3">
-            {i > 0 ? <span aria-hidden="true" className="h-0.5 w-14 border-t-2 border-dashed border-slate-300" /> : null}
+            {i > 0 ? (
+              <span
+                aria-hidden="true"
+                className={cn('h-0.5 w-14 border-t-2', n <= step ? 'border-solid border-primary' : 'border-dashed border-slate-300')}
+              />
+            ) : null}
             <span className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
               <span
                 aria-hidden="true"
                 className={cn(
                   'flex items-center justify-center rounded-full',
-                  current ? 'size-[22px] border-2 border-blue-700' : 'size-[18px] border border-input',
+                  current ? 'size-[22px] border-2 border-blue-700' : done ? 'size-[18px] border border-blue-200' : 'size-[18px] border border-input',
                 )}
               >
-                <span className={cn('rounded-full', current ? 'size-2 bg-primary' : 'size-1.5 bg-slate-400')} />
+                <span className={cn('rounded-full', current ? 'size-2 bg-primary' : done ? 'size-2 bg-primary' : 'size-1.5 bg-slate-400')} />
               </span>
-              <span className={cn('font-sans text-[13px] leading-auto', current ? 'font-bold text-foreground' : 'font-medium text-muted-foreground')}>
+              <span
+                className={cn(
+                  'font-sans text-[13px] leading-auto',
+                  current ? 'font-bold text-foreground' : done ? 'font-medium text-foreground' : 'font-medium text-muted-foreground',
+                )}
+              >
                 {label}
               </span>
+              {n === 3 && unplanned ? <span className="font-mono text-[12px] font-bold text-foreground">{unplanned}</span> : null}
             </span>
           </li>
         )

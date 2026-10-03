@@ -58,6 +58,16 @@ export const RULE_CHIP: Record<string, string> = {
   LATE_RISK: 'TIGHT WINDOW',
 }
 
+/** A trip's own problem, in the chip 11 puts on the trip ("Over volume"). */
+export const TRIP_PROBLEM: Record<string, string> = {
+  CAP_WEIGHT: 'Over weight',
+  CAP_VOLUME: 'Over volume',
+  BUDGET_FRESH: 'Over time',
+  BUDGET_STYLE_TECH: 'Over time',
+  FUEL_WEEKLY: 'Over fuel quota',
+  TRIP_LIMIT: 'Too many trips',
+}
+
 /** The six lines of 08's feasibility check and the rules each one covers. */
 export const CHECKS: readonly { label: string; rules: readonly string[] }[] = [
   { label: 'Weight and volume', rules: ['CAP_WEIGHT', 'CAP_VOLUME'] },

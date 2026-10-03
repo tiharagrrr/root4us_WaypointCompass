@@ -164,11 +164,14 @@ export function PlanPanel({ plan, trips, vehicles, onEditVehicle, onAddVehicle, 
   )
 }
 
-/** A thin progress bar in the primary tone. */
-export function Bar({ value, className }: { value: number; className?: string }) {
+/** A thin progress bar in the primary tone, or red past full. */
+export function Bar({ value, className, tone = 'primary' }: { value: number; className?: string; tone?: 'primary' | 'danger' }) {
   return (
     <span role="presentation" className={`relative block overflow-hidden rounded-full bg-muted ${className ?? ''}`}>
-      <span className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${Math.min(100, value)}%` }} />
+      <span
+        className={`absolute inset-y-0 left-0 rounded-full ${tone === 'danger' ? 'bg-status-danger-icon' : 'bg-primary'}`}
+        style={{ width: `${Math.min(100, value)}%` }}
+      />
     </span>
   )
 }
