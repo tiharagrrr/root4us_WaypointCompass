@@ -28,8 +28,22 @@ export const dispatchRoutes: RouteObject[] = [
           },
           { path: 'orders', handle: handle('Order queue'), element: <ScreenPlaceholder code="03" name="Order queue" node="185:12856" /> },
           { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
-          { path: 'plan', handle: handle('Plan'), element: <ScreenPlaceholder code="05" name="Plan" node="265:2134" /> },
-          { path: 'plan/:date', handle: handle('Plan'), element: <ScreenPlaceholder code="09" name="Plan · vehicles" node="268:2245" /> },
+          {
+            path: 'plan',
+            handle: handle('Plan'),
+            lazy: async () => ({ Component: (await import('@/features/planning/plan-page')).PlanIndexRedirect }),
+          },
+          {
+            // 05 and 09: one route, empty until the day has trips (ROO-30).
+            path: 'plan/:date',
+            handle: handle('Plan'),
+            lazy: async () => ({ Component: (await import('@/features/planning/plan-page')).PlanPage }),
+          },
+          {
+            path: 'plan/:date/confirm',
+            handle: handle('Plan'),
+            element: <ScreenPlaceholder code="14" name="Confirm trips" node="185:15323" />,
+          },
           { path: 'plan-ahead', handle: handle('Plan ahead'), element: <ScreenPlaceholder code="12" name="Plan ahead" node="290:2387" /> },
           {
             path: 'plan-ahead/:date',

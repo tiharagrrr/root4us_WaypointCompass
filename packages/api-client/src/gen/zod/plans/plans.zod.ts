@@ -431,7 +431,8 @@ export const PlanBuildingVehicleOptionsResponse = zod.object({
   "styleTechMinutesLeft": zod.number(),
   "weightCapKg": zod.number(),
   "volumeCapM3": zod.number(),
-  "fuelLeftL": zod.number().describe('Weekly quota less what is used and planned')
+  "fuelLeftL": zod.number().describe('Weekly quota less what is used and planned'),
+  "weeklyFuelQuotaL": zod.number().describe('Weekly fuel quota, litres')
 })),
   "meta": zod.object({
   "requestId": zod.string(),

@@ -11,7 +11,7 @@ import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
-import { HeaderSlotContext } from './header-slot'
+import { HeaderSlotContext, PageHeaderContext, type PageHeader } from './header-slot'
 
 export interface ShellNavItem {
   to: string
@@ -44,8 +44,10 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
   useEventStream()
   const handle = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
+  const [pageHeader, setPageHeader] = useState<PageHeader | null>(null)
 
   return (
+    <PageHeaderContext.Provider value={setPageHeader}>
     <HeaderSlotContext.Provider value={actionsSlot}>
       <div className="flex min-h-svh bg-background text-foreground">
         <aside className="sticky top-0 flex h-svh w-[232px] shrink-0 flex-col gap-[18px] border-r border-border bg-background py-[18px] pl-3 pr-[13px]">
@@ -87,8 +89,8 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 pb-[17px] pt-4">
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="type-label m-0 uppercase text-muted-foreground">{handle.eyebrow ?? eyebrow}</p>
-              <h1 className="type-page-title m-0 truncate text-foreground">{handle.title ?? title}</h1>
+              <p className="type-label m-0 uppercase text-muted-foreground">{pageHeader?.eyebrow ?? handle.eyebrow ?? eyebrow}</p>
+              <h1 className="type-page-title m-0 truncate text-foreground">{pageHeader?.title ?? handle.title ?? title}</h1>
             </div>
             <div className="flex items-center gap-2">
               {headerLead}
@@ -113,5 +115,6 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
         </div>
       </div>
     </HeaderSlotContext.Provider>
+    </PageHeaderContext.Provider>
   )
 }

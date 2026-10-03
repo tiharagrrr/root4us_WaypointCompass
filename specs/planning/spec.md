@@ -603,6 +603,10 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-03 Screens 05 to 09 (ROO-30) on the live API: the day's plan with its day strip and stepper, the
+  orders on no trip, Add Trip and Auto-suggest from the plan's links, and the 06 → 07 → 08 wizard that
+  runs the engine in the browser on `/context` and saves one edit list. `PlanVehicleOptionDto` gains
+  `weeklyFuelQuotaL` for 06's fuel bar. Departures are in docs/departures.md
 - 2026-10-03 The planning API (ROO-29): plan reads and the engine context, the wizard reads (vehicle
   and order options, validate, suggest fixes, unplanned), edits, deferral decisions, publish with
   publish-preview and revisions, and Auto-suggest engine runs finished by the worker. `PlanWriter`
