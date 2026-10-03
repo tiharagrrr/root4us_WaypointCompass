@@ -18,8 +18,10 @@ export const ALLOWED_GLOBALS: Readonly<Record<string, string>> = {
   Error: 'EngineInputError extends it',
   JSON: 'quotes values in error messages; stringify is deterministic',
   Map: 'lookups by id; never iterated unsorted',
+  Number: 'Number.POSITIVE_INFINITY as a sort sentinel',
   Math: 'arithmetic only; Math.random is refused below',
   Object: 'fromEntries and entries over sorted or fixed keys',
+  Set: 'membership checks (has); iteration order is insertion order, so it is deterministic',
   String: 'padStart and String(value) in messages',
 };
 

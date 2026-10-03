@@ -1,4 +1,5 @@
 import { allowanceMinutes } from '../time/trip-minutes';
+import { effectiveWindow } from './window';
 import type { EngineOrder, EngineOutlet, RuleContext, Trip } from '../types';
 
 export interface Stop {

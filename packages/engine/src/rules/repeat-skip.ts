@@ -1,5 +1,4 @@
-import type { EngineParams } from '../params';
-import type { FairnessHistory } from '../types';
+import { isRepeatSkip } from '../plan/repeat-skip';
 import { defineRule, violation } from './types';
 
 /**
@@ -18,7 +17,8 @@ export const REPEAT_SKIP = defineRule('REPEAT_SKIP', {
   check: ({ unplannedOrder, orderById, input, params }) => {
     if (!unplannedOrder) return [];
     const order = orderById.get(unplannedOrder.orderId);
-    if (!order || !isRepeatSkip(input.history[order.outletId], params)) return [];
+    const history = order ? input.history[order.outletId] : undefined;
+    if (!order || !isRepeatSkip(history, params)) return [];
     return [
       violation('REPEAT_SKIP', {
         orderId: order.id,

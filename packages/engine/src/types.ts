@@ -136,28 +136,22 @@ export interface UnplannedDetail {
   bestTripNo: number | null;
 }
 
+/**
+ * An order on no trip, with what is known about why. "Unplanned" means on no trip; the reason fields
+ * are filled in when the allocator decided it and are null when a dispatcher took the order off by
+ * hand, until she picks a reason by confirming the deferral. Null means "not decided yet".
+ */
 export interface Unplanned {
   orderId: string;
-  reasonCode: DeferralReasonCode;
-  /** The rule that ruled out the last candidate vehicle tried. */
-  bindingRule: BindingRule | null;
-  choice: DeferralChoice;
   priority: number;
+  /** The outlet was deferred on its last run, so leaving it off again needs a note. */
   repeatSkip: boolean;
-  detail?: UnplannedDetail;
-  tried?: readonly TriedVehicle[];
-  /** The order that took this one's place, on a PRIORITY_CHOICE. */
-  displacedBy?: string;
-}
-
-/**
- * An order the allocator left out of the plan altogether: not a deferral, no store notice. It is a
- * rare signal that something upstream went wrong, and the API raises an alert for it.
- */
-export interface Excluded {
-  orderId: string;
-  code: ExclusionCode;
-  message: string;
+  /** From the reason map. Null until the dispatcher picks one. */
+  reasonCode: string | null;
+  /** The rule that blocked the last candidate vehicle. Null for a manual removal. */
+  bindingRule: BindingRule | null;
+  /** UNAVOIDABLE or PRIORITY_CHOICE for an engine decision. Null for a manual removal. */
+  choice: DeferralChoice | null;
 }
 
 export interface Plan {

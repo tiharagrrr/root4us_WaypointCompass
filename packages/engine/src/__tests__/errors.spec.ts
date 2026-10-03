@@ -48,9 +48,24 @@ describe('EngineInputError says exactly what is wrong', () => {
     expect(e.cause).toBe(cause);
   });
 
-  it('errors: every code in the list is one the tests below can produce', () => {
+  it('errors: the codes are exactly these, so adding one is a decision', () => {
     expect([...ENGINE_INPUT_ERROR_CODES].sort()).toEqual(
-      ['INVALID_DATE', 'MISSING_ALLOWANCE', 'UNKNOWN_DISTRICT', 'UNKNOWN_ORDER', 'UNKNOWN_OUTLET', 'UNKNOWN_VEHICLE'].sort(),
+      [
+        'FIXED_TRIP',
+        'INVALID_DATE',
+        'INVALID_EDIT',
+        'INVALID_POSITION',
+        'INVALID_RESEQUENCE',
+        'MISSING_ALLOWANCE',
+        'ORDER_ALREADY_ASSIGNED',
+        'ORDER_NOT_ASSIGNED',
+        'TRIP_EXISTS',
+        'UNKNOWN_DISTRICT',
+        'UNKNOWN_ORDER',
+        'UNKNOWN_OUTLET',
+        'UNKNOWN_TRIP',
+        'UNKNOWN_VEHICLE',
+      ].sort(),
     );
   });
 });
