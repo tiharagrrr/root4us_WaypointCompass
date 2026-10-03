@@ -123,12 +123,14 @@ describeWithDb('loading: flags and decisions (ROO-33)', () => {
       // Tihara's queue lists it. She is scoped to no depot, so her queue is
       // every depot's; the exact total is asserted on the same query narrowed
       // to this trip, because the suites share one database and another
-      // world's open flags are legitimately in her unfiltered queue.
+      // world's open flags are legitimately in her unfiltered queue. Newest
+      // first, so earlier runs' flags left in that database cannot push this
+      // one off the page.
       const queue = await call(
         w,
         'tihara',
         'get',
-        '/load-flags?filter[status]=OPEN',
+        '/load-flags?filter[status]=OPEN&sort=-raisedAt&limit=100',
       );
       expect(queue.status).toBe(200);
       expect(data<LoadFlagDto[]>(queue).map((row) => row.id)).toContain(

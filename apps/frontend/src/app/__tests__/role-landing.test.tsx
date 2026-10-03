@@ -54,6 +54,12 @@ const stub = (role: UserRole, scope?: Scope) =>
     'GET /api/v1/invitations': () => page([]),
   })
 
+/**
+ * The shells and their first screens load lazily, and the first import of each compiles in the
+ * test run; with every suite running at once that can pass the default 1 s, so wait longer.
+ */
+const LAZY = { timeout: 5_000 }
+
 const renderApp = (initialEntry = '/sign-in') => {
   const router = createMemoryRouter(routes, { initialEntries: [initialEntry] })
   render(
@@ -90,7 +96,7 @@ describe('ROO-15 role landing', () => {
 
     await signInAs()
 
-    expect(await screen.findByRole(landmark.role, { name: landmark.name })).toBeInTheDocument()
+    expect(await screen.findByRole(landmark.role, { name: landmark.name }, LAZY)).toBeInTheDocument()
     await waitFor(() => expect(router.state.location.pathname).toBe(home))
   })
 
@@ -98,7 +104,7 @@ describe('ROO-15 role landing', () => {
     stub('dispatcher', { depotId: 'PLG' })
     const router = renderApp('/store/orders')
 
-    await waitFor(() => expect(router.state.location.pathname).toBe('/dispatch'))
-    expect(await screen.findByRole('link', { name: 'Order queue' })).toBeInTheDocument()
+    await waitFor(() => expect(router.state.location.pathname).toBe('/dispatch'), LAZY)
+    expect(await screen.findByRole('link', { name: 'Order queue' }, LAZY)).toBeInTheDocument()
   })
 })
