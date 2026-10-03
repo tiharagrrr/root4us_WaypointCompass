@@ -364,7 +364,8 @@ AC-PLN-16  Confirming a deferral
   Given unplanned order WF-0171 for Fresh Kadawatha with a PROPOSED deferral from the engine, reasonCode OVER_CAPACITY and repeatSkip false
   When Tihara posts a DEFER decision with the pre-filled reasonCode and a note for the store
   Then the deferral is CONFIRMED with the note, decidedById Tihara and decidedAt equal to the demo clock
-    And exactly one audit row planning.deferral.confirmed with reasonCode OVER_CAPACITY and one outbox event deferral.confirmed exist, and a log line planning.deferral.confirmed carries the reason
+    And exactly one audit row planning.deferral.confirmed with reasonCode OVER_CAPACITY exists, and a log line planning.deferral.confirmed carries the reason
+    And no deferral.confirmed outbox event exists until the plan is published, when exactly one is written for it (decided 2026-10-03: the store hears about it at publish)
     And GET /deferrals/{id} as Nimesha shows "Every suitable vehicle was full for this run." and the note, not the engine's numbers
     And a DEFER decision without a reasonCode or without a note gets 400 VALIDATION_FAILED naming the missing field
 
@@ -512,26 +513,26 @@ AC-PLN-34  Other modules move trips through the lifecycle
 ```
 
 Checklist (tick in the PR that adds the passing test):
-- [ ] AC-PLN-01 Engine run leaves no hard violation
-- [ ] AC-PLN-02 Moving onto a full vehicle is refused
-- [ ] AC-PLN-03 Publishing before it opens is locked
-- [ ] AC-PLN-04 An undecided unplanned order blocks publishing
-- [ ] AC-PLN-05 A repeat skip needs an override note
+- [x] AC-PLN-01 Engine run leaves no hard violation
+- [x] AC-PLN-02 Moving onto a full vehicle is refused
+- [x] AC-PLN-03 Publishing before it opens is locked
+- [x] AC-PLN-04 An undecided unplanned order blocks publishing
+- [x] AC-PLN-05 A repeat skip needs an override note
 - [ ] AC-PLN-06 A breakdown after publishing becomes revision 2
-- [ ] AC-PLN-07 A stale If-Match loses
-- [ ] AC-PLN-08 One plan per depot and date
-- [ ] AC-PLN-09 An engine run records how it ran
-- [ ] AC-PLN-10 Hand-built trips survive Auto-suggest
-- [ ] AC-PLN-11 A failed run changes nothing
-- [ ] AC-PLN-12 Validate never saves
-- [ ] AC-PLN-13 The wizard saves one edit list
-- [ ] AC-PLN-14 A soft rule needs an override
-- [ ] AC-PLN-15 The wizard shows why
-- [ ] AC-PLN-16 Confirming a deferral
-- [ ] AC-PLN-17 Planning an unplanned order on a trip
-- [ ] AC-PLN-18 Swapping serves a repeat skip
-- [ ] AC-PLN-19 Publishing commits the day
-- [ ] AC-PLN-20 Other blockers stop publishing
+- [x] AC-PLN-07 A stale If-Match loses
+- [x] AC-PLN-08 One plan per depot and date
+- [x] AC-PLN-09 An engine run records how it ran
+- [x] AC-PLN-10 Hand-built trips survive Auto-suggest
+- [x] AC-PLN-11 A failed run changes nothing
+- [x] AC-PLN-12 Validate never saves
+- [x] AC-PLN-13 The wizard saves one edit list
+- [x] AC-PLN-14 A soft rule needs an override
+- [x] AC-PLN-15 The wizard shows why
+- [x] AC-PLN-16 Confirming a deferral
+- [x] AC-PLN-17 Planning an unplanned order on a trip
+- [x] AC-PLN-18 Swapping serves a repeat skip
+- [x] AC-PLN-19 Publishing commits the day
+- [x] AC-PLN-20 Other blockers stop publishing
 - [ ] AC-PLN-21 A change after publishing is a revision
 - [ ] AC-PLN-22 Released trips take three changes only
 - [ ] AC-PLN-23 Reassigning a released trip
@@ -602,6 +603,15 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-03 The planning API (ROO-29): plan reads and the engine context, the wizard reads (vehicle
+  and order options, validate, suggest fixes, unplanned), edits, deferral decisions, publish with
+  publish-preview and revisions, and Auto-suggest engine runs finished by the worker. `PlanWriter`
+  is the one writer of trips and stops; `PlanContextBuilder` builds the engine input (fairness from
+  the queued orders' `deferredCount`, fuel from fleet's ledger). AC-PLN-01 to 05 and 07 to 20 pass;
+  AC-PLN-16 is amended for the publish-time notice. Still to come: revisions after publish (ROO-42),
+  trip reassign, re-sequence, stop defer and cancel, close, reservations, repair runs (ROO-56), the
+  deferral reads and responses, and the event consumers (AC-PLN-31). `planning.reeferCarriesAmbient`
+  now defaults to true and `planning.techValueLimitLkr` to none, as this spec says
 - 2026-10-03 Contract (ROO-29): every endpoint 05 to 18 and the deferral endpoints for 23, M4 and M7
   answer 501 with their final route, permission, headers and DTOs; the web builds on the generated
   mocks. Close, reservations, reassign, re-sequence, stop defer and cancel come later

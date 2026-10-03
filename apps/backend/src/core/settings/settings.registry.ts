@@ -45,7 +45,7 @@ export const SETTINGS = {
   }),
   'planning.reeferCarriesAmbient': define({
     schema: z.boolean(),
-    default: false,
+    default: true,
     description: 'A reefer may also carry ambient orders',
   }),
   'planning.enforceWindows': define({
@@ -71,9 +71,11 @@ export const SETTINGS = {
     description: 'Runs back that count for a repeat skip',
   }),
   'planning.techValueLimitLkr': define({
-    schema: z.number().int().min(0),
-    default: 250_000,
-    description: 'Most Tech stock value one trip may carry, LKR',
+    // Off until an admin sets it (specs/planning/spec.md); 0 also means off.
+    schema: z.number().int().min(0).nullable(),
+    default: null,
+    description:
+      'Most Tech stock value one trip may carry, LKR; empty for no limit',
   }),
   'planning.priorityWeights': define({
     schema: z.object({

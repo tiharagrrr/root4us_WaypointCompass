@@ -8,19 +8,21 @@ import {
   ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
-import { notImplemented } from '../../../core/http/not-implemented';
 import { PlanRevisionDto, UnplannedOrderDto } from '../dto/plan-actions.dto';
 import { PlanContextDto } from '../dto/plan-engine.dto';
 import { PlanDayParamsDto, PlanDto, TripDto } from '../dto/plan.dto';
+import { PlanQueries } from '../services/plan.queries';
+import { PlansService } from '../services/plans.service';
 
-/**
- * Reading a day's plan (05, 09, 15, 17). Contract first (ROO-29): the routes,
- * permissions and shapes are final, and the services land in the next PRs;
- * until then the web runs on the generated mocks.
- */
+/** Reading a day's plan (05, 09, 15, 17). Out of scope is 404 (AC-PLN-32). */
 @ApiTags('plans')
 @Controller()
 export class PlansController {
+  constructor(
+    private readonly plans: PlansService,
+    private readonly queries: PlanQueries,
+  ) {}
+
   /** The plan, created as a DRAFT on first access (AC-PLN-08). */
   @Get('depots/:depotId/plans/:date')
   @RequirePermission('plan:read')
@@ -28,18 +30,20 @@ export class PlansController {
   @ApiOperation({
     summary: "A depot's plan for a date, created on first access",
   })
-  forDay(@Param() params: PlanDayParamsDto, @Actor() actor: SignedIn) {
-    return notImplemented('GET /depots/{depotId}/plans/{date}', {
-      params,
+  async forDay(@Param() params: PlanDayParamsDto, @Actor() actor: SignedIn) {
+    const plan = await this.plans.getOrCreate(
+      params.depotId,
+      params.date,
       actor,
-    });
+    );
+    return this.queries.view(await this.plans.contextFor(plan), actor);
   }
 
   @Get('plans/:id')
   @RequirePermission('plan:read')
   @ApiResource(PlanDto)
   get(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
-    return notImplemented('GET /plans/{id}', { id, actor });
+    return this.queries.get(id, actor);
   }
 
   @Get('plans/:id/trips')
@@ -47,7 +51,7 @@ export class PlansController {
   @ApiPaginated(TripDto)
   @ApiProblems(404)
   trips(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
-    return notImplemented('GET /plans/{id}/trips', { id, actor });
+    return this.queries.trips(id, actor);
   }
 
   /** Everything the engine needs, so the web validates edits instantly (AC-PLN-12). */
@@ -55,7 +59,7 @@ export class PlansController {
   @RequirePermission('plan:read')
   @ApiResource(PlanContextDto)
   context(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
-    return notImplemented('GET /plans/{id}/context', { id, actor });
+    return this.queries.context(id, actor);
   }
 
   /** Orders on no trip, with reason, priority and repeat-skip flag (15). */
@@ -64,7 +68,7 @@ export class PlansController {
   @ApiPaginated(UnplannedOrderDto)
   @ApiProblems(404)
   unplanned(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
-    return notImplemented('GET /plans/{id}/unplanned', { id, actor });
+    return this.queries.unplanned(id, actor);
   }
 
   @Get('plans/:id/revisions')
@@ -72,6 +76,6 @@ export class PlansController {
   @ApiPaginated(PlanRevisionDto)
   @ApiProblems(404)
   revisions(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
-    return notImplemented('GET /plans/{id}/revisions', { id, actor });
+    return this.queries.revisions(id, actor);
   }
 }

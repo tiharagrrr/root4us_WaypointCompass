@@ -4,6 +4,14 @@
  * drop it, because consumers subscribe by domain event.
  */
 export const PLANNING_AUDIT = {
+  planCreated: 'planning.plan.created',
+  planEdited: 'planning.plan.edited',
+  softRuleOverridden: 'planning.plan.soft_rule_overridden',
+  planPublished: 'planning.plan.published',
+  engineRunCompleted: 'planning.engine.run_completed',
+  deferralConfirmed: 'planning.deferral.confirmed',
+  repeatSkipOverridden: 'planning.deferral.repeat_skip_overridden',
+  orderSwapped: 'planning.order.swapped',
   tripReassigned: 'planning.trip.reassigned',
   tripResequenced: 'planning.trip.resequenced',
   tripCancelled: 'planning.trip.cancelled',
@@ -16,4 +24,18 @@ export const PLANNING_AUDIT = {
    */
   tripStatusChanged: 'planning.trip.status_changed',
   stopStatusChanged: 'planning.stop.status_changed',
+} as const;
+
+/** Outbox event types planning emits (specs/planning/spec.md, Events; docs/events.md). */
+export const PLANNING_EVENTS = {
+  planEdited: 'plan.edited',
+  planPublished: 'plan.published',
+  engineRunCompleted: 'plan.engine_run.completed',
+  engineRunFailed: 'plan.engine_run.failed',
+  deferralConfirmed: 'deferral.confirmed',
+} as const;
+
+/** Log events that are not also audit actions. */
+export const PLANNING_LOGS = {
+  engineRunFailed: 'planning.engine.run_failed',
 } as const;

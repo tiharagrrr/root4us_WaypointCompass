@@ -180,8 +180,9 @@ const ROUTES: Route[] = [
 
 /**
  * The planning contract: every route is mounted with its permission, its
- * If-Match rule and its request DTO, and answers 501 until its service lands.
- * The logic PRs turn each 501 into the behaviour its AC-PLN criteria describe.
+ * If-Match rule and its request DTO. What each plan route does with a real
+ * plan is the AC-PLN-nn suites; the deferral routes answer 501 until theirs
+ * land.
  */
 describeWithDb('planning contract', () => {
   jest.setTimeout(60_000);
@@ -231,13 +232,17 @@ describeWithDb('planning contract', () => {
       .set(headers)
       .send(route.body ?? {});
 
-  it.each(ROUTES)(
-    '$method $path is mounted and answers 501 for a $allowed',
-    async (route) => {
-      const res = await call(route, route.allowed);
-      expect(res.status).toBe(501);
-    },
-  );
+  // The plan routes are implemented (ROO-29); the deferral routes for 23, M4
+  // and M7 still answer 501 until their services land.
+  const stillContract = (route: Route) => route.path.startsWith('/deferrals');
+
+  it.each(ROUTES)('$method $path is mounted for a $allowed', async (route) => {
+    const res = await call(route, route.allowed);
+    // The plan id above belongs to nothing, so a plan route answers 404;
+    // what none may answer any more is 501.
+    if (stillContract(route)) expect(res.status).toBe(501);
+    else expect([200, 404]).toContain(res.status);
+  });
 
   it.each(ROUTES)(
     '$method $path refuses a $refused with 403',

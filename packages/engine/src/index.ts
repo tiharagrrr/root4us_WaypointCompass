@@ -30,3 +30,5 @@ export * from './manual/violation-key';
 export * from './manual/suggest-fixes';
 export * from './plan/unplanned';
 export * from './plan/repeat-skip';
+export * from './plan/plan-schedule';
+export * from './allocate/index';

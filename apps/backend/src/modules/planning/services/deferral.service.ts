@@ -195,7 +195,7 @@ export class DeferralService {
    * code must also still be active: A6 turns a reason off when it stops
    * being used (AC-IDN-57).
    */
-  private async assertReason(code: string): Promise<void> {
+  async assertReason(code: string): Promise<void> {
     const [row] = await this.txHost.tx
       .select({ code: deferralReasons.code })
       .from(deferralReasons)
@@ -212,10 +212,7 @@ export class DeferralService {
    * Any other date would put the goods on a day with no run for them, and
    * the engine would leave them out as not due.
    */
-  private async deferralDate(
-    orderId: string,
-    planDate: string,
-  ): Promise<string> {
+  async deferralDate(orderId: string, planDate: string): Promise<string> {
     const [row] = await this.txHost.tx
       .select({
         brand: orders.brand,

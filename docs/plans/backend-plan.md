@@ -309,7 +309,7 @@ Rules:
 
 ---
 
-## Planning API (ROO-29)
+## Planning API (ROO-29) (PR-2 to PR-7 done together on branch `feat/roo-29-planning-api`)
 
 Shared pattern for PR-1 to PR-7:
 - **Controllers:** `planning/controllers/plans.controller.ts`, one controller (add a second only if
