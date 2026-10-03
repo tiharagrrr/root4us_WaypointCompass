@@ -137,7 +137,7 @@ export function NextStopPage() {
             className="flex items-start justify-between gap-3 border-t border-slate-100 pt-2.5 pb-[9px]"
           >
             <span className="type-field-label truncate text-slate-700">
-              {siblings.indexOf(next) + 1} · {next.outletName}
+              {siblings.findIndex((s) => s.id === next.id) + 1} · {next.outletName}
             </span>
             {next.windowStart && next.windowEnd ? (
               <DeliveryWindow open={next.windowStart} close={next.windowEnd} className="text-slate-700" />

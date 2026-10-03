@@ -11,7 +11,9 @@ import { aBundle, STOP_IDS, TRIP_ID } from './fixtures'
 
 const OTHER_TRIP = '0192a3f4-0000-7000-8000-00000000b002'
 
-const stopRoutes = (stopId: string, over: Record<string, unknown> = {}) => ({
+type Routes = Record<string, (url: URL, init: RequestInit | undefined) => unknown>
+
+const stopRoutes = (stopId: string, over: Routes = {}): Routes => ({
   [`GET /api/v1/stops/${stopId}`]: () =>
     envelope({
       id: stopId,
