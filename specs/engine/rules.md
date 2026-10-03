@@ -608,6 +608,7 @@ Never duplicate a rule in the API or the web app; both import `validate()`. Neve
 
 ## Changelog
 
+- 2026-10-03 `allocate()` is exported from the package root, and `planSchedule(input, plan)` returns each trip measured and timed stop by stop (arrival, travel, service, window), which the API stores on trips and stops. No output changed, so `ENGINE_VERSION` stays
 - 2026-10-03 Deleted shared's unused draft time model and validator; `deferral_reasons` is now seeded from `DEFERRAL_REASONS` in the reason map
 - 2026-10-02 ROO-75: one concept for "on no trip": `applyEdits` adds orders it takes off a trip to `plan.unplanned` (an `Unplanned` entry with no reason yet), `unplannedOrders()` and `isRepeatSkip()` are the shared definitions, and "unassigned" is no longer a separate term
 - 2026-10-02 ROO-75: the manual plan helpers (`applyEdits`, `fits`, `optionsForTrip`, `vehicleOptions`, `suggestFixes`), the `EditOp` union, `priorityOf()` with `params.priorityWeights`, and eight edit error codes; `ENGINE_VERSION` 0.3.0

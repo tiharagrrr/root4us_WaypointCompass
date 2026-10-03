@@ -15,3 +15,8 @@ export {
   type PartialDeferralInput,
 } from './services/deferral.service';
 export { PLANNING_AUDIT } from './planning.constants';
+/** The worker's allocation processor finishes engine runs through it. */
+export {
+  EngineRunner,
+  type EngineRunJob,
+} from './services/engine-runner.service';

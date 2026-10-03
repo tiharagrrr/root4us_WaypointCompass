@@ -155,7 +155,7 @@ export const UseIdempotency = () =>
 /** One resource in the envelope: { data: model, meta }. */
 export const ApiResource = <T extends Type<unknown>>(
   model: T,
-  opts: { status?: 200 | 201 } = {},
+  opts: { status?: 200 | 201 | 202 } = {},
 ) =>
   applyDecorators(
     ApiExtraModels(model, MetaDto, LinkDto),

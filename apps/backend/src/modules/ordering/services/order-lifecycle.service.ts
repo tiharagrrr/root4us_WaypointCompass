@@ -62,9 +62,12 @@ export class OrderLifecycleService {
     return this.move(id, 'CUTOFF', { confirmedAt: this.clock.now() });
   }
 
-  /** Planning published a plan that carries this order. */
-  markPlanned(id: string): Promise<OrderRow> {
-    return this.move(id, 'PLAN');
+  /**
+   * Planning published a plan that carries this order, on `stopId`, which
+   * becomes its one live stop (`activeStopId`).
+   */
+  markPlanned(id: string, stopId?: string): Promise<OrderRow> {
+    return this.move(id, 'PLAN', stopId ? { activeStopId: stopId } : {});
   }
 
   /** The order waits for a later run; `deliveryDate` moves with it. */
