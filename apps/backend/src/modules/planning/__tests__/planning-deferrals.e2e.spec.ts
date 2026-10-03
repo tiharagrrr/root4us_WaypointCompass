@@ -1,9 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import { describeWithDb } from '../../../../test/create-test-app';
+import { depotFixture, outletFixture, suffix } from '../../../../test/fixtures';
 import { expectProblem } from '../../../../test/kernel';
 import { JobContextRunner } from '../../../core/context/job-context';
 import { EventBus } from '../../../core/outbox/event-bus';
-import { alerts, deferrals, orders, plans } from '../../../db/schema';
+import { alerts, deferrals, orders, plans, users } from '../../../db/schema';
 import type { DeferralDto } from '../dto/deferral.dto';
 import {
   auditCount,
@@ -295,5 +296,191 @@ describeWithDb('planning: deferral reads and responses', () => {
       }),
       'CONFLICT_STATE',
     );
+  });
+
+  it('AC-PLN-35 the dispatcher replies to the store', async () => {
+    const id = await deferralFor(w);
+    await respond(w, id, {
+      response: 'PRIORITY_REQUESTED',
+      note: 'Dairy shelf is empty',
+    });
+    const reply = (role: 'dispatcher' | 'store_manager', text: string) =>
+      call(w, role, 'post', `/deferrals/${id}/reply`, {
+        key: crypto.randomUUID(),
+        body: { text },
+      });
+
+    const before = data<DeferralDto>(
+      await call(w, 'dispatcher', 'get', `/deferrals/${id}`),
+    );
+    expect(before._links.reply).toMatchObject({ method: 'POST' });
+    expectProblem(await reply('dispatcher', '  '), 'VALIDATION_FAILED');
+
+    const res = await reply('dispatcher', 'Pinned to Friday’s first run');
+    expect(res.status).toBe(200);
+    const body = data<DeferralDto>(res);
+    expect(body).toMatchObject({
+      dispatcherReply: 'Pinned to Friday’s first run',
+      dispatcherRepliedAt: new Date(OPEN).toISOString(),
+    });
+    expect(body._links.reply).toBeUndefined();
+    const [row] = await w.db
+      .select()
+      .from(deferrals)
+      .where(eq(deferrals.id, id));
+    expect(row.dispatcherRepliedById).toBeTruthy();
+
+    // Nimesha reads it on M4, and never gets a reply link herself.
+    const store = data<DeferralDto>(
+      await call(w, 'store_manager', 'get', `/deferrals/${id}`),
+    );
+    expect(store.dispatcherReply).toBe('Pinned to Friday’s first run');
+    expect(store.storeRespondedByName).toEqual(expect.any(String));
+    expect(store._links.reply).toBeUndefined();
+
+    expect(await auditCount(w, 'planning.deferral.replied', id)).toBe(1);
+    expect(await outboxOf(w, 'deferral.replied', id)).toHaveLength(1);
+    expectProblem(await reply('dispatcher', 'Again'), 'CONFLICT_STATE');
+
+    const proposed = await deferralFor(w, {
+      status: 'PROPOSED',
+      planStatus: 'DRAFT',
+    });
+    const draft = data<DeferralDto>(
+      await call(w, 'dispatcher', 'get', `/deferrals/${proposed}`),
+    );
+    expect(draft._links.reply).toBeUndefined();
+  });
+
+  it("AC-PLN-36 the deferral log answers the dispatcher's questions", async () => {
+    const sfx = suffix();
+    const depot = await depotFixture(w.db, sfx);
+    const place = { depotId: depot.plg, districtId: depot.plgDistrict };
+    const kadawatha = await outletFixture(w.db, `KW${sfx}`, place, {
+      name: `Fresh Kadawatha ${sfx}`,
+    });
+    const gampaha = await outletFixture(w.db, `GP${sfx}`, place, {
+      name: `Fresh Gampaha ${sfx}`,
+    });
+    const tihara = `u-${sfx}`;
+    await w.db.insert(users).values({
+      id: tihara,
+      name: 'Tihara Egodage',
+      email: `tihara-${sfx}@test.local`,
+      role: 'dispatcher',
+    });
+
+    // Five runs; Gampaha deferred on the third, Kadawatha on the fourth and fifth.
+    const runs = await w.db
+      .insert(plans)
+      .values(
+        [1, 2, 3, 4, 5].map((n) => ({
+          depotId: depot.plg,
+          date: `2026-12-0${n}`,
+          status: 'PUBLISHED' as const,
+          revision: 1,
+        })),
+      )
+      .returning();
+    const defer = async (outletId: string, run: number, reasonCode: string) => {
+      const plan = runs[run - 1];
+      const [order] = await w.db
+        .insert(orders)
+        .values({
+          orderNo: `L${sfx}${outletId.slice(0, 2)}${run}`,
+          outletId,
+          depotId: depot.plg,
+          brand: 'FRESH',
+          districtId: depot.plgDistrict,
+          tempClass: 'CHILLED',
+          requestedDate: plan.date,
+          deliveryDate: `2026-12-0${run + 1}`,
+          status: 'DEFERRED',
+          deferredCount: 1,
+          units: 10,
+          weightKg: 100,
+          volumeM3: 1,
+        })
+        .returning();
+      const [row] = await w.db
+        .insert(deferrals)
+        .values({
+          orderId: order.id,
+          planId: plan.id,
+          status: 'CONFIRMED',
+          source: 'PLANNING',
+          reasonCode,
+          fromDate: plan.date,
+          toDate: `2026-12-0${run + 1}`,
+          decidedById: tihara,
+          decidedAt: new Date(OPEN),
+        })
+        .returning();
+      return row.id;
+    };
+    await defer(gampaha, 3, 'OVER_CAPACITY');
+    await defer(kadawatha, 4, 'OVER_CAPACITY');
+    const latest = await defer(kadawatha, 5, 'OVER_CAPACITY');
+
+    const list = await call(
+      w,
+      'dispatcher',
+      'get',
+      `/deferrals?filter[reasonCode]=OVER_CAPACITY&q=${encodeURIComponent(`kadawatha ${sfx}`)}`,
+    );
+    expect(list.status).toBe(200);
+    const rows = data<DeferralDto[]>(list);
+    expect(rows.map((d) => d.outletId)).toEqual([kadawatha, kadawatha]);
+    expect(rows.find((d) => d.id === latest)).toMatchObject({
+      reasonCode: 'OVER_CAPACITY',
+      decidedByName: 'Tihara Egodage',
+      outletBrand: 'FRESH',
+      skips30d: 2,
+      recentSkips: 2,
+      recentRuns: 5,
+    });
+
+    const history = data<DeferralDto[]>(
+      await call(
+        w,
+        'dispatcher',
+        'get',
+        `/deferrals?filter[outletId]=${gampaha}`,
+      ),
+    );
+    expect(history.map((d) => d.outletId)).toEqual([gampaha]);
+
+    // The depot switch: only that depot's deferrals.
+    const atDepot = data<DeferralDto[]>(
+      await call(
+        w,
+        'dispatcher',
+        'get',
+        `/deferrals?filter[depotId]=${depot.plg}&limit=50`,
+      ),
+    );
+    expect(atDepot).toHaveLength(3);
+    expect(
+      data<DeferralDto[]>(
+        await call(
+          w,
+          'dispatcher',
+          'get',
+          `/deferrals?filter[depotId]=${depot.kdy}`,
+        ),
+      ),
+    ).toEqual([]);
+
+    // The store never sees the dispatcher's numbers.
+    const mine = data<DeferralDto[]>(
+      await call(w, 'store_manager', 'get', '/deferrals?limit=5'),
+    );
+    expect(mine.length).toBeGreaterThan(0);
+    for (const d of mine)
+      expect(d).toMatchObject({
+        skips30d: null,
+        recentSkips: null,
+        recentRuns: null,
+      });
   });
 });

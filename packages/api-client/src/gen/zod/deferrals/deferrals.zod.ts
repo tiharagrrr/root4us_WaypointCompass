@@ -39,7 +39,10 @@ export const DeferralsListQueryParams = zod.object({
   "filter[orderId]": zod.string().optional().describe('a UUID; comma-separated for any of. Also filter[orderId][op] with op in eq, ne, null.'),
   "filter[fromDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[fromDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
   "filter[toDate]": zod.string().optional().describe('YYYY-MM-DD; comma-separated for any of. Also filter[toDate][op] with op in eq, ne, gt, gte, lt, lte, null.'),
-  "filter[repeatSkip]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.')
+  "filter[repeatSkip]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.'),
+  "filter[reasonCode]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[reasonCode][op] with op in eq, ne, contains, null.'),
+  "filter[outletId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[outletId][op] with op in eq, ne, contains, null.'),
+  "filter[depotId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.')
 })
 
 export const DeferralsListResponse = zod.object({
@@ -50,6 +53,7 @@ export const DeferralsListResponse = zod.object({
   "orderStatus": zod.string().describe('The order\'s status now: DEFERRED until a later run carries it'),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "outletBrand": zod.enum(['FRESH', 'STYLE', 'TECH']),
   "planId": zod.string(),
   "status": zod.enum(['PROPOSED', 'CONFIRMED', 'REVERSED', 'CANCELLED']),
   "source": zod.enum(['ENGINE', 'PLANNING', 'LOAD_CHECK', 'TRACKING']),
@@ -64,7 +68,14 @@ export const DeferralsListResponse = zod.object({
   "storeResponse": zod.enum(['AWAITING', 'ACKNOWLEDGED', 'PRIORITY_REQUESTED']),
   "storeNote": zod.string().nullable(),
   "storeRespondedAt": zod.string().nullable(),
+  "storeRespondedByName": zod.string().nullable().describe('Who answered for the store'),
   "decidedAt": zod.string().nullable(),
+  "decidedByName": zod.string().nullable().describe('Who decided it; null for an engine proposal nobody confirmed'),
+  "dispatcherReply": zod.string().nullable().describe('The dispatcher’s reply to the store (23), shown on M4'),
+  "dispatcherRepliedAt": zod.string().nullable(),
+  "skips30d": zod.number().nullable().describe('Dispatchers only: the outlet’s live deferrals in the 30 days up to this one'),
+  "recentSkips": zod.number().nullable().describe('Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet'),
+  "recentRuns": zod.number().nullable().describe('Dispatchers only: the runs recentSkips counts over, up to 5'),
   "choice": zod.union([zod.literal('UNAVOIDABLE'),zod.literal('PRIORITY_CHOICE'),zod.literal(null)]).nullable().describe('Dispatchers only'),
   "bindingRule": zod.string().nullable().describe('Dispatchers only'),
   "priorityScore": zod.number().nullable().describe('Dispatchers only'),
@@ -75,7 +86,7 @@ export const DeferralsListResponse = zod.object({
   "title": zod.string().optional(),
   "templated": zod.boolean().optional(),
   "requires": zod.array(zod.string()).optional()
-})).describe('self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher).')
+})).describe('self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).')
 })),
   "meta": zod.object({
   "requestId": zod.string(),
@@ -112,6 +123,7 @@ export const DeferralsGetResponse = zod.object({
   "orderStatus": zod.string().describe('The order\'s status now: DEFERRED until a later run carries it'),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "outletBrand": zod.enum(['FRESH', 'STYLE', 'TECH']),
   "planId": zod.string(),
   "status": zod.enum(['PROPOSED', 'CONFIRMED', 'REVERSED', 'CANCELLED']),
   "source": zod.enum(['ENGINE', 'PLANNING', 'LOAD_CHECK', 'TRACKING']),
@@ -126,7 +138,14 @@ export const DeferralsGetResponse = zod.object({
   "storeResponse": zod.enum(['AWAITING', 'ACKNOWLEDGED', 'PRIORITY_REQUESTED']),
   "storeNote": zod.string().nullable(),
   "storeRespondedAt": zod.string().nullable(),
+  "storeRespondedByName": zod.string().nullable().describe('Who answered for the store'),
   "decidedAt": zod.string().nullable(),
+  "decidedByName": zod.string().nullable().describe('Who decided it; null for an engine proposal nobody confirmed'),
+  "dispatcherReply": zod.string().nullable().describe('The dispatcher’s reply to the store (23), shown on M4'),
+  "dispatcherRepliedAt": zod.string().nullable(),
+  "skips30d": zod.number().nullable().describe('Dispatchers only: the outlet’s live deferrals in the 30 days up to this one'),
+  "recentSkips": zod.number().nullable().describe('Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet'),
+  "recentRuns": zod.number().nullable().describe('Dispatchers only: the runs recentSkips counts over, up to 5'),
   "choice": zod.union([zod.literal('UNAVOIDABLE'),zod.literal('PRIORITY_CHOICE'),zod.literal(null)]).nullable().describe('Dispatchers only'),
   "bindingRule": zod.string().nullable().describe('Dispatchers only'),
   "priorityScore": zod.number().nullable().describe('Dispatchers only'),
@@ -137,7 +156,7 @@ export const DeferralsGetResponse = zod.object({
   "title": zod.string().optional(),
   "templated": zod.boolean().optional(),
   "requires": zod.array(zod.string()).optional()
-})).describe('self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher).')
+})).describe('self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).')
 }),
   "meta": zod.object({
   "requestId": zod.string(),
@@ -178,6 +197,7 @@ export const DeferralsRespondResponse = zod.object({
   "orderStatus": zod.string().describe('The order\'s status now: DEFERRED until a later run carries it'),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "outletBrand": zod.enum(['FRESH', 'STYLE', 'TECH']),
   "planId": zod.string(),
   "status": zod.enum(['PROPOSED', 'CONFIRMED', 'REVERSED', 'CANCELLED']),
   "source": zod.enum(['ENGINE', 'PLANNING', 'LOAD_CHECK', 'TRACKING']),
@@ -192,7 +212,14 @@ export const DeferralsRespondResponse = zod.object({
   "storeResponse": zod.enum(['AWAITING', 'ACKNOWLEDGED', 'PRIORITY_REQUESTED']),
   "storeNote": zod.string().nullable(),
   "storeRespondedAt": zod.string().nullable(),
+  "storeRespondedByName": zod.string().nullable().describe('Who answered for the store'),
   "decidedAt": zod.string().nullable(),
+  "decidedByName": zod.string().nullable().describe('Who decided it; null for an engine proposal nobody confirmed'),
+  "dispatcherReply": zod.string().nullable().describe('The dispatcher’s reply to the store (23), shown on M4'),
+  "dispatcherRepliedAt": zod.string().nullable(),
+  "skips30d": zod.number().nullable().describe('Dispatchers only: the outlet’s live deferrals in the 30 days up to this one'),
+  "recentSkips": zod.number().nullable().describe('Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet'),
+  "recentRuns": zod.number().nullable().describe('Dispatchers only: the runs recentSkips counts over, up to 5'),
   "choice": zod.union([zod.literal('UNAVOIDABLE'),zod.literal('PRIORITY_CHOICE'),zod.literal(null)]).nullable().describe('Dispatchers only'),
   "bindingRule": zod.string().nullable().describe('Dispatchers only'),
   "priorityScore": zod.number().nullable().describe('Dispatchers only'),
@@ -203,7 +230,7 @@ export const DeferralsRespondResponse = zod.object({
   "title": zod.string().optional(),
   "templated": zod.boolean().optional(),
   "requires": zod.array(zod.string()).optional()
-})).describe('self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher).')
+})).describe('self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).')
 }),
   "meta": zod.object({
   "requestId": zod.string(),
@@ -243,6 +270,7 @@ export const DeferralsReverseResponse = zod.object({
   "orderStatus": zod.string().describe('The order\'s status now: DEFERRED until a later run carries it'),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "outletBrand": zod.enum(['FRESH', 'STYLE', 'TECH']),
   "planId": zod.string(),
   "status": zod.enum(['PROPOSED', 'CONFIRMED', 'REVERSED', 'CANCELLED']),
   "source": zod.enum(['ENGINE', 'PLANNING', 'LOAD_CHECK', 'TRACKING']),
@@ -257,7 +285,14 @@ export const DeferralsReverseResponse = zod.object({
   "storeResponse": zod.enum(['AWAITING', 'ACKNOWLEDGED', 'PRIORITY_REQUESTED']),
   "storeNote": zod.string().nullable(),
   "storeRespondedAt": zod.string().nullable(),
+  "storeRespondedByName": zod.string().nullable().describe('Who answered for the store'),
   "decidedAt": zod.string().nullable(),
+  "decidedByName": zod.string().nullable().describe('Who decided it; null for an engine proposal nobody confirmed'),
+  "dispatcherReply": zod.string().nullable().describe('The dispatcher’s reply to the store (23), shown on M4'),
+  "dispatcherRepliedAt": zod.string().nullable(),
+  "skips30d": zod.number().nullable().describe('Dispatchers only: the outlet’s live deferrals in the 30 days up to this one'),
+  "recentSkips": zod.number().nullable().describe('Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet'),
+  "recentRuns": zod.number().nullable().describe('Dispatchers only: the runs recentSkips counts over, up to 5'),
   "choice": zod.union([zod.literal('UNAVOIDABLE'),zod.literal('PRIORITY_CHOICE'),zod.literal(null)]).nullable().describe('Dispatchers only'),
   "bindingRule": zod.string().nullable().describe('Dispatchers only'),
   "priorityScore": zod.number().nullable().describe('Dispatchers only'),
@@ -268,7 +303,80 @@ export const DeferralsReverseResponse = zod.object({
   "title": zod.string().optional(),
   "templated": zod.boolean().optional(),
   "requires": zod.array(zod.string()).optional()
-})).describe('self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher).')
+})).describe('self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).')
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary 23: the dispatcher's one reply to the store, shown on M4 (AC-PLN-35).
+ */
+export const DeferralsReplyParams = zod.object({
+  "id": zod.string()
+})
+
+export const DeferralsReplyHeader = zod.object({
+  "Idempotency-Key": zod.string().optional().describe('One per button press; a repeat replays the first response')
+})
+
+export const deferralsReplyBodyTextMax = 500;
+
+
+
+export const DeferralsReplyBody = zod.object({
+  "text": zod.string().max(deferralsReplyBodyTextMax)
+})
+
+export const DeferralsReplyResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "orderId": zod.string(),
+  "orderNo": zod.string(),
+  "orderStatus": zod.string().describe('The order\'s status now: DEFERRED until a later run carries it'),
+  "outletId": zod.string(),
+  "outletName": zod.string(),
+  "outletBrand": zod.enum(['FRESH', 'STYLE', 'TECH']),
+  "planId": zod.string(),
+  "status": zod.enum(['PROPOSED', 'CONFIRMED', 'REVERSED', 'CANCELLED']),
+  "source": zod.enum(['ENGINE', 'PLANNING', 'LOAD_CHECK', 'TRACKING']),
+  "reasonCode": zod.string(),
+  "reasonLabel": zod.string(),
+  "reasonText": zod.string().nullable().describe('What the store reads; null for a manual reason, where the note says it'),
+  "note": zod.string().nullable().describe('The dispatcher\'s note to the store'),
+  "fromDate": zod.string(),
+  "toDate": zod.string().describe('The run it is due on now'),
+  "repeatSkip": zod.boolean().describe('Its outlet was deferred on the run before too'),
+  "partial": zod.boolean().describe('Part of the order, removed at the dock'),
+  "storeResponse": zod.enum(['AWAITING', 'ACKNOWLEDGED', 'PRIORITY_REQUESTED']),
+  "storeNote": zod.string().nullable(),
+  "storeRespondedAt": zod.string().nullable(),
+  "storeRespondedByName": zod.string().nullable().describe('Who answered for the store'),
+  "decidedAt": zod.string().nullable(),
+  "decidedByName": zod.string().nullable().describe('Who decided it; null for an engine proposal nobody confirmed'),
+  "dispatcherReply": zod.string().nullable().describe('The dispatcher’s reply to the store (23), shown on M4'),
+  "dispatcherRepliedAt": zod.string().nullable(),
+  "skips30d": zod.number().nullable().describe('Dispatchers only: the outlet’s live deferrals in the 30 days up to this one'),
+  "recentSkips": zod.number().nullable().describe('Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet'),
+  "recentRuns": zod.number().nullable().describe('Dispatchers only: the runs recentSkips counts over, up to 5'),
+  "choice": zod.union([zod.literal('UNAVOIDABLE'),zod.literal('PRIORITY_CHOICE'),zod.literal(null)]).nullable().describe('Dispatchers only'),
+  "bindingRule": zod.string().nullable().describe('Dispatchers only'),
+  "priorityScore": zod.number().nullable().describe('Dispatchers only'),
+  "createdAt": zod.string(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+})).describe('self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).')
 }),
   "meta": zod.object({
   "requestId": zod.string(),

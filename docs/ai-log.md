@@ -8,6 +8,7 @@ which decisions people made and why, how every output was reviewed, and the data
 
 | Date | Person | Tool and model | Task | Used in | Human review and changes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-10-04 | Tihara | Claude Code (Claude Opus 5.5) | Dispatcher screen 23 (ROO-43) from its Figma frame, with the reply to the store and the log's filters and skip counts (AC-PLN-35, AC-PLN-36); tests first, then a 1440 × 960 screenshot check | `apps/frontend/src/features/deferrals/`, `apps/backend/src/modules/planning/`, `docs/departures.md` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Store screens M3, M4 and M7 (ROO-49, ROO-51) from their Figma frames on the live orders and deferrals API, with component tests and a screenshot check against each frame | `apps/frontend/src/features/ordering/orders-page.tsx`, `apps/frontend/src/features/deferrals/`, `docs/departures.md` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Dispatcher screens 10, 11 and 14 to 18 (ROO-40, ROO-41) from their Figma frames on the planning API, with component tests and a 1440 × 960 screenshot check against each frame | `apps/frontend/src/features/planning/`, `apps/frontend/src/app/routes/dispatch.tsx`, `docs/departures.md` | _To fill after review_ |
 | 2026-10-03 | Tihara | Claude Code (Claude Opus 5.5) | Deferral reads, store response and reverse (AC-PLN-27, AC-PLN-28) with their scope and links, and acceptance tests | `apps/backend/src/modules/planning/`, `specs/planning/spec.md` | _To fill after review_ |

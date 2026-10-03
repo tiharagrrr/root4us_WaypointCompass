@@ -50,7 +50,7 @@ strings in Asia/Colombo; instants are `timestamptz`.
 | `trips` | `planId`, `depotId`, `vehicleId`, `driverId`, `tripNo`, `brand`, `districtId`, `tempClass`, `status`, `isReserved`, `locked`, `waveId`, `plannedDepartAt`, `plannedReturnAt`, `budgetMinutes`, `plannedKm`, `plannedFuelL`, `loadWeightKg`, `loadVolumeM3`, `releasedAt`, `releasedById`, `releaseTempC`, `downloadedAt`, `startedAt`, `completedAt`, `cantRunReason` (BREAKDOWN, COOLING, UNWELL, OTHER; projected from execution's CANT_RUN event), `cancelReason`, `version` | `(planId, depotId)` references plans and `(vehicleId, depotId)` references vehicles, so a vehicle serves only its home depot. `tripNo` is 1 or 2, null once cancelled (which frees the slot); unique `(planId, vehicleId, tripNo)` caps a vehicle at two trips a day. `locked` marks trips built or edited by hand. `isReserved` marks a plan-ahead reservation with no stops |
 | `stops` | `tripId`, `orderId`, `outletId`, `depotId`, `brand`, `districtId`, `seq`, `status`, `plannedArrivalAt`, `plannedTravelMin` (the leg into this stop), `plannedServiceMin`, `predictedServiceMin` (service-time model, informational), `windowOpenMin`, `windowCloseMin`, `etaAt`, `etaUpdatedAt`, `lateRiskProb` (0 to 1), `arrivedAt`, `arrivedLat`, `arrivedLng`, `completedAt`, `outcome`, `unitsDelivered` (>= 0), `receiverName`, `exceptionNote`, `cancelledReason`, `version` | Composite keys to trips and outlets on `(depotId, brand, districtId)`: one brand and one district per trip. Unique `(tripId, seq)`; `seq` is null once cancelled; re-sequencing writes negative values first, then the final ones, in one transaction. The window columns snapshot the effective window |
 | `deferral_reasons` | `code` (key), `label`, `description`, `fromEngine`, `active`, `sortOrder` | Seeded from the engine's `DEFERRAL_REASONS` (`packages/engine/src/rules/reason-map.ts`), so every code an engine run writes exists; `description` is the store wording M4 shows, null for a manual reason. A re-seed keeps an admin's label and description. Engine reasons (`fromEngine`) cannot be deleted on A6. Codes and store wording: `specs/engine/rules.md` |
-| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. At most one live (PROPOSED or CONFIRMED) whole-order deferral per order and plan (`deferrals_live_uq`, partial unique index); partial deferrals from the dock are exempt, one per removed line. `swappedForOrderId` is unused and is dropped once the schema freeze allows drops Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
+| `deferrals` | `orderId`, `planId`, `engineRunId`, `status`, `source` (ENGINE, PLANNING, LOAD_CHECK, TRACKING), `reasonCode`, `choice`, `bindingRule`, `reasonDetail`, `note`, `fromDate`, `toDate`, `priorityScore`, `repeatSkip`, `overrideNote`, `partial`, `decidedById`, `decidedAt`, `storeResponse`, `storeNote`, `storeRespondedById`, `storeRespondedAt`, `reversedAt`, `reversedReason`, `dispatcherReply`, `dispatcherRepliedAt`, `dispatcherRepliedById` | `reasonCode` references `deferral_reasons`. `note` is shown to the store. `overrideNote` is required to confirm a repeat skip. `choice` (UNAVOIDABLE or PRIORITY_CHOICE) and `bindingRule` (the rule that blocked the last candidate vehicle) are real columns, null for a manual deferral; `reasonDetail` holds `tried[]`, the numbers and `displacedBy`. A swap (16) is recorded in the audit trail as `planning.order.swapped`, not on the deferral. At most one live (PROPOSED or CONFIRMED) whole-order deferral per order and plan (`deferrals_live_uq`, partial unique index); partial deferrals from the dock are exempt, one per removed line. `swappedForOrderId` is unused and is dropped once the schema freeze allows drops Row-level security: a row is visible only when its order is (`viaVisibleOrder`) |
 
 Other invariants:
 - Whole orders on one trip each: `orders.activeStopId` is unique (owned by ordering).
@@ -95,6 +95,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | GET | `/deferrals`, `/deferrals/{id}` | `deferral:read` | 23 for dispatchers, M4 and M7 for stores (scoped: a store sees only its outlet's CONFIRMED or REVERSED deferrals on a published or closed plan). Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10` |
 | POST | `/deferrals/{id}/response` | `deferral:respond` | M4: acknowledge, or request priority with a note |
 | POST | `/deferrals/{id}/reverse` | `deferral:decide` | 19c: keep a delivery the device recorded |
+| POST | `/deferrals/{id}/reply` | `deferral:decide` | 23: the dispatcher's one reply to the store, shown on M4 |
 | POST | `/trips/{id}/reassign` | `trip:reassign` | 20: new vehicle or driver, validated, with a reason |
 | POST | `/trips/{id}/resequence` | `trip:resequence` | 19b: stop ids in their new order, with a reason |
 | POST | `/trips/{id}/stops/{stopId}/defer` | `deferral:decide` | Defer one stop mid-route from 19a |
@@ -176,7 +177,7 @@ Emits:
 | `plan.published` | `revision`, `tripIds` (aggregate `plan`) | loading (builds lists), execution (readies driver trips), notifications (loaders, drivers, stores), realtime, webhooks |
 | `plan.revised` | not given; routed only to affected outlets and people | loading (Plan updated banner), execution (changes feed, bundle refresh), notifications (affected people only), realtime, webhooks |
 | `plan.closed` | not given | loading, execution, notifications, realtime, webhooks |
-| `deferral.confirmed`, `deferral.store_responded`, `deferral.reversed` | not given | notifications (M4; dispatchers on a priority request), alerts (PRIORITY_REQUEST), realtime, webhooks (`deferral.confirmed`) |
+| `deferral.confirmed`, `deferral.store_responded`, `deferral.reversed`, `deferral.replied` | not given | notifications (M4; dispatchers on a priority request; the store on a reply), alerts (PRIORITY_REQUEST), realtime, webhooks (`deferral.confirmed`) |
 | `trip.reassigned`, `trip.resequenced`, `trip.cancelled`, `stop.deferred` | not given | execution (driver's bundle and changes feed), loading (`trip.reassigned` refreshes the list), notifications, realtime |
 
 Consumes:
@@ -201,7 +202,7 @@ Audit actions (all in the same transaction as the change):
 | `planning.plan.closed` | none | derived |
 | `planning.deferral.confirmed` | deferral reason code (the engine's pre-filled) and a note the store sees | Step 2 reason table |
 | `planning.deferral.repeat_skip_overridden` | override note | Step 2 reason table |
-| `planning.deferral.store_responded`, `planning.deferral.reversed` | none named | derived |
+| `planning.deferral.store_responded`, `planning.deferral.reversed`, `planning.deferral.replied` | none named | derived |
 | `planning.trip.reassigned`, `planning.trip.resequenced`, `planning.stop.deferred` | code | Step 2 reason table |
 | `planning.trip.cancelled` | none named | derived |
 
@@ -510,6 +511,21 @@ AC-PLN-34  Other modules move trips through the lifecycle
   Then the call fails with CONFLICT_STATE and the trip is unchanged
     And TripLifecycleService.markLoading moves it to LOADING with one audit row
     And scripts/check-table-writes.ts fails CI if loading or execution writes trips or stops directly
+
+AC-PLN-35  The dispatcher replies to the store
+  Given a CONFIRMED deferral for WF-0131 on a PUBLISHED plan, with storeResponse PRIORITY_REQUESTED and no reply yet
+  When Tihara replies on 23 with "Pinned to Friday's first run" (POST /deferrals/{id}/reply)
+  Then dispatcherReply, dispatcherRepliedAt and dispatcherRepliedById are set, and Nimesha reads the reply on M4
+    And exactly one audit row planning.deferral.replied and one outbox event deferral.replied exist
+    And the deferral no longer carries a reply link, and a second reply gets 409 CONFLICT_STATE
+    And an empty reply gets 400 with an error on text, Nimesha never gets a reply link, and a PROPOSED deferral has none
+
+AC-PLN-36  The deferral log answers the dispatcher's questions
+  Given Kadawatha was deferred on two of Peliyagoda's last five runs and Gampaha on one, by Tihara
+  When Tihara reads GET /deferrals?filter[reasonCode]=OVER_CAPACITY&q=kada on 23
+  Then only Kadawatha's over-capacity deferrals come back, each with decidedByName "Tihara Egodage", outletBrand FRESH, skips30d 2, recentSkips 2 and recentRuns 5
+    And filter[outletId]=<Kadawatha> returns that outlet's deferrals, newest first, for the history panel, and filter[depotId]=PLG only Peliyagoda's
+    And Nimesha's skip counts are null, so the store never sees the dispatcher's numbers
 ```
 
 Checklist (tick in the PR that adds the passing test):
@@ -547,6 +563,8 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-PLN-32 Permissions and scope hold
 - [ ] AC-PLN-33 Action links follow the rules
 - [ ] AC-PLN-34 Other modules move trips through the lifecycle
+- [x] AC-PLN-35 The dispatcher replies to the store
+- [x] AC-PLN-36 The deferral log answers the dispatcher's questions
 
 ## Non-functional
 - Engine speed: an S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms
@@ -603,6 +621,12 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Screen 23 (ROO-43) and AC-PLN-35, AC-PLN-36: the dispatcher's one reply to the store
+  (`POST /deferrals/{id}/reply`, `reply` link, `deferral.replied`, three nullable `dispatcherReply*`
+  columns), shown on M4; `/deferrals` filters by `reasonCode`, `outletId` and `depotId` and searches
+  order number and outlet name; a deferral carries `outletBrand`, `decidedByName`,
+  `storeRespondedByName` and, for dispatchers, `skips30d`, `recentSkips` and `recentRuns`. Pin to next
+  run on 23 uses ordering's `PATCH /orders/{id}/priority`
 - 2026-10-03 Store screens M3, M4 and M7 on the live API: a deferred order on M3 opens its notice, M4
   answers once through the `respond` link, and M7 lists the outlet's deferrals with what still waits
   on the store

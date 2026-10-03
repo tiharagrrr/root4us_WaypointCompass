@@ -1,4 +1,4 @@
-import type { SQL } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { vehicles } from '../../../db/schema';
 import { ValidationError } from '../../errors/domain-errors';
@@ -91,6 +91,21 @@ describe('list queries', () => {
     );
     expect(render(whereOf(TABLE, { code: { null: 'false' } }))?.sql).toBe(
       '"vehicles"."code" is not null',
+    );
+  });
+
+  it('puts a wrapped filter inside its subquery', () => {
+    const spec = {
+      ...TABLE,
+      filters: {
+        depot: {
+          ...textFilter(vehicles.depotId),
+          wrap: (c: SQL) => sql`exists (select 1 where ${c})`,
+        },
+      },
+    } satisfies ResourceSpec<typeof vehicles>;
+    expect(render(whereOf(spec, { depot: 'PLG' }))?.sql).toBe(
+      'exists (select 1 where "vehicles"."depotId" = $1)',
     );
   });
 

@@ -5,9 +5,12 @@
  * Delivery planning for Waypoint Group (Tech Triathlon 2026). Conventions: specs/api-conventions.md.
  * OpenAPI spec version: 1.0.0
  */
-import type { LinkDto } from './linkDto.ts';
 
-/**
- * self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).
- */
-export type _DeferralDtoLinks = {[key: string]: LinkDto};
+export type DeferralDtoOutletBrand = typeof DeferralDtoOutletBrand[keyof typeof DeferralDtoOutletBrand];
+
+
+export const DeferralDtoOutletBrand = {
+  FRESH: 'FRESH',
+  STYLE: 'STYLE',
+  TECH: 'TECH',
+} as const;

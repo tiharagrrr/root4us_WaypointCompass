@@ -13,6 +13,7 @@ export const PLANNING_AUDIT = {
   repeatSkipOverridden: 'planning.deferral.repeat_skip_overridden',
   deferralStoreResponded: 'planning.deferral.store_responded',
   deferralReversed: 'planning.deferral.reversed',
+  deferralReplied: 'planning.deferral.replied',
   orderSwapped: 'planning.order.swapped',
   tripReassigned: 'planning.trip.reassigned',
   tripResequenced: 'planning.trip.resequenced',
@@ -37,6 +38,7 @@ export const PLANNING_EVENTS = {
   deferralConfirmed: 'deferral.confirmed',
   deferralStoreResponded: 'deferral.store_responded',
   deferralReversed: 'deferral.reversed',
+  deferralReplied: 'deferral.replied',
 } as const;
 
 /** Log events that are not also audit actions. */

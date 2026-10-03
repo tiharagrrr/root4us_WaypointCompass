@@ -37,8 +37,21 @@ export function canReverse(d: DeferralView, actor: Actor): boolean {
 }
 
 /**
- * A deferral's `_links`: `respond` and `reverse` appear only when the service
- * would accept them, from the same two checks (architecture rule 9).
+ * 23: a dispatcher writes back to the store once, on a confirmed deferral the
+ * store has been told about (its plan is published or closed).
+ */
+export function canReply(d: DeferralView, actor: Actor): boolean {
+  return (
+    can(actor, 'deferral:decide') &&
+    d.status === 'CONFIRMED' &&
+    (d.planStatus === 'PUBLISHED' || d.planStatus === 'CLOSED') &&
+    d.dispatcherReply === null
+  );
+}
+
+/**
+ * A deferral's `_links`: `respond`, `reverse` and `reply` appear only when the
+ * service would accept them, from the same checks (architecture rule 9).
  */
 @Injectable()
 export class DeferralLinks extends LinkBuilder<DeferralView, DeferralDto> {
@@ -64,6 +77,12 @@ export class DeferralLinks extends LinkBuilder<DeferralView, DeferralDto> {
         href: `${self}/reverse`,
         method: 'POST',
         title: 'Keep the delivery',
+        requires: ['Idempotency-Key'],
+      },
+      reply: canReply(d, actor) && {
+        href: `${self}/reply`,
+        method: 'POST',
+        title: 'Reply to store',
         requires: ['Idempotency-Key'],
       },
     };
