@@ -48,6 +48,7 @@ export const ORDER_AUDIT = {
   reordered: 'ordering.order.reordered',
   backordered: 'ordering.order.backordered',
   statusChanged: 'ordering.order.status_changed',
+  stopChanged: 'ordering.order.stop_changed',
   templateSaved: 'ordering.order_template.created',
   templateRenamed: 'ordering.order_template.renamed',
   templateDeleted: 'ordering.order_template.deleted',

@@ -549,7 +549,7 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-18 Swapping serves a repeat skip
 - [x] AC-PLN-19 Publishing commits the day
 - [x] AC-PLN-20 Other blockers stop publishing
-- [ ] AC-PLN-21 A change after publishing is a revision
+- [x] AC-PLN-21 A change after publishing is a revision
 - [ ] AC-PLN-22 Released trips take three changes only
 - [ ] AC-PLN-23 Reassigning a released trip
 - [ ] AC-PLN-24 Re-sequencing the stops left
@@ -578,6 +578,19 @@ Checklist (tick in the PR that adds the passing test):
   (05 to 09, 15, 17, 18) are snapshotted in CI with the demo clock frozen.
 - Row-level security on `deferrals` re-checks the store scope in Postgres.
 - Logs carry ids only; no names, phone numbers or notes.
+
+## Decided 2026-10-04 (ROO-42)
+- A revision is the same edit list on a PUBLISHED plan, with a required `reasonCode` and an optional
+  `note`. The reason codes are the deferral reasons (A6); there is no separate revision list.
+- The edit list cannot change a RELEASED, IN_PROGRESS or COMPLETED trip (409); those trips change
+  only through reassign, re-sequence and stop defer. LOADING and PLANNED trips can change, and
+  loading rebuilds their lists from `plan.revised`.
+- Orders follow their stops through OrderLifecycleService: newly carried orders become PLANNED, an
+  order moved to another trip keeps PLANNED and takes the new stop (`moveStop`), and an order off
+  every trip goes back to CONFIRMED with no live stop (`requeue`).
+- `affectedTripIds` are the trips the edits changed; `affectedOutletIds` are the outlets whose orders
+  were added, moved or dropped, so a timing change alone does not notify a store.
+- Fuel: the touched trips' planned fuel is reversed and booked again at the new figures.
 
 ## Decided 2026-10-03
 - Unplanned is derived: an order is unplanned when it is in the plan's queue and on no live stop.
@@ -621,6 +634,11 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 ROO-42: edits on a published plan are revisions (AC-PLN-21): reason required, revision + 1,
+  a `plan_revisions` row, audit `planning.plan.revised`, outbox `plan.revised` routed to the affected
+  outlets, orders following their stops, and fuel reversed and re-planned. The edit list refuses a
+  released trip (the 409 half of AC-PLN-22; the rest waits for reassign, re-sequence and stop defer).
+  A published plan keeps `edits` ("Save as revision"); 08 and 10 ask for the reason
 - 2026-10-04 Screen 23 (ROO-43) and AC-PLN-35, AC-PLN-36: the dispatcher's one reply to the store
   (`POST /deferrals/{id}/reply`, `reply` link, `deferral.replied`, three nullable `dispatcherReply*`
   columns), shown on M4; `/deferrals` filters by `reasonCode`, `outletId` and `depotId` and searches

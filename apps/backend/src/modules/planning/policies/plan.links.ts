@@ -15,7 +15,9 @@ const write = (href: string, title: string): Link => ({
  * A plan's `_links` (AC-PLN-33). `publish` appears only when publishing would
  * be accepted now: the actor may publish, the plan is a DRAFT, the clock has
  * reached the opening time and nothing blocks it, so the web greys Publish
- * out from the link alone (architecture rule 9).
+ * out from the link alone (architecture rule 9). Once published, `edits`
+ * saves a revision (AC-PLN-21): the web asks for a reason when its title
+ * says so.
  */
 @Injectable()
 export class PlanLinks {
@@ -26,7 +28,11 @@ export class PlanLinks {
   ): Record<string, Link> {
     const self = `/api/v1/plans/${plan.id}`;
     const draft = plan.status === 'DRAFT';
-    const build = draft && can(actor, 'plan:build');
+    const revising =
+      plan.status === 'PUBLISHED' &&
+      can(actor, 'plan:build') &&
+      can(actor, 'plan:revise');
+    const build = (draft && can(actor, 'plan:build')) || revising;
     return compact({
       self: { href: self },
       trips: { href: `${self}/trips` },
@@ -34,10 +40,13 @@ export class PlanLinks {
       unplanned: { href: `${self}/unplanned` },
       revisions: { href: `${self}/revisions` },
       validate: { href: `${self}/validate`, method: 'POST' },
-      engineRuns: build && write(`${self}/engine-runs`, 'Auto-suggest'),
+      engineRuns:
+        draft && build && write(`${self}/engine-runs`, 'Auto-suggest'),
       vehicleOptions: build && { href: `${self}/vehicle-options` },
       orderOptions: build && { href: `${self}/order-options` },
-      edits: build && write(`${self}/edits`, 'Save changes'),
+      edits:
+        build &&
+        write(`${self}/edits`, revising ? 'Save as revision' : 'Save changes'),
       suggestFixes: build && { href: `${self}/suggest-fixes`, method: 'POST' },
       decisions:
         draft &&

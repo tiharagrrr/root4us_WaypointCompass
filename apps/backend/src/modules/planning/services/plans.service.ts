@@ -20,6 +20,7 @@ import {
   depotWaves,
   planRevisions,
   plans,
+  stops,
   trips,
   users,
 } from '../../../db/schema';
@@ -38,6 +39,12 @@ import {
 import { PlanEngine } from './plan-engine';
 import { PlanWriter } from './plan-writer';
 import { PublishPolicy } from './publish.policy';
+
+/** Trips a revision's edit list cannot change (AC-PLN-22). */
+const FROZEN_TRIPS = new Set(['RELEASED', 'IN_PROGRESS', 'COMPLETED']);
+
+/** An order's live stop and its trip. */
+type Carried = Map<string, { stopId: string; tripId: string }>;
 
 export interface EditInput {
   ops: readonly unknown[];
@@ -119,7 +126,8 @@ export class PlansService {
    * One edit list from 08, 10 or 11 (AC-PLN-02, 13, 14). A hard violation the
    * edits cause is 422 with the violations and a `fixes` link; a soft one
    * needs a reason code and an override note. The trips the edits touch are
-   * locked, so Auto-suggest keeps them (AC-PLN-10).
+   * locked, so Auto-suggest keeps them (AC-PLN-10). On a published plan the
+   * same edit list is a revision (AC-PLN-21, 22).
    */
   @Transactional()
   async edit(
@@ -128,7 +136,8 @@ export class PlansService {
     input: EditInput,
     actor: Actor,
   ): Promise<PlanContext> {
-    const ctx = await this.loadDraft(id, version, actor);
+    const ctx = await this.loadEditable(id, version, actor);
+    if (ctx.plan.status === 'PUBLISHED') return this.revise(ctx, input, actor);
     const parsed = parsePlanEdits(input.ops);
     const result = this.engine.applyEdits(ctx.input, ctx.draft, parsed.engine);
     this.refuseIntroduced(ctx, result.introduced, input);
@@ -173,6 +182,195 @@ export class PlansService {
       'plan edited',
     );
     return this.contexts.build(plan);
+  }
+
+  /**
+   * A change to a published plan (AC-PLN-21, 22): a reason is required; trips
+   * the dock has released, or that are on the road or done, cannot change
+   * here (reassign, re-sequence and stop defer have their own commands); the
+   * orders follow their stops through OrderLifecycleService; the touched
+   * trips' planned fuel is reversed and booked again; and the plan moves to
+   * the next revision, which notifies only the trips and outlets it touched.
+   */
+  private async revise(
+    ctx: PlanContext,
+    input: EditInput,
+    actor: Actor,
+  ): Promise<PlanContext> {
+    const reasonCode = input.reasonCode?.trim();
+    if (!reasonCode)
+      throw new ValidationError([
+        {
+          field: 'reasonCode',
+          code: 'required',
+          message: 'A reason is required',
+        },
+      ]);
+    const note = input.note?.trim() || null;
+    const parsed = parsePlanEdits(input.ops);
+    const result = this.engine.applyEdits(ctx.input, ctx.draft, parsed.engine);
+    this.refuseIntroduced(ctx, result.introduced, input);
+
+    // What the plan carried before; read now, because the writer changes ctx.
+    const frozen = new Set(
+      [...ctx.tripsByKey.values()]
+        .filter((t) => FROZEN_TRIPS.has(t.status))
+        .map((t) => t.id),
+    );
+    const before: Carried = new Map();
+    for (const [tripId, list] of ctx.stopsByTrip)
+      for (const stop of list)
+        before.set(stop.orderId, { stopId: stop.id, tripId });
+
+    const saved = await this.writer.save(ctx, result.plan, {
+      lockChanged: true,
+    });
+    if (saved.some((tripId) => frozen.has(tripId)))
+      throw new StateConflictError(
+        'A released trip takes only a reassign, a re-sequence or a stop deferral.',
+      );
+    const metaTrips = await this.applyMeta(ctx.plan, parsed.meta);
+    const tripIds = [...new Set([...saved, ...metaTrips])].sort();
+
+    // Orders follow their stops: newly carried ones are planned, moved ones
+    // take their new stop, and ones off every trip go back to the queue.
+    const after = await this.liveStops(ctx.plan.id);
+    const moved = new Set<string>();
+    for (const [orderId, now] of after) {
+      const was = before.get(orderId);
+      if (!was) await this.lifecycle.markPlanned(orderId, now.stopId);
+      else if (was.tripId !== now.tripId)
+        await this.lifecycle.moveStop(orderId, now.stopId);
+      else continue;
+      moved.add(orderId);
+    }
+    for (const orderId of before.keys())
+      if (!after.has(orderId)) {
+        await this.lifecycle.requeue(orderId);
+        moved.add(orderId);
+      }
+    const outletIds = [
+      ...new Set(
+        [...moved]
+          .map((orderId) => ctx.orders.get(orderId)?.outletId)
+          .filter((o): o is string => Boolean(o)),
+      ),
+    ].sort();
+
+    // Fuel: take back what the touched trips had planned, book what they plan now.
+    await this.fuel.reversePlanned(saved, `revision: ${reasonCode}`);
+    const carrying = new Set([...after.values()].map((s) => s.tripId));
+    const rebooked = saved.filter((tripId) => carrying.has(tripId));
+    const live = rebooked.length
+      ? await this.txHost.tx
+          .select()
+          .from(trips)
+          .where(inArray(trips.id, rebooked))
+      : [];
+    await this.fuel.addPlanned(
+      live.map((t) => ({
+        tripId: t.id,
+        vehicleId: t.vehicleId,
+        date: ctx.plan.date,
+        km: t.plannedKm,
+        litres: t.plannedFuelL,
+      })),
+    );
+
+    const [plan] = await this.txHost.tx
+      .update(plans)
+      .set({
+        revision: sql`${plans.revision} + 1`,
+        version: sql`${plans.version} + 1`,
+        updatedAt: this.clock.realNow(),
+      })
+      .where(
+        and(eq(plans.id, ctx.plan.id), eq(plans.version, ctx.plan.version)),
+      )
+      .returning();
+    if (!plan) throw new VersionMismatchError('plan');
+
+    await this.txHost.tx.insert(planRevisions).values({
+      planId: plan.id,
+      revision: plan.revision,
+      reasonCode,
+      note,
+      changes: input.ops as Record<string, unknown>[],
+      affectedTripIds: tripIds,
+      affectedOutletIds: outletIds,
+      createdById: actor.id,
+    });
+    const soft = result.introduced.filter((v) => v.severity === 'SOFT');
+    if (soft.length)
+      await this.audit.record({
+        action: PLANNING_AUDIT.softRuleOverridden,
+        entity: ['plan', plan.id],
+        after: { rules: soft.map((v) => v.rule) },
+        reasonCode,
+        reasonNote: input.overrideNote,
+      });
+    await this.audit.record({
+      action: PLANNING_AUDIT.planRevised,
+      entity: ['plan', plan.id],
+      before: { revision: ctx.plan.revision, version: ctx.plan.version },
+      after: {
+        revision: plan.revision,
+        version: plan.version,
+        trips: tripIds.length,
+        outlets: outletIds.length,
+      },
+      reasonCode,
+      reasonNote: note ?? undefined,
+    });
+    // Loading needs at least one trip to act on; a revision that changed none has nothing to tell.
+    if (tripIds.length)
+      await this.outbox.add(
+        PLANNING_EVENTS.planRevised,
+        {
+          v: 1,
+          planId: plan.id,
+          depotId: plan.depotId,
+          date: plan.date,
+          revision: plan.revision,
+          tripIds,
+          reasonCode,
+          note,
+        },
+        { aggregate: ['plan', plan.id], depotId: plan.depotId, outletIds },
+      );
+    this.log.info(
+      {
+        event: PLANNING_AUDIT.planRevised,
+        planId: plan.id,
+        revision: plan.revision,
+        reason: reasonCode,
+        trips: tripIds.length,
+        outlets: outletIds.length,
+      },
+      'plan revised',
+    );
+    return this.contexts.build(plan);
+  }
+
+  /** Each order on a live stop of the plan, read back after the writer saved. */
+  private async liveStops(planId: string): Promise<Carried> {
+    const rows = await this.txHost.tx
+      .select({
+        stopId: stops.id,
+        tripId: stops.tripId,
+        orderId: stops.orderId,
+      })
+      .from(stops)
+      .innerJoin(trips, eq(trips.id, stops.tripId))
+      .where(
+        and(
+          eq(trips.planId, planId),
+          sql`${stops.status} NOT IN ('CANCELLED', 'FAILED')`,
+        ),
+      );
+    return new Map(
+      rows.map((r) => [r.orderId, { stopId: r.stopId, tripId: r.tripId }]),
+    );
   }
 
   /**
@@ -341,6 +539,19 @@ export class PlansService {
     return this.scope.found(row);
   }
 
+  /** A DRAFT or PUBLISHED plan at the version the caller loaded (edits and revisions). */
+  async loadEditable(
+    id: string,
+    version: number,
+    actor: Actor,
+  ): Promise<PlanContext> {
+    const plan = await this.lock(id, actor);
+    if (plan.status === 'CLOSED')
+      throw new PlanLockedError('The plan is closed.');
+    if (plan.version !== version) throw new VersionMismatchError('plan');
+    return this.contexts.build(plan);
+  }
+
   /** A DRAFT plan at the version the caller loaded, with its context. */
   async loadDraft(
     id: string,
@@ -351,9 +562,9 @@ export class PlansService {
     if (plan.status === 'CLOSED')
       throw new PlanLockedError('The plan is closed.');
     if (plan.status !== 'DRAFT')
-      // Changes after publish are revisions (ROO-42).
+      // After publish the edit list is the one way to change it (a revision).
       throw new StateConflictError(
-        'The plan is published; changes are revisions.',
+        'The plan is published; change it with an edit list and a reason.',
       );
     if (plan.version !== version) throw new VersionMismatchError('plan');
     return this.contexts.build(plan);
@@ -404,15 +615,20 @@ export class PlansService {
       );
   }
 
-  /** SET_DRIVER and SET_WAVE, by trip key, after the engine's edits are saved. */
+  /**
+   * SET_DRIVER and SET_WAVE, by trip key, after the engine's edits are saved.
+   * Returns the trips they changed.
+   */
   private async applyMeta(
     plan: PlanRow,
     ops: readonly MetaOp[],
-  ): Promise<void> {
-    if (ops.length === 0) return;
+  ): Promise<string[]> {
+    if (ops.length === 0) return [];
+    const changed: string[] = [];
     const ctx = await this.contexts.build(plan);
     for (const op of ops) {
       const trip = ctx.tripsByKey.get(op.tripKey);
+      if (trip) changed.push(trip.id);
       if (!trip)
         throw new ValidationError([
           {
@@ -443,6 +659,7 @@ export class PlansService {
           .where(eq(trips.id, trip.id));
       }
     }
+    return changed;
   }
 
   private async assertDriver(id: string, depotId: string): Promise<void> {
