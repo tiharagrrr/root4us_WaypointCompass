@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import type { Actor } from '@waypoint/shared';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { PinoLogger } from 'nestjs-pino';
 import { ClockService } from '../../../core/clock/clock.service';
 import {
@@ -15,16 +15,18 @@ import { AuditService } from '../../audit';
 import { nextDeferralStatus, nextStoreResponse } from '../domain/transitions';
 import type {
   DeferralResponseDto,
+  ReplyDeferralDto,
   ReverseDeferralDto,
 } from '../dto/deferral.dto';
-import { canRespond } from '../policies/deferral.links';
+import { canReply, canRespond } from '../policies/deferral.links';
 import { PLANNING_AUDIT, PLANNING_EVENTS } from '../planning.constants';
 import { DeferralQueries, type DeferralView } from './deferral.queries';
 
 /**
  * What happens to a deferral after the dispatcher has decided it: the store
- * answers on M4 (AC-PLN-27), and a dispatcher reverses it on 19c when the
- * device's delivery is kept (AC-PLN-28).
+ * answers on M4 (AC-PLN-27), a dispatcher reverses it on 19c when the
+ * device's delivery is kept (AC-PLN-28), and a dispatcher replies to the store
+ * from 23 (AC-PLN-35).
  *
  * Neither changes the order. Acknowledged, priority requested or never
  * answered, the order stays DEFERRED with its new delivery date, and the next
@@ -159,6 +161,65 @@ export class DeferralActions {
         orderId: before.orderId,
       },
       'a deferral was reversed',
+    );
+    return this.queries.get(id, actor);
+  }
+
+  /** 23: the dispatcher's one reply to the store, which M4 shows under the store's note. */
+  @Transactional()
+  async reply(
+    id: string,
+    dto: ReplyDeferralDto,
+    actor: Actor,
+  ): Promise<DeferralView> {
+    const text = dto.text.trim();
+    if (!text)
+      throw new ValidationError([
+        { field: 'text', code: 'required', message: 'Write the reply' },
+      ]);
+    const before = await this.queries.get(id, actor);
+    if (!canReply(before, actor))
+      throw new StateConflictError(
+        'This deferral has a reply already, or the store has not been told about it',
+      );
+
+    // Conditional on no reply yet, so two replies at once cannot both land.
+    const [row] = await this.txHost.tx
+      .update(deferrals)
+      .set({
+        dispatcherReply: text,
+        dispatcherRepliedById: actor.id,
+        dispatcherRepliedAt: this.clock.now(),
+        updatedAt: this.clock.realNow(),
+      })
+      .where(and(eq(deferrals.id, id), isNull(deferrals.dispatcherReply)))
+      .returning({ id: deferrals.id });
+    if (!row) throw new StateConflictError('This deferral has a reply already');
+
+    await this.audit.record({
+      action: PLANNING_AUDIT.deferralReplied,
+      entity: ['deferral', id],
+      before: { dispatcherReply: null },
+      after: { dispatcherReply: text },
+    });
+    await this.outbox.add(
+      PLANNING_EVENTS.deferralReplied,
+      {
+        v: 1,
+        deferralId: id,
+        orderId: before.orderId,
+        outletId: before.outletId,
+        repliedById: actor.id,
+      },
+      { aggregate: ['deferral', id], depotId: before.depotId },
+    );
+    this.log.info(
+      {
+        event: PLANNING_AUDIT.deferralReplied,
+        deferralId: id,
+        orderId: before.orderId,
+      },
+      'a dispatcher replied to the store',
     );
     return this.queries.get(id, actor);
   }

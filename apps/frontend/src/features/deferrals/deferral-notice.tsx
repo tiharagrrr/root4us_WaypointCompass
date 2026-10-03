@@ -129,6 +129,15 @@ export function DeferralNotice({ id, onClose }: DeferralNoticeProps) {
                   <p className="type-body-medium m-0 font-bold text-foreground">{RESPONSE_WORDS[deferral.storeResponse] ?? 'Answered'}</p>
                 )}
                 {deferral.storeNote ? <p className="type-body m-0 text-muted-foreground">“{deferral.storeNote}”</p> : null}
+                {deferral.dispatcherReply ? (
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="type-label m-0 uppercase text-muted-foreground">Reply from dispatcher</h3>
+                    <p className="type-body m-0 rounded-md border border-status-info-border bg-accent px-3.5 py-3 text-foreground">{deferral.dispatcherReply}</p>
+                    {deferral.dispatcherRepliedAt ? (
+                      <p className="type-body-small m-0 text-muted-foreground">{formatColombo(deferral.dispatcherRepliedAt, 'EEE d MMM, HH:mm')}</p>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {order && (getLink(order._links, 'edit') || getLink(order._links, 'cancel')) ? (
                   <div className="grid grid-cols-2 gap-2">

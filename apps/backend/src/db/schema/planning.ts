@@ -306,6 +306,9 @@ export const deferrals = pgTable(
     storeRespondedAt: instant(),
     reversedAt: instant(),
     reversedReason: text(),
+    dispatcherReply: text(), // 23: the dispatcher's one reply to the store, shown on M4
+    dispatcherRepliedById: text(),
+    dispatcherRepliedAt: instant(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

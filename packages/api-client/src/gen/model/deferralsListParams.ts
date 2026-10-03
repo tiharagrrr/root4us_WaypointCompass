@@ -70,4 +70,16 @@ include?: string;
  * true or false; comma-separated for any of. Also filter[repeatSkip][op] with op in eq, null.
  */
 'filter[repeatSkip]'?: string;
+/**
+ * text of up to 200 characters; comma-separated for any of. Also filter[reasonCode][op] with op in eq, ne, contains, null.
+ */
+'filter[reasonCode]'?: string;
+/**
+ * text of up to 200 characters; comma-separated for any of. Also filter[outletId][op] with op in eq, ne, contains, null.
+ */
+'filter[outletId]'?: string;
+/**
+ * text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.
+ */
+'filter[depotId]'?: string;
 };

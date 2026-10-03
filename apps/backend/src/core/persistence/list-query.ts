@@ -180,7 +180,8 @@ export function whereOf(spec: ResourceSpec, filter: unknown): SQL | undefined {
         typeof text === 'string'
           ? conditionOf(filterSpec, op as FilterOp, text)
           : undefined;
-      if (condition) parts.push(condition);
+      if (condition)
+        parts.push(filterSpec.wrap ? filterSpec.wrap(condition) : condition);
       else
         errors.push({
           field: name,
@@ -199,7 +200,9 @@ function conditionOf(
   op: FilterOp,
   text: string,
 ): SQL | undefined {
-  const col = f.column;
+  // A wrapped filter's SQL expression takes the same operators; the column
+  // type is what the overloads need, and a column keeps its value encoding.
+  const col = f.column as AnyPgColumn;
   if (op === 'null') {
     if (text === 'true') return isNull(col);
     if (text === 'false') return isNotNull(col);

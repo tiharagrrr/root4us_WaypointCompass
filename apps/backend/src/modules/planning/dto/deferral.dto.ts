@@ -38,6 +38,9 @@ export class DeferralDto {
   @ApiProperty({ example: 'Fresh Kadawatha' })
   outletName!: string;
 
+  @ApiProperty({ enum: ['FRESH', 'STYLE', 'TECH'], example: 'FRESH' })
+  outletBrand!: string;
+
   @ApiProperty({ example: '0192a3f4-0000-7000-8000-00000000b201' })
   planId!: string;
 
@@ -112,9 +115,62 @@ export class DeferralDto {
   @ApiProperty({
     nullable: true,
     type: String,
+    example: 'Nimesha Periyapperuma',
+    description: 'Who answered for the store',
+  })
+  storeRespondedByName!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
     example: '2026-10-01T16:12:00+05:30',
   })
   decidedAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'Tihara Egodage',
+    description: 'Who decided it; null for an engine proposal nobody confirmed',
+  })
+  decidedByName!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: 'Pinned to Friday’s first run',
+    description: 'The dispatcher’s reply to the store (23), shown on M4',
+  })
+  dispatcherReply!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: null })
+  dispatcherRepliedAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 2,
+    description:
+      'Dispatchers only: the outlet’s live deferrals in the 30 days up to this one',
+  })
+  skips30d!: number | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 3,
+    description:
+      'Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet',
+  })
+  recentSkips!: number | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 5,
+    description: 'Dispatchers only: the runs recentSkips counts over, up to 5',
+  })
+  recentRuns!: number | null;
 
   @ApiProperty({
     enum: ['UNAVOIDABLE', 'PRIORITY_CHOICE'],
@@ -144,7 +200,7 @@ export class DeferralDto {
   @ApiProperty({ example: '2026-10-01T16:06:13+05:30' })
   createdAt!: string;
 
-  /** self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher). */
+  /** self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher). */
   @ApiLinks()
   _links!: Record<string, Link>;
 }
@@ -176,4 +232,12 @@ export class ReverseDeferralDto {
   @MinLength(1)
   @MaxLength(500)
   reason!: string;
+}
+
+/** 23: the dispatcher's one reply to the store. */
+export class ReplyDeferralDto {
+  @ApiProperty({ example: 'Pinned to Friday’s first run' })
+  @IsString()
+  @MaxLength(500)
+  text!: string;
 }

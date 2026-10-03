@@ -10,12 +10,18 @@ export const INVALID: unique symbol = Symbol('invalid');
 
 /** One filterable field of a resource: its column, operators and parser. */
 export interface FilterSpec {
-  column: AnyPgColumn;
+  /** The column, or for a wrapped filter an expression on the subquery's alias. */
+  column: AnyPgColumn | SQL;
   ops: readonly FilterOp[];
   /** The value to compare with, or INVALID. */
   parse: (raw: string) => unknown;
   /** What a valid value looks like, for the 400 message. */
   format: string;
+  /**
+   * Puts the condition on `column` inside a subquery, for a field that lives on a related table
+   * (deferrals by their order's outlet). Unset, the condition applies to the row itself.
+   */
+  wrap?: (condition: SQL) => SQL;
 }
 
 /**
@@ -73,7 +79,7 @@ export function enumFilter(
 }
 
 /** Exact text, or case-insensitive `contains`. */
-export function textFilter(column: AnyPgColumn): FilterSpec {
+export function textFilter(column: AnyPgColumn | SQL): FilterSpec {
   return {
     column,
     ops: ['eq', 'ne', 'contains', 'null'],

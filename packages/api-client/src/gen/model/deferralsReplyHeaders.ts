@@ -5,9 +5,10 @@
  * Delivery planning for Waypoint Group (Tech Triathlon 2026). Conventions: specs/api-conventions.md.
  * OpenAPI spec version: 1.0.0
  */
-import type { LinkDto } from './linkDto.ts';
 
+export type DeferralsReplyHeaders = {
 /**
- * self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher).
+ * One per button press; a repeat replays the first response
  */
-export type _DeferralDtoLinks = {[key: string]: LinkDto};
+'Idempotency-Key'?: string;
+};

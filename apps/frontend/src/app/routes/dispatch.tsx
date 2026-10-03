@@ -1,4 +1,4 @@
-import { getMeGetQueryOptions } from '@compass/api-client'
+import { getDeferralReasonsListQueryOptions, getMeGetQueryOptions } from '@compass/api-client'
 import type { RouteObject } from 'react-router'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
@@ -81,7 +81,13 @@ export const dispatchRoutes: RouteObject[] = [
             element: <ScreenPlaceholder code="21" name="End-of-day summary" node="185:18295" />,
           },
           { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
-          { path: 'deferrals', handle: handle('Deferrals'), element: <ScreenPlaceholder code="23" name="Deferrals" node="185:18890" /> },
+          {
+            // 23 (ROO-43).
+            path: 'deferrals',
+            handle: handle('Deferrals'),
+            loader: prefetchLoader((qc) => qc.prefetchQuery(getDeferralReasonsListQueryOptions())),
+            lazy: async () => ({ Component: (await import('@/features/deferrals/dispatch-deferrals-page')).DispatchDeferralsPage }),
+          },
         ],
       },
     ],

@@ -9458,6 +9458,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "filter[reasonCode]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[reasonCode][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[outletId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[outletId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[depotId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -9851,6 +9878,128 @@
           }
         },
         "summary": "19c: keep a delivery the device recorded for a deferred stop (AC-PLN-28).",
+        "tags": [
+          "deferrals"
+        ]
+      }
+    },
+    "/api/v1/deferrals/{id}/reply": {
+      "post": {
+        "operationId": "deferralsReply",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyDeferralDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DeferralDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "23: the dispatcher's one reply to the store, shown on M4 (AC-PLN-35).",
         "tags": [
           "deferrals"
         ]
@@ -17966,6 +18115,15 @@
             "type": "string",
             "example": "Fresh Kadawatha"
           },
+          "outletBrand": {
+            "type": "string",
+            "enum": [
+              "FRESH",
+              "STYLE",
+              "TECH"
+            ],
+            "example": "FRESH"
+          },
           "planId": {
             "type": "string",
             "example": "0192a3f4-0000-7000-8000-00000000b201"
@@ -18048,10 +18206,51 @@
             "nullable": true,
             "example": null
           },
+          "storeRespondedByName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Nimesha Periyapperuma",
+            "description": "Who answered for the store"
+          },
           "decidedAt": {
             "type": "string",
             "nullable": true,
             "example": "2026-10-01T16:12:00+05:30"
+          },
+          "decidedByName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Tihara Egodage",
+            "description": "Who decided it; null for an engine proposal nobody confirmed"
+          },
+          "dispatcherReply": {
+            "type": "string",
+            "nullable": true,
+            "example": "Pinned to Friday’s first run",
+            "description": "The dispatcher’s reply to the store (23), shown on M4"
+          },
+          "dispatcherRepliedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "skips30d": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Dispatchers only: the outlet’s live deferrals in the 30 days up to this one"
+          },
+          "recentSkips": {
+            "type": "number",
+            "nullable": true,
+            "example": 3,
+            "description": "Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet"
+          },
+          "recentRuns": {
+            "type": "number",
+            "nullable": true,
+            "example": 5,
+            "description": "Dispatchers only: the runs recentSkips counts over, up to 5"
           },
           "choice": {
             "type": "string",
@@ -18084,7 +18283,7 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/LinkDto"
             },
-            "description": "self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher)."
+            "description": "self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher)."
           }
         },
         "required": [
@@ -18094,6 +18293,7 @@
           "orderStatus",
           "outletId",
           "outletName",
+          "outletBrand",
           "planId",
           "status",
           "source",
@@ -18108,7 +18308,14 @@
           "storeResponse",
           "storeNote",
           "storeRespondedAt",
+          "storeRespondedByName",
           "decidedAt",
+          "decidedByName",
+          "dispatcherReply",
+          "dispatcherRepliedAt",
+          "skips30d",
+          "recentSkips",
+          "recentRuns",
           "choice",
           "bindingRule",
           "priorityScore",
@@ -18150,6 +18357,19 @@
         },
         "required": [
           "reason"
+        ]
+      },
+      "ReplyDeferralDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Pinned to Friday’s first run"
+          }
+        },
+        "required": [
+          "text"
         ]
       },
       "LoadProgressDto": {

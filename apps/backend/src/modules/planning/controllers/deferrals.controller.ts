@@ -25,6 +25,7 @@ import { DEFERRAL_RESOURCE } from '../deferral.resource';
 import {
   DeferralDto,
   DeferralResponseDto,
+  ReplyDeferralDto,
   ReverseDeferralDto,
 } from '../dto/deferral.dto';
 import { DeferralLinks } from '../policies/deferral.links';
@@ -93,5 +94,20 @@ export class DeferralsController {
     @Actor() actor: SignedIn,
   ) {
     return this.links.one(await this.actions.reverse(id, dto, actor), actor);
+  }
+
+  /** 23: the dispatcher's one reply to the store, shown on M4 (AC-PLN-35). */
+  @Post(':id/reply')
+  @HttpCode(200)
+  @RequirePermission('deferral:decide')
+  @UseIdempotency()
+  @ApiResource(DeferralDto)
+  @ApiProblems(404, 409)
+  async reply(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReplyDeferralDto,
+    @Actor() actor: SignedIn,
+  ) {
+    return this.links.one(await this.actions.reply(id, dto, actor), actor);
   }
 }

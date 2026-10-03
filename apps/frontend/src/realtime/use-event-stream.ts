@@ -30,6 +30,11 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'alert.acknowledged': () => ['/api/v1/alerts'],
   'alert.resolved': () => ['/api/v1/alerts'],
   'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
+  // 23, M4 and M7 follow a deferral as it is confirmed, answered, replied to or reversed.
+  'deferral.confirmed': () => ['/api/v1/deferrals', '/api/v1/orders'],
+  'deferral.store_responded': () => ['/api/v1/deferrals'],
+  'deferral.replied': () => ['/api/v1/deferrals'],
+  'deferral.reversed': () => ['/api/v1/deferrals', '/api/v1/orders'],
   'clock.changed': () => ['/api/v1/clock'],
   'settings.changed': () => ['/api/v1/settings'],
   'identity.user.role_changed': () => ['/api/v1/me'],

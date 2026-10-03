@@ -7,6 +7,7 @@
  */
 import type { _DeferralDtoLinks } from './_deferralDtoLinks.ts';
 import type { DeferralDtoChoice } from './deferralDtoChoice.ts';
+import type { DeferralDtoOutletBrand } from './deferralDtoOutletBrand.ts';
 import type { DeferralDtoSource } from './deferralDtoSource.ts';
 import type { DeferralDtoStatus } from './deferralDtoStatus.ts';
 import type { DeferralDtoStoreResponse } from './deferralDtoStoreResponse.ts';
@@ -19,6 +20,7 @@ export interface DeferralDto {
   orderStatus: string;
   outletId: string;
   outletName: string;
+  outletBrand: DeferralDtoOutletBrand;
   planId: string;
   status: DeferralDtoStatus;
   source: DeferralDtoSource;
@@ -46,8 +48,40 @@ export interface DeferralDto {
   storeNote: string | null;
   /** @nullable */
   storeRespondedAt: string | null;
+  /**
+     * Who answered for the store
+     * @nullable
+     */
+  storeRespondedByName: string | null;
   /** @nullable */
   decidedAt: string | null;
+  /**
+     * Who decided it; null for an engine proposal nobody confirmed
+     * @nullable
+     */
+  decidedByName: string | null;
+  /**
+     * The dispatcher’s reply to the store (23), shown on M4
+     * @nullable
+     */
+  dispatcherReply: string | null;
+  /** @nullable */
+  dispatcherRepliedAt: string | null;
+  /**
+     * Dispatchers only: the outlet’s live deferrals in the 30 days up to this one
+     * @nullable
+     */
+  skips30d: number | null;
+  /**
+     * Dispatchers only: of the depot’s last recentRuns plans up to this one, how many deferred this outlet
+     * @nullable
+     */
+  recentSkips: number | null;
+  /**
+     * Dispatchers only: the runs recentSkips counts over, up to 5
+     * @nullable
+     */
+  recentRuns: number | null;
   /**
      * Dispatchers only
      * @nullable
@@ -64,6 +98,6 @@ export interface DeferralDto {
      */
   priorityScore: number | null;
   createdAt: string;
-  /** self, order, respond (POST, store manager while AWAITING), reverse (POST, dispatcher). */
+  /** self, order, respond (POST, store manager while AWAITING), reverse and reply (POST, dispatcher). */
   _links: _DeferralDtoLinks;
 }
