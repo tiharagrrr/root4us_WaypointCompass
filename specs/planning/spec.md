@@ -603,6 +603,11 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-03 Screens 10, 11 and 14 to 18 (ROO-40, ROO-41) on the live API. 10 and 11 reopen the wizard on a
+  saved vehicle; the engine in the browser shows each trip's checks and the fixes suggestFixes() finds,
+  and a fix saves with the draft as one edit list. 14 confirms the trips, 15 and 16 record deferrals
+  and swaps as one decision list, and 17 and 18 publish from the preview's `publish` link. Departures
+  are in docs/departures.md
 - 2026-10-03 Deferral reads, the store's response and reverse are live (AC-PLN-27, AC-PLN-28). The
   `respond` link shows only while the deferral is CONFIRMED and AWAITING, its plan is published and the
   order is still DEFERRED. `/deferrals` filters by status, storeResponse, source, plan, order, dates and

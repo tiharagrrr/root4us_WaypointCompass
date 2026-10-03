@@ -25,11 +25,11 @@ export const aPlan = (over: Partial<PlanDto> = {}): PlanDto => ({
 })
 
 /** Two chilled Fresh orders for Gampaha, each 2 m³. */
-export const anUnplanned = (n: 1 | 2): UnplannedOrderDto => ({
+export const anUnplanned = (n: number, over: Partial<UnplannedOrderDto> = {}): UnplannedOrderDto => ({
   orderId: `ord-${n}`,
   orderNo: `WF-017${n}`,
   outletId: `out-${n}`,
-  outletName: n === 1 ? 'Wattala' : 'Ja-Ela',
+  outletName: outletOf(n),
   brand: 'FRESH',
   districtId: 'gampaha',
   tempClass: 'CHILLED',
@@ -46,22 +46,56 @@ export const anUnplanned = (n: 1 | 2): UnplannedOrderDto => ({
   deferralId: null,
   note: null,
   toDate: null,
+  ...over,
 })
 
-const vehicle = (id: string, code: string, temp: 'REEFER' | 'AMBIENT') =>
-  ({ id, code, depotId: 'PLG', type: 'TRUCK', temp, weightCapKg: 4000, volumeCapM3: 18, kmPerL: 5, weeklyFuelQuotaL: 400, available: true, unavailableReason: null }) as const
+const vehicle = (id: string, code: string, temp: 'REEFER' | 'AMBIENT', volumeCapM3 = 18) =>
+  ({ id, code, depotId: 'PLG', type: 'TRUCK', temp, weightCapKg: 4000, volumeCapM3, kmPerL: 5, weeklyFuelQuotaL: 400, available: true, unavailableReason: null }) as const
+
+/** One saved Fresh trip for Gampaha in the engine's plan. */
+export const aDraftTrip = (orderIds: string[], over: { vehicleId?: string; key?: string; tripNo?: number } = {}) => ({
+  key: over.key ?? 'REF-07#1',
+  vehicleId: over.vehicleId ?? 'veh-ref',
+  tripNo: over.tripNo ?? 1,
+  brand: 'FRESH',
+  districtId: 'gampaha',
+  orderIds,
+  locked: true,
+})
+
+export interface ContextOptions {
+  /** Saved trips in the engine's plan. */
+  trips?: ReturnType<typeof aDraftTrip>[]
+  /** REF-07's volume, to make a trip over capacity. */
+  ref07VolumeM3?: number
+  /** Add a second reefer, REF-03, for a fix to move an order to. */
+  ref03?: boolean
+  /** Order ids the engine's plan leaves unplanned, with their reasons. */
+  unplanned?: { orderId: string; repeatSkip?: boolean }[]
+  /** How many Fresh orders (ord-1 …), 2 by default. */
+  orders?: number
+}
+
+const OUTLETS = ['Wattala', 'Ja-Ela', 'Seeduwa', 'Ragama']
+export const outletOf = (n: number) => OUTLETS[n - 1] ?? `Outlet ${n}`
+
+const ns = (opts: ContextOptions) => Array.from({ length: opts.orders ?? 2 }, (_, i) => i + 1)
 
 /** An engine context the browser's engine can run on: the shape of GET /plans/{id}/context. */
-export const aContext = () => ({
+export const aContext = (opts: ContextOptions = {}) => ({
   planId: PLAN_ID,
   version: 7,
   engineVersion: '0.3.0',
   input: {
     date: DATE,
     isOperatingDay: true,
-    vehicles: [vehicle('veh-ref', 'REF-07', 'REEFER'), vehicle('veh-dry', 'DRY-22', 'AMBIENT')],
+    vehicles: [
+      vehicle('veh-ref', 'REF-07', 'REEFER', opts.ref07VolumeM3),
+      vehicle('veh-dry', 'DRY-22', 'AMBIENT'),
+      ...(opts.ref03 ? [vehicle('veh-ref3', 'REF-03', 'REEFER')] : []),
+    ],
     outlets: Object.fromEntries(
-      [1, 2].map((n) => [
+      ns(opts).map((n) => [
         `out-${n}`,
         {
           id: `out-${n}`,
@@ -78,7 +112,7 @@ export const aContext = () => ({
     ),
     districts: { gampaha: { id: 'gampaha', name: 'Gampaha', depotToDistrictMin: 37, interStopMin: 9, depotToDistrictKm: 20, interStopKm: 4 } },
     allowances: { 'FRESH:REAR_DOCK': 15 },
-    orders: [1, 2].map((n) => ({
+    orders: ns(opts).map((n) => ({
       id: `ord-${n}`,
       ref: `WF-017${n}`,
       outletId: `out-${n}`,
@@ -95,7 +129,17 @@ export const aContext = () => ({
     fuelUsedThisWeek: {},
     fixedTrips: [],
   },
-  plan: { trips: [], unplanned: [] },
+  plan: {
+    trips: opts.trips ?? [],
+    unplanned: (opts.unplanned ?? []).map((u) => ({
+      orderId: u.orderId,
+      priority: 25,
+      repeatSkip: u.repeatSkip ?? false,
+      reasonCode: 'OVER_CAPACITY',
+      bindingRule: 'CAP_VOLUME',
+      choice: 'UNAVOIDABLE',
+    })),
+  },
 })
 
 export const aVehicleOption = (over: Partial<PlanVehicleOptionDto> = {}): PlanVehicleOptionDto => ({

@@ -1,14 +1,16 @@
-// Figma: 07 Add vehicle · Orders · 488:9309 (dialog 488:9543)
+// Figma: 07 Add vehicle · Orders · 488:9309 (dialog 488:9543); the same step on a saved vehicle is
+// 10 View and edit vehicle · 488:9736 and 11 Over capacity · 269:2996.
 import type { PlanVehicleOptionDto } from '@compass/api-client'
-import type { EngineInput, OrderOption, Plan } from '@waypoint/engine'
-import { useState } from 'react'
+import type { EngineInput, FixSuggestion, OrderOption, Plan, Violation } from '@waypoint/engine'
+import { type ReactNode, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/button'
 import { Icon } from '@/ui/icon'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { StatusChip } from '@/ui/status-chip'
+import { FixPanel } from './fix-panel'
 import { Bar } from './plan-panels'
-import { BRAND_GLYPH, BRAND_WORD, RULE_CHIP, clock, kg, percent, vehicleKind } from './plan-copy'
+import { BRAND_GLYPH, BRAND_WORD, RULE_CHIP, TRIP_PROBLEM, clock, kg, percent, vehicleKind } from './plan-copy'
 import type { DraftPreview, TripDraft } from './trip-draft'
 
 export interface OrdersStepProps {
@@ -22,6 +24,12 @@ export interface OrdersStepProps {
   outletName: (outletId: string | undefined) => string | undefined
   onChange: (orderIds: string[]) => void
   onPickTrip: (tripNo: number) => void
+  /** 10 and 11: a vehicle already on the plan, so the trip shows its checks and any fixes. */
+  editing?: {
+    fixes: readonly FixSuggestion[]
+    onApplyFix: (fix: FixSuggestion) => void
+    applying: boolean
+  }
 }
 
 /**
@@ -29,7 +37,7 @@ export interface OrdersStepProps {
  * first, blocked ones dimmed with why), and the trip as the engine times it on the right. Every
  * figure comes from the engine running in the browser, so it changes as orders are added.
  */
-export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, outletName, onChange, onPickTrip }: OrdersStepProps) {
+export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, outletName, onChange, onPickTrip, editing }: OrdersStepProps) {
   const [filter, setFilter] = useState<'all' | 'fits'>('all')
   const orderOf = (id: string) => input.orders.find((o) => o.id === id)
   const districtName = (id: string) => input.districts[id]?.name ?? id
@@ -42,6 +50,11 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
   const weightPct = percent(trip?.weightKg ?? 0, vehicle.weightCapKg)
   const volumePct = percent(trip?.volumeM3 ?? 0, vehicle.volumeCapM3)
   const canAddTrip = tripNos.length < 2 && vehicle.tripsLeft > (own.includes(draft.tripNo) ? 0 : 1)
+  const problemsOf = (no: number): Violation[] =>
+    preview.problems.filter((v) => v.tripKey === `${draft.vehicleCode}#${no}` || (!v.tripKey && no === draft.tripNo))
+  const problem = problemsOf(draft.tripNo)[0]
+  const scheduledOf = (no: number) => preview.vehicleTrips.find((t) => t.tripNo === no)
+  const orderOutlet = (orderId: string) => outletName(orderOf(orderId)?.outletId)
 
   return (
     <div className="flex items-start gap-4 px-5 py-3.5">
@@ -50,6 +63,9 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
         {tripNos.map((no) => {
           const active = no === draft.tripNo
           const stops = active ? draft.orderIds.length : (plan.trips.find((t) => t.vehicleId === draft.vehicleId && t.tripNo === no)?.orderIds.length ?? 0)
+          const shown = active ? trip : editing ? scheduledOf(no) : undefined
+          const fill = shown ? Math.max(percent(shown.weightKg, vehicle.weightCapKg), percent(shown.volumeM3, vehicle.volumeCapM3)) : 0
+          const bad = editing !== undefined && problemsOf(no).length > 0
           return (
             <button
               key={no}
@@ -62,16 +78,16 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
               )}
             >
               <span className="type-body-medium text-foreground">Trip {no}</span>
-              {active && trip ? (
+              {shown ? (
                 <>
                   <span className="type-body-small text-muted-foreground">
-                    {BRAND_WORD[trip.brand]} · {districtName(trip.districtId)} · {clock(trip.departMin)}
+                    {BRAND_WORD[shown.brand]} · {districtName(shown.districtId)} · {clock(shown.departMin)}
                   </span>
-                  <Bar value={Math.max(weightPct, volumePct)} className="h-1 w-full" />
+                  <Bar value={fill} tone={fill > 100 ? 'danger' : 'primary'} className="h-1 w-full" />
                 </>
               ) : null}
-              <span className="type-data text-slate-700">
-                {stops} stops{active && trip ? ` · ${Math.max(weightPct, volumePct)}%` : ''}
+              <span className={cn('type-data', bad ? 'text-status-danger-fg' : 'text-slate-700')}>
+                {stops} stops{shown ? ` · ${fill}%` : ''}
               </span>
             </button>
           )
@@ -85,7 +101,9 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
             + Add trip {draft.tripNo === 1 ? 2 : 1}
           </button>
         ) : null}
-        <p className="type-caption m-0 text-muted-foreground">A vehicle can run up to 2 trips a day.</p>
+        <p className="type-caption m-0 text-muted-foreground">
+          {editing ? `${tripNos.length} of 2 trips used today.` : 'A vehicle can run up to 2 trips a day.'}
+        </p>
       </nav>
 
       <section aria-label="Orders" className="flex w-[340px] shrink-0 flex-col gap-2">
@@ -126,7 +144,11 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
           <span className="type-card-title text-foreground">Trip {draft.tripNo}</span>
           <span className="type-caption text-muted-foreground">Home · {depotName}</span>
           <span className="flex-1" />
-          <StatusChip tone="neutral">Draft</StatusChip>
+          {editing ? (
+            <StatusChip tone={problem ? 'danger' : 'neutral'}>{problem ? (TRIP_PROBLEM[problem.rule] ?? RULE_CHIP[problem.rule] ?? problem.rule) : 'Checks pass'}</StatusChip>
+          ) : (
+            <StatusChip tone="neutral">Draft</StatusChip>
+          )}
         </header>
         <div className="flex items-center gap-2">
           <span className="type-label uppercase text-muted-foreground">Brand</span>
@@ -136,6 +158,9 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
         </div>
         <Meter label="Weight" value={`${kg(trip?.weightKg ?? 0).replace(' kg', '')} / ${kg(vehicle.weightCapKg)} · ${weightPct}%`} pct={weightPct} />
         <Meter label="Volume" value={`${(trip?.volumeM3 ?? 0).toFixed(1)} / ${vehicle.volumeCapM3.toFixed(1)} m³ · ${volumePct}%`} pct={volumePct} />
+        {editing && problem ? (
+          <FixPanel problem={problem} fixes={editing.fixes} outletOf={orderOutlet} onApply={editing.onApplyFix} applying={editing.applying} />
+        ) : null}
         <div className="flex flex-col">
           <p className="m-0 flex items-center gap-2 pb-2">
             <span className="font-sans text-[13px] font-bold leading-[18.85px] text-foreground">{depotName} depot</span>
@@ -185,14 +210,15 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
   )
 }
 
-function Meter({ label, value, pct }: { label: string; value: string; pct: number }) {
+function Meter({ label, value, pct }: { label: string; value: ReactNode; pct: number }) {
+  const over = pct > 100
   return (
     <div className="flex flex-col gap-[5px]">
       <div className="flex items-start justify-between">
-        <span className="type-label uppercase text-muted-foreground">{label}</span>
-        <span className="font-mono text-[12px] font-bold text-slate-700">{value}</span>
+        <span className={cn('type-label uppercase', over ? 'text-status-danger-fg' : 'text-muted-foreground')}>{label}</span>
+        <span className={cn('font-mono text-[12px] font-bold', over ? 'text-status-danger-fg' : 'text-slate-700')}>{value}</span>
       </div>
-      <Bar value={pct} className="h-1.5 w-full" />
+      <Bar value={pct} tone={over ? 'danger' : 'primary'} className="h-1.5 w-full" />
     </div>
   )
 }

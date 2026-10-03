@@ -1,13 +1,15 @@
 // Figma: 06 Add vehicle · Vehicle · 265:2419, 07 Add vehicle · Orders · 488:9309, 08 Add vehicle ·
-// Check · 267:2216: one dialog, three steps.
+// Check · 267:2216: one dialog, three steps. On a saved vehicle it is 10 View and edit vehicle ·
+// 488:9736 (and 11 Over capacity · 269:2996): the orders step only, saved straight to the plan.
 import { usePlanBuildingEdit, usePlanBuildingValidate, type PlanDto, type ViolationDto } from '@compass/api-client'
+import type { EditOp, FixSuggestion } from '@waypoint/engine'
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
 import { ErrorState } from '@/ui/states'
-import { canTakeTrip, kg, percent } from './plan-copy'
-import { editsFor, previewDraft, savedOrders, type TripDraft } from './trip-draft'
+import { canTakeTrip, kg, percent, vehicleKind } from './plan-copy'
+import { editsFor, fixesFor, previewDraft, savedOrders, type TripDraft } from './trip-draft'
 import type { PlanDay } from './use-plan-day'
 import { CheckStep } from './wizard-check-step'
 import { OrdersStep } from './wizard-orders-step'
@@ -50,6 +52,8 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   const [introduced, setIntroduced] = useState<ViolationDto[] | undefined>(undefined)
   const validate = usePlanBuildingValidate()
   const save = usePlanBuildingEdit()
+  // 10: a vehicle already on the plan. Its changes save straight to the plan, with no check step.
+  const editing = start.vehicleId !== undefined
 
   const vehicle = vehicles.find((v) => v.vehicleId === draft?.vehicleId)
   const begin = (vehicleId: string, tripNo?: number) => setDraft(draftFor(vehicleId, tripNo))
@@ -76,15 +80,17 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
     setIntroduced(res.data.introduced)
   }
 
+  const send = async (edits: readonly EditOp[]) => {
+    await save.mutateAsync({
+      id: plan.id,
+      data: { ops: [...edits] },
+      headers: { 'If-Match': `W/"${plan.version}"`, 'Idempotency-Key': globalThis.crypto.randomUUID() },
+    })
+    await day.refresh()
+  }
+
   const commit = async (another: boolean) => {
-    if (ops.length) {
-      await save.mutateAsync({
-        id: plan.id,
-        data: { ops },
-        headers: { 'If-Match': `W/"${plan.version}"`, 'Idempotency-Key': globalThis.crypto.randomUUID() },
-      })
-      await day.refresh()
-    }
+    if (ops.length) await send(ops)
     if (another) {
       setDraft(null)
       setIntroduced(undefined)
@@ -92,25 +98,51 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
     } else onClose()
   }
 
+  /** 11: the draft and the fix as one edit list; the trip then shows what the plan now holds. */
+  const applyFix = async (fix: FixSuggestion) => {
+    if (!engine || !draft) return
+    const edits: EditOp[] = [...ops, ...fix.edits]
+    await send(edits)
+    const after = preview?.next ?? engine.plan
+    const moved = new Set(fix.edits.flatMap((e) => ('orderId' in e && e.op !== 'ASSIGN_ORDER' ? [e.orderId] : [])))
+    setDraft({ ...draft, orderIds: savedOrders(after, draft).filter((id) => !moved.has(id)) })
+  }
+
+  /** 10: every trip of this vehicle comes off the plan, and its orders go back to the list. */
+  const removeVehicle = async () => {
+    if (!engine || !draft) return
+    const keys = engine.plan.trips.filter((t) => t.vehicleId === draft.vehicleId).map((t) => `${draft.vehicleCode}#${t.tripNo}`)
+    if (keys.length) await send(keys.map((tripKey): EditOp => ({ op: 'REMOVE_TRIP', tripKey })))
+    onClose()
+  }
+
+  const fixes = useMemo(
+    () => (engine && preview?.problems[0] ? fixesFor(engine.input, preview.next, preview.problems[0]) : []),
+    [engine, preview],
+  )
+
   const trip = preview?.trip
   const orders = draft?.orderIds.length ?? 0
   const full = vehicle && trip ? Math.max(percent(trip.weightKg, vehicle.weightCapKg), percent(trip.volumeM3, vehicle.volumeCapM3)) : 0
   const blocked = (introduced ?? []).some((v) => v.severity === 'HARD')
+  const title = editing && vehicle ? `${vehicle.code} · ${vehicleKind(vehicle.type, vehicle.temp)}` : step === 1 || !vehicle ? 'Add vehicle' : `Add vehicle · ${vehicle.code}`
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className={cn('top-1/2 -translate-y-1/2', step === 2 ? 'w-[1220px]' : 'w-[822px]')}>
         <DialogHeader
-          title={step === 1 || !vehicle ? 'Add vehicle' : `Add vehicle · ${vehicle.code}`}
+          title={title}
           description={
-            step === 1
-              ? 'Pick the vehicle for this trip. Each vehicle runs up to 2 trips a day.'
-              : step === 2
-                ? `Add orders to Trip ${draft?.tripNo ?? 1}. The first order sets the brand and district.`
-                : `Check Trip ${draft?.tripNo ?? 1} before you save it.`
+            editing
+              ? 'View and edit this vehicle. Changes save straight to the plan.'
+              : step === 1
+                ? 'Pick the vehicle for this trip. Each vehicle runs up to 2 trips a day.'
+                : step === 2
+                  ? `Add orders to Trip ${draft?.tripNo ?? 1}. The first order sets the brand and district.`
+                  : `Check Trip ${draft?.tripNo ?? 1} before you save it.`
           }
         />
-        <WizardSteps step={step} />
+        <WizardSteps step={step} editing={editing} />
 
         <div className="min-h-0 overflow-y-auto">
           {step === 1 ? (
@@ -127,6 +159,7 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
               outletName={outletName}
               onChange={(orderIds) => setDraft({ ...draft, orderIds })}
               onPickTrip={(tripNo) => begin(draft.vehicleId, tripNo)}
+              editing={editing ? { fixes, onApplyFix: (fix) => void applyFix(fix).catch(() => undefined), applying: save.isPending } : undefined}
             />
           ) : null}
           {step === 3 && draft && vehicle ? (
@@ -147,6 +180,26 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
           ) : null}
         </div>
 
+        {editing ? (
+          <DialogFooter className="justify-between">
+            <Button variant="outline" loading={save.isPending} onClick={() => void removeVehicle().catch(() => undefined)}>
+              Remove from plan
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                disabled={ops.length === 0 || (preview?.problems.length ?? 0) > 0}
+                loading={save.isPending}
+                onClick={() => void commit(false).catch(() => undefined)}
+              >
+                Save changes
+              </Button>
+            </div>
+          </DialogFooter>
+        ) : (
         <DialogFooter className="justify-between">
           <p className="type-mono-small m-0 text-muted-foreground">
             {step === 1
@@ -191,13 +244,14 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
             )}
           </div>
         </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   )
 }
 
 /** The dialog's own three steps: done ones in black with a tick, the current one in blue. */
-function WizardSteps({ step }: { step: Step }) {
+function WizardSteps({ step, editing }: { step: Step; editing: boolean }) {
   const steps = ['Vehicle', 'Orders', 'Check'] as const
   return (
     <ol className="m-0 flex list-none items-center gap-3 border-b border-border px-5 py-3">
@@ -223,9 +277,7 @@ function WizardSteps({ step }: { step: Step }) {
         )
       })}
       <li aria-hidden="true" className="flex-1" />
-      <li className="type-label uppercase text-muted-foreground">
-        Step {step} of 3
-      </li>
+      <li className="type-label uppercase text-muted-foreground">{editing ? 'Editing a saved vehicle' : `Step ${step} of 3`}</li>
     </ol>
   )
 }

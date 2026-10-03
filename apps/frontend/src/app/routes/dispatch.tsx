@@ -40,9 +40,22 @@ export const dispatchRoutes: RouteObject[] = [
             lazy: async () => ({ Component: (await import('@/features/planning/plan-page')).PlanPage }),
           },
           {
+            // 14, step 2 (ROO-41).
             path: 'plan/:date/confirm',
             handle: handle('Plan'),
-            element: <ScreenPlaceholder code="14" name="Confirm trips" node="185:15323" />,
+            lazy: async () => ({ Component: (await import('@/features/planning/confirm-page')).ConfirmPage }),
+          },
+          {
+            // 15 and 16, step 3 (ROO-41).
+            path: 'plan/:date/unplanned',
+            handle: handle('Unplanned orders'),
+            lazy: async () => ({ Component: (await import('@/features/planning/unplanned-page')).UnplannedPage }),
+          },
+          {
+            // 17 and 18, step 4 (ROO-41).
+            path: 'plan/:date/publish',
+            handle: handle('Review and publish'),
+            lazy: async () => ({ Component: (await import('@/features/planning/publish-page')).PublishPage }),
           },
           { path: 'plan-ahead', handle: handle('Plan ahead'), element: <ScreenPlaceholder code="12" name="Plan ahead" node="290:2387" /> },
           {

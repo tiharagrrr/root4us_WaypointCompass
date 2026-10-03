@@ -2,12 +2,15 @@ import {
   applyEdits,
   optionsForTrip,
   planSchedule,
+  suggestFixes,
   tripKeyOf,
   type EditOp,
   type EngineInput,
+  type FixSuggestion,
   type OrderOption,
   type Plan,
   type ScheduledTrip,
+  type Violation,
 } from '@waypoint/engine'
 
 /** The trip the wizard is building or editing: a vehicle, a trip number and its orders in stop order. */
@@ -54,6 +57,12 @@ export interface DraftPreview {
   trip: ScheduledTrip | undefined
   /** The orders 07 lists for this trip: fits first, then warnings, then blocked with why. */
   options: OrderOption[]
+  /** Every trip of the draft's vehicle, scheduled, for the trip list on 10. */
+  vehicleTrips: ScheduledTrip[]
+  /** The hard violations on the draft's vehicle after the draft's edits (10, 11). */
+  problems: Violation[]
+  /** The plan after the draft's edits, which a fix is worked out against. */
+  next: Plan
 }
 
 /**
@@ -62,9 +71,21 @@ export interface DraftPreview {
  * order tried against it.
  */
 export function previewDraft(input: EngineInput, plan: Plan, draft: TripDraft): DraftPreview {
-  const next = applyEdits(input, plan, editsFor(input, plan, draft)).plan
+  const applied = applyEdits(input, plan, editsFor(input, plan, draft))
+  const next = applied.plan
   const key = keyOf(draft)
-  const trip = draft.orderIds.length ? planSchedule(input, next).find((t) => t.key === key) : undefined
+  const scheduled = planSchedule(input, next)
+  const trip = draft.orderIds.length ? scheduled.find((t) => t.key === key) : undefined
   const options = optionsForTrip(input, next, { vehicleId: draft.vehicleId, tripNo: draft.tripNo })
-  return { trip, options }
+  const vehicleTrips = scheduled.filter((t) => t.vehicleId === draft.vehicleId).sort((a, b) => a.tripNo - b.tripNo)
+  const keys = new Set(vehicleTrips.map((t) => t.key))
+  const problems = applied.violations.filter(
+    (v) => v.severity === 'HARD' && ((v.tripKey && keys.has(v.tripKey)) || (!v.tripKey && v.vehicleId === draft.vehicleId)),
+  )
+  return { trip, options, vehicleTrips, problems, next }
+}
+
+/** 11: the engine's ranked ways to clear one hard violation, worked out after the draft's edits. */
+export function fixesFor(input: EngineInput, next: Plan, violation: Violation): FixSuggestion[] {
+  return suggestFixes(input, next, violation)
 }
