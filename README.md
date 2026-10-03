@@ -36,14 +36,18 @@ Once the `seed` job has finished and `api` is healthy:
 
 ## Seeded accounts
 
-| Role | Username | Password | Scope |
+| Role | Person | Sign in with | Scope |
 | --- | --- | --- | --- |
-| Dispatcher | `dispatcher` | `Waypoint@2026` | Peliyagoda (all depots) |
-| Loader | `loader` | `Waypoint@2026` | Peliyagoda dock |
-| Driver | `driver` | `Waypoint@2026` | _VEHxxx_ |
-| Store manager | `storemanager` | `Waypoint@2026` | _OUTxxx (Waypoint Fresh, …)_ |
+| Admin | Rusiru Withanage | `rusiru.w@waypoint.lk` / `Waypoint@2026` | Every depot |
+| Dispatcher | Tihara Egodage | `tihara.e@waypoint.lk` / `Waypoint@2026` | Every depot (Peliyagoda by default) |
+| Store manager | Nimesha Periyapperuma | `nimesha.p@waypoint.lk` / `Waypoint@2026` | OUT014 |
+| Loader | Harini De Mel | `harini.d@waypoint.lk` / `Waypoint@2026`; dock PIN `2468` | Peliyagoda |
+| Driver | Aniqa Razick | phone `+94776041932`, code from the demo inbox | REF-07 |
+| Driver | Dinushi Rathnayake | phone `+94775550107`, code from the demo inbox | DRY-31 |
 
-Credentials come from the `SEED_*` variables in `.env`.
+The password is `SEED_PASSWORD` in `.env` (at least 10 characters; without it the seed skips the
+accounts). Driver codes go to `/api/v1/demo/inbox` when `DEMO_MODE=true`, and the worker sends them.
+Signing in from the Vite dev server needs `TRUSTED_ORIGINS=http://localhost:5173` in `.env`.
 
 ## Judge walkthrough
 
@@ -83,6 +87,7 @@ pnpm db:generate          # only after schema changes: writes apps/backend/drizz
 pnpm db:migrate
 pnpm db:seed
 pnpm dev                  # shared (watch) + API :3000 + web :5173
+pnpm --filter api dev:worker   # second terminal: the worker (cutoff ticker, outbox relay, jobs)
 ```
 
 The web dev server proxies `/api` to the API, so both run on one origin, as they do behind Caddy in Docker.
@@ -91,7 +96,7 @@ The web dev server proxies `/api` to the API, so both run on one origin, as they
 
 | Script | Does |
 | --- | --- |
-| `pnpm dev` | Shared package in watch mode, API with hot reload, Vite dev server |
+| `pnpm dev` | Shared package in watch mode, API with hot reload, Vite dev server (start the worker separately with `pnpm --filter api dev:worker`) |
 | `pnpm build` / `lint` / `typecheck` / `test` | Runs across all workspaces |
 | `pnpm db:generate` | Generate a migration from `apps/backend/src/db/schema/<module>.ts`; name it with `pnpm --filter api db:generate --name=<module>_<change>` |
 | `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, open Drizzle Studio |

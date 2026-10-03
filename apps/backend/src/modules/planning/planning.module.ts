@@ -5,6 +5,9 @@ import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit';
 import { OrderingModule } from '../ordering';
 import { DeferralReasonsController } from './controllers/deferral-reasons.controller';
+import { DeferralsController } from './controllers/deferrals.controller';
+import { PlanBuildingController } from './controllers/plan-building.controller';
+import { PlansController } from './controllers/plans.controller';
 import { DeferralReasonLinks } from './policies/deferral-reason.links';
 import { DeferralReasonsService } from './services/deferral-reasons.service';
 import { DeferralService } from './services/deferral.service';
@@ -12,7 +15,12 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
 
 @Module({
   imports: [AuditModule, OrderingModule],
-  controllers: [DeferralReasonsController],
+  controllers: [
+    DeferralReasonsController,
+    PlansController,
+    PlanBuildingController,
+    DeferralsController,
+  ],
   providers: [
     DeferralReasonsService,
     DeferralReasonLinks,

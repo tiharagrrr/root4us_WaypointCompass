@@ -36,7 +36,11 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: 'all', path: '/api/v1/deferral-reasons/*' },
   // Master data reads and the A3/A4 edits (ROO-19).
   { method: 'all', path: '/api/v1/depots' },
-  { method: 'all', path: '/api/v1/depots/*' },
+  { method: 'all', path: '/api/v1/depots/:id' },
+  // Ordering's depot day and loading's boards. Not /depots/* as a whole:
+  // planning's /depots/:id/plans/:date is still mocked (ROO-29).
+  { method: 'all', path: '/api/v1/depots/:id/days/*' },
+  { method: 'all', path: '/api/v1/depots/:id/loading/*' },
   { method: 'all', path: '/api/v1/districts' },
   { method: 'all', path: '/api/v1/outlets' },
   { method: 'all', path: '/api/v1/outlets/*' },

@@ -1,7 +1,7 @@
 ---
 module: planning
 owner: Tihara
-status: draft          # draft | ready | in-progress | done
+status: in-progress          # draft | ready | in-progress | done
 screens: ["05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "23"]
 depends-on: [audit, master-data, ordering, fleet, engine]   # core is implied; engine is packages/engine
 ---
@@ -560,12 +560,31 @@ Checklist (tick in the PR that adds the passing test):
 - Row-level security on `deferrals` re-checks the store scope in Postgres.
 - Logs carry ids only; no names, phone numbers or notes.
 
+## Decided 2026-10-03
+- Unplanned is derived: an order is unplanned when it is in the plan's queue and on no live stop.
+  `deferrals` rows hold reasons and decisions only; an order taken off by hand has no row until the
+  dispatcher decides, so `/unplanned` lists it with `reasonCode` null.
+- `orders.activeStopId` is set at publish (`markPlanned`); in a DRAFT plan the stops are the truth.
+- Publish blockers are shown before publishing: the plan carries `publish` only when it is open and
+  nothing blocks it, and `publish-preview` lists each blocker as `{ kind, message, orderId?, orderNo?,
+  tripId?, tripKey?, rule? }` (`kind` HARD_VIOLATION, NO_DRIVER, UNDECIDED_ORDER or NOT_DRAFT). A
+  publish that races a new blocker answers 409 CONFLICT_STATE with the same `blockers`.
+- A soft violation without an override note is 422 PLAN_RULE_VIOLATION listing the soft violations.
+- A trip with no orders is cancelled (`tripNo` null) when a save leaves it empty, except a reserved
+  trip, which publish cancels if it is still empty. Never a blocker.
+- The store hears about a deferral at publish: a DEFER decision writes its audit row, and publish
+  emits one `deferral.confirmed` per CONFIRMED deferral. AC-PLN-16 is amended with the decisions PR.
+  A store manager sees only deferrals on PUBLISHED or CLOSED plans.
+- Revision 1 (publish) carries `reasonCode` `PUBLISH`; `plan_revisions.reasonCode` is free text.
+- A deferral's `toDate` is the next run after the plan's date (ordering's `CutoffService.nextRun`).
+- The edit list body is `{ ops, reasonCode?, note?, overrideNote? }`. `ops` is the engine's `EditOp`
+  union plus `SET_DRIVER` and `SET_WAVE`, parsed with zod in the service and described in OpenAPI as
+  `oneOf` eight op schemas discriminated on `op`. Decisions are posted as a list,
+  `{ decisions: [...] }`, so 15 confirms several at once.
+
 ## Open questions
 - Dates: Steps 3, 4 and 7 call 2026-10-01 a Wednesday, but it is a Thursday (2026-09-30 is the
   Wednesday). This spec uses ISO dates only. Which date is the demo's cutoff day? Decides: Nimesha.
-- AC-PLN-04, 20, 29: which problem code and body a failed publish or close precondition returns
-  (409 is given; CONFLICT_STATE with a blockers list?). Decides: Tihara.
-- AC-PLN-14: the status and code when a soft violation has no override note. Decides: Tihara.
 - Names the doc does not fix: audit actions marked derived above (Step 2's reason table also drops
   the module prefix), and link relations for engine runs, edits, close, decisions, reverse and stop
   defer. Decides: Nimesha with Tihara.
@@ -578,18 +597,14 @@ Checklist (tick in the PR that adds the passing test):
   a repair suggestion. Which type? Decides: Harini (alerts) with Tihara.
 - AC-PLN-06: how a REPAIR run returns its diff and how it is applied (persisted proposal, or an
   EditOp list posted to `/plans/{id}/edits`). Decides: Tihara.
-- AC-PLN-19, 30: Step 5 releases empty reservations at publish, yet "every reserved trip is filled or
-  released" is a publish precondition. Auto-release or blocker, and what does release write (trip
-  CANCELLED with tripNo null)? Decides: Tihara.
 - AC-PLN-22, 26: can a RELEASED trip be cancelled (Step 5 allows only re-sequence, stop defer and
   reassign; the trip machine and D8 allow cancel before start), and what happens to a cancelled
   trip's orders? Decides: Tihara with Aniqa.
-- `plan_revisions.reasonCode` is required: which code does revision 1 (publish) carry, and do
-  revisions use the deferral reason list or their own? Decides: Tihara.
-- AC-PLN-16: is `deferral.confirmed` emitted at the DEFER decision (so M4 may notify the store before
-  the plan is published) or at publish? Decides: Tihara with Harini.
 
 ## Changelog
+- 2026-10-03 Contract (ROO-29): every endpoint 05 to 18 and the deferral endpoints for 23, M4 and M7
+  answer 501 with their final route, permission, headers and DTOs; the web builds on the generated
+  mocks. Close, reservations, reassign, re-sequence, stop defer and cancel come later
 - 2026-10-03 ROO-74: `deferrals.choice` (enum `deferral_choice`) and `deferrals.bindingRule` added,
   and `deferrals_live_uq` keeps one live whole-order deferral per order and plan. Additive only
   (the freeze allows no drops before 4 Oct): `swappedForOrderId` stays, unused, until a follow-up

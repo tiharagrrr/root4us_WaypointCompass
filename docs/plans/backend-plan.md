@@ -325,7 +325,7 @@ Shared pattern for PR-1 to PR-7:
 - **Commands:** every command is `@Transactional()` and writes one `audit.record`, one
   `outbox.add` and one log line. Add the names to `planning.constants.ts`.
 
-### PR-1 `feat(planning): plans contract` (contract-first skill)
+### PR-1 `feat(planning): plans contract` (contract-first skill) (done with PR-1b: branch `feat/roo-29-planning-contract`; the vehicle options DTO is `PlanVehicleOptionDto`, because `VehicleOptionDto` is taken by identity)
 
 Covers the 15 operations: `GET /depots/{id}/plans/{date}`, `GET /plans/{id}`,
 `GET /plans/{id}/trips`, `GET /plans/{id}/context`, `POST /plans/{id}/engine-runs` (202),
