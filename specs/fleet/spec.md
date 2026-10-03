@@ -1,7 +1,7 @@
 ---
 module: fleet
 owner: Tihara
-status: draft          # draft | ready | in-progress | done
+status: in-progress          # draft | ready | in-progress | done
 screens: [A5, "06", "09"]
 depends-on: [audit, master-data]   # core is implied
 ---
@@ -51,7 +51,7 @@ Paths omit `/api/v1`. Vehicles use offset pages (default limit 10, max 100).
 | GET | `/vehicles`, `/vehicles/{id}` | `masterData:read` | A5 |
 | PATCH | `/vehicles/{id}` | `masterData:manage` | A5; JSON merge patch; `If-Match` |
 | PUT | `/vehicles/{id}/status` | `masterData:manage` or `plan:revise` | ACTIVE, WORKSHOP or BREAKDOWN with a reason; `If-Match` |
-| GET | `/vehicles/{id}/fuel?week=` | `plan:read` | Quota, planned, actual, left (A5 shows this week's fuel against quota) |
+| GET | `/vehicles/{id}/fuel?week=` | `plan:read` | Quota, planned, actual, left (A5 shows this week's fuel against quota). `week` is `YYYY-Www` (e.g. `2026-W40`), the current business week by default; built |
 
 ## Services and helpers
 - `VehiclesService`: vehicle edits (A5), audited.
@@ -180,7 +180,7 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-FLT-05 A breakdown takes a vehicle out
 - [ ] AC-FLT-06 Who may change a status
 - [ ] AC-FLT-07 Only admins edit vehicle details
-- [ ] AC-FLT-08 Only planners read fuel
+- [x] AC-FLT-08 Only planners read fuel
 - [ ] AC-FLT-09 A low quota raises an event
 
 ## Non-functional
@@ -194,14 +194,26 @@ Checklist (tick in the PR that adds the passing test):
 ## Open questions
 - AC-FLT-09: the `fuel.quota_low` threshold, its payload, and whether it fires once per vehicle and
   week. Decides: Tihara.
-- AC-FLT-03: the `kind` of a reversal entry (PLANNED with negative litres, or ADJUSTMENT), and whether
-  a revision also writes new PLANNED entries for the changed trips. Decides: Tihara.
-- AC-FLT-04: where actual km and litres come from at close, and whether PLANNED entries still count
-  towards "used" once ACTUAL ones exist (the formula for left). Decides: Tihara with Aniqa.
+- AC-FLT-03: whether a revision also writes new PLANNED entries for the changed trips. Decides: Tihara.
+- AC-FLT-04: where actual km and litres come from at close. Decides: Tihara with Aniqa.
+
+## Decided while building
+- A reversal is a PLANNED entry with negative litres and km, in the week of the entries it reverses,
+  so `planned` is always the net still planned (AC-FLT-03). Reversing a trip with nothing left
+  planned writes nothing.
+- Used = every entry of the ISO week; left = quota − used. Close therefore reverses a trip's
+  PLANNED fuel when it records the ACTUAL, so a trip never counts twice (AC-FLT-04).
+- `FuelLedgerService` (exported): `addPlanned(trips)` takes km and litres as the engine measured them
+  (fleet never repeats the formula), `reversePlanned(tripIds)`, `usedThisWeek(vehicleIds, date,
+  { excludePlanId })` for the engine's `fuelUsedThisWeek` (leaving out the plan being built), and
+  `weekOf(vehicleId, week)`. `VehicleQueries` (exported): `get(id, actor)` with `VehicleScope`, and
+  `forDepot(depotId)` for the engine. ISO weeks come from `isoWeekOf(date)` in `packages/shared`.
 - AC-FLT-02, 08: the format of the `week` query parameter. Decides: Tihara.
 - AC-FLT-05, 07: does every status change emit `vehicle.status_changed`, or only BREAKDOWN (the doc
   says "a breakdown emits")? Which audit action and outbox event does a vehicle PATCH write, and which
   fields may it change? Decides: Tihara.
 
 ## Changelog
+- 2026-10-03 Fleet read side for planning: `VehicleQueries`, `FuelLedgerService`, `isoWeekOf` in shared,
+  and `GET /vehicles/{id}/fuel` (AC-FLT-08). Status changes and vehicle edits still to come
 - 2026-09-30 created from the Build Spec

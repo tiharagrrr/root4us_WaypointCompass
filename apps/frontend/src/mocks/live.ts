@@ -69,6 +69,9 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // may show a fix whose POST is still mocked.
   { method: 'all', path: '/api/v1/alerts' },
   { method: 'all', path: '/api/v1/alerts/*' },
+  // Fleet: a vehicle's fuel for a week (ROO-42). The rest of /vehicles is
+  // still mocked.
+  { method: 'get', path: '/api/v1/vehicles/:id/fuel' },
 ]
 
 /** Pass-through handlers; they go before the mocks so they win. */

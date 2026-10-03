@@ -216,7 +216,7 @@ Fixes problem 8. Follow the `drizzle-change` skill.
    two columns).
 5. **Test:** a schema test that inserts two live deferrals for the same order and plan, and fails.
 
-## PR-D `feat(fleet): vehicle reads and fuel ledger` (part of ROO-42)
+## PR-D `feat(fleet): vehicle reads and fuel ledger` (part of ROO-42) (done: branch `feat/roo-42-fleet-vehicles-fuel-ledger`; the reversal method is `reversePlanned`, and `weekOf` backs `GET /vehicles/{id}/fuel`)
 
 Fixes problem 7, with the read side planning needs and nothing more. Vehicle edits and status
 endpoints (A5) come later. Copy the module layout from `master-data`.
@@ -348,6 +348,10 @@ Covers the 15 operations: `GET /depots/{id}/plans/{date}`, `GET /plans/{id}`,
   current `Plan`. Document it as an object; its exact type is `EngineInput`.
 - **Examples:** use PLG, 2026-10-02, REF-07, DRY-31, WF-0171 and WF-0172.
 - **Codegen:** run `pnpm api:gen`, and keep these paths out of `apps/frontend/src/mocks/live.ts`.
+  Careful: `live.ts` already lets `/api/v1/depots/*` and `/api/v1/trips/*` through to the real API
+  (master data and execution). Those wildcards also catch `/depots/{id}/plans/{date}` and the
+  `/trips/{id}/...` actions, so they would hit the 501s instead of the mocks. Narrow the two
+  wildcards to the paths master data and execution actually serve.
 - **Tests:** one guard test per operation (store manager 403, dispatcher 501; admin 501 on reads
   and 403 on writes).
 - **Spec:** `specs/planning/spec.md` status goes to `in-progress`.

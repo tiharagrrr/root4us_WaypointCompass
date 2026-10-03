@@ -72,6 +72,19 @@ export function dowOf(date: string): number {
   return (sunday0 + 6) % 7;
 }
 
+/**
+ * The ISO week of a business date (weeks start on Monday; week 1 holds the
+ * year's first Thursday), which the weekly fuel quota is counted in. The year
+ * is the year of the week's Thursday, so 2027-01-01 is in week 53 of 2026.
+ */
+export function isoWeekOf(date: string): { isoYear: number; isoWeek: number } {
+  const thursday = addDays(date, 3 - dowOf(date));
+  const isoYear = Number(thursday.slice(0, 4));
+  const dayOfYear =
+    (Date.parse(`${thursday}T00:00:00Z`) - Date.parse(`${isoYear}-01-01T00:00:00Z`)) / DAY_MS;
+  return { isoYear, isoWeek: Math.floor(dayOfYear / 7) + 1 };
+}
+
 export function weekdayOf(date: string): Weekday {
   return WEEKDAYS[dowOf(date)] as Weekday;
 }

@@ -7158,6 +7158,100 @@
         ]
       }
     },
+    "/api/v1/vehicles/{id}/fuel": {
+      "get": {
+        "operationId": "vehicleFuelFuel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "ISO week as YYYY-Www; defaults to the current business week",
+            "schema": {
+              "pattern": "^\\d{4}-W(0[1-9]|[1-4]\\d|5[0-3])$",
+              "example": "2026-W40",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FuelWeekDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A vehicle's fuel for one ISO week",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
     "/api/v1/deferral-reasons": {
       "get": {
         "operationId": "deferralReasonsList",
@@ -13744,6 +13838,70 @@
           "date",
           "confirmed",
           "closed",
+          "_links"
+        ]
+      },
+      "FuelWeekDto": {
+        "type": "object",
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "example": "VEH014"
+          },
+          "isoYear": {
+            "type": "number",
+            "example": 2026
+          },
+          "isoWeek": {
+            "type": "number",
+            "example": 40
+          },
+          "quotaL": {
+            "type": "number",
+            "example": 400,
+            "description": "Weekly fuel quota, litres"
+          },
+          "plannedL": {
+            "type": "number",
+            "example": 120,
+            "description": "Planned litres still standing (reversals are subtracted)"
+          },
+          "actualL": {
+            "type": "number",
+            "example": 46.5,
+            "description": "Litres recorded at close"
+          },
+          "adjustmentL": {
+            "type": "number",
+            "example": 0
+          },
+          "usedL": {
+            "type": "number",
+            "example": 166.5,
+            "description": "Everything counted against the quota"
+          },
+          "leftL": {
+            "type": "number",
+            "example": 233.5,
+            "description": "quotaL minus usedL; negative when over"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "vehicleId",
+          "isoYear",
+          "isoWeek",
+          "quotaL",
+          "plannedL",
+          "actualL",
+          "adjustmentL",
+          "usedL",
+          "leftL",
           "_links"
         ]
       },
