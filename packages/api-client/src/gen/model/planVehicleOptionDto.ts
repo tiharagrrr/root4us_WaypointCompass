@@ -29,4 +29,6 @@ export interface PlanVehicleOptionDto {
   volumeCapM3: number;
   /** Weekly quota less what is used and planned */
   fuelLeftL: number;
+  /** Weekly fuel quota, litres */
+  weeklyFuelQuotaL: number;
 }

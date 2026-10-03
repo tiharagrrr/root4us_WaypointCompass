@@ -163,7 +163,12 @@ export class PlanQueries {
       .vehicleOptions(ctx.input, ctx.draft)
       .map((o) => {
         const v = ctx.vehicles.get(o.vehicleId);
-        return { ...o, type: v?.type ?? 'TRUCK', temp: v?.temp ?? 'AMBIENT' };
+        return {
+          ...o,
+          type: v?.type ?? 'TRUCK',
+          temp: v?.temp ?? 'AMBIENT',
+          weeklyFuelQuotaL: v?.weeklyFuelQuotaL ?? 0,
+        };
       });
     return all(options, `/api/v1/plans/${id}/vehicle-options`);
   }

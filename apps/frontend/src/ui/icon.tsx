@@ -1,12 +1,15 @@
 import type { CSSProperties } from 'react'
 import { cn } from '@/lib/cn'
 import add from '@material-symbols/svg-400/rounded/add-fill.svg'
+import apparel from '@material-symbols/svg-400/rounded/apparel-fill.svg'
 import arrowBack from '@material-symbols/svg-400/rounded/arrow_back-fill.svg'
 import assignmentTurnedIn from '@material-symbols/svg-400/rounded/assignment_turned_in-fill.svg'
 import backspace from '@material-symbols/svg-400/rounded/backspace-fill.svg'
+import bolt from '@material-symbols/svg-400/rounded/bolt-fill.svg'
 import calendarToday from '@material-symbols/svg-400/rounded/calendar_today-fill.svg'
 import check from '@material-symbols/svg-400/rounded/check-fill.svg'
 import checkCircle from '@material-symbols/svg-400/rounded/check_circle-fill.svg'
+import chevronRight from '@material-symbols/svg-400/rounded/chevron_right-fill.svg'
 import close from '@material-symbols/svg-400/rounded/close-fill.svg'
 import cloudOff from '@material-symbols/svg-400/rounded/cloud_off-fill.svg'
 import dragIndicator from '@material-symbols/svg-400/rounded/drag_indicator-fill.svg'
@@ -41,14 +44,17 @@ import warehouse from '@material-symbols/svg-400/rounded/warehouse-fill.svg'
  */
 const icons = {
   account: person,
+  apparel,
   back: arrowBack,
   backspace,
   bell: notifications,
+  bolt,
   camera: photoCamera,
   check,
   'check-circle': checkCircle,
   'chevron-down': keyboardArrowDown,
   'chevron-down-small': keyboardArrowDown,
+  'chevron-right': chevronRight,
   close,
   dashboard,
   deferrals: eventUpcoming,

@@ -75,3 +75,8 @@ row for every intended difference; anything else that differs is a bug.
 | L4 Release trip | "Load 3,640 kg · 16.4 m³" and each stop's delivery window | Items checked against items expected, and the stops with their order numbers | Neither the release checks nor the load list carries the trip's weight, volume or stop windows |
 | L4 Release trip | Release is a plain primary button | Disabled with "Releasing needs a connection…" while the tablet is offline | Release must confirm the plan revision, so it is the one loader write the outbox does not take (AC-LOD-17) |
 | L5 Trip released | "REF-07 · Trip 1 released" | "REF-07 released" | Same missing trip sequence as L2 |
+| 05, 09 Plan | Style glyph in purple | Style glyph in the primary blue | Compass has no purple token; tokens only, no hex values |
+| 09 Plan · vehicles | Each unplanned order has a sentence ("Would take DRY-22 over its fuel quota") | The reason's label ("Fleet full"), or "Needs a decision in step 3" for one taken off by hand | The engine's sentence needs the run's tried vehicles and numbers, which the unplanned list does not carry yet |
+| 06 Add vehicle | Footer "REF-07 · Trip 1 · departs Peliyagoda 04:40" | "REF-07 · Trip 1 · from Peliyagoda" | The departure depends on the trip's brand, which the first order sets on 07 |
+| 07 Add vehicle · Orders | Orders listed by GET order-options | The same list from the engine's optionsForTrip in the browser | Every Add re-ranks the list instantly without a round trip; it is the same engine function the endpoint runs (AC-PLN-12) |
+| 09 Plan · vehicles | Confirm trips opens step 2 | Opens the 14 placeholder | Screens 14 to 18 are ROO-41 |

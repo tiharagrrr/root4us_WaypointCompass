@@ -17336,6 +17336,11 @@
             "type": "number",
             "example": 61.5,
             "description": "Weekly quota less what is used and planned"
+          },
+          "weeklyFuelQuotaL": {
+            "type": "number",
+            "example": 400,
+            "description": "Weekly fuel quota, litres"
           }
         },
         "required": [
@@ -17353,7 +17358,8 @@
           "styleTechMinutesLeft",
           "weightCapKg",
           "volumeCapM3",
-          "fuelLeftL"
+          "fuelLeftL",
+          "weeklyFuelQuotaL"
         ]
       },
       "TripTotalsDto": {

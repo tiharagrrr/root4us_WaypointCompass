@@ -153,6 +153,9 @@ export class PlanVehicleOptionDto {
     description: 'Weekly quota less what is used and planned',
   })
   fuelLeftL!: number;
+
+  @ApiProperty({ example: 400, description: 'Weekly fuel quota, litres' })
+  weeklyFuelQuotaL!: number;
 }
 
 export class OrderOptionsQueryDto {
