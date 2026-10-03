@@ -18,9 +18,9 @@ export interface DemoDayBuilder {
 }
 
 /**
- * The builders POST /demo/reset runs. The S1 demo-day seed (ROO-22)
- * registers one from the module that owns the rows, in onModuleInit:
- * `demoDay.register(this)`. Until one exists the reset answers 501.
+ * The builders POST /demo/reset runs, each registered in onModuleInit with
+ * `demoDay.register(this)`. The S1 demo day (ROO-22) is SeedDemoDayBuilder,
+ * which runs the seed's own rebuild; with none registered the reset answers 501.
  */
 @Injectable()
 export class DemoDay {

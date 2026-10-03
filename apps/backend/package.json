@@ -25,6 +25,7 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:check": "drizzle-kit check",
     "db:seed": "tsx src/db/seed.ts",
+    "db:reset-demo": "tsx src/db/reset-demo.ts",
     "db:reset": "tsx src/db/reset.ts && pnpm db:migrate && pnpm db:seed",
     "db:studio": "drizzle-kit studio",
     "start:worker": "node dist/worker",

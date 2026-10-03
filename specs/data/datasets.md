@@ -167,10 +167,13 @@ Order records. One row per order. In `deliveries_train.csv`, each dispatched ord
 and its `route_id` plus `seq_in_route` match exactly one route leg. `task1_test_inputs.csv` has the
 same columns for a later period, and every row in it was dispatched.
 
-The seed builds the 14 operating days before the demo day from `deliveries_train.csv`, with dates
-shifted, as closed plans with trips, stops and receipts. `task1_test_inputs.csv` is not loaded.
-Step 1 doesn't give a column-by-column transform for history, so the mappings below are
-**proposed** (see Open questions).
+The seed (`src/db/seed/history.ts`) builds the 14 operating days before D−1 from the 14 dispatch
+days before the file's last one, mapped in order, as one CLOSED plan per depot and day, a COMPLETED
+trip per route (trip 1 or 2 by first planned arrival) and a DELIVERED stop and order per row that
+ran. A `deferred` row also gets a CONFIRMED, acknowledged deferral on its order day's plan. The
+file's last dispatch day becomes Kandy's demo day (`kandy-day.ts`). Not loaded: `not_run` rows,
+actual times, drivers and receipts. `task1_test_inputs.csv` is not loaded. The mappings below are
+what the seed does; the open ones are in Open questions.
 
 | Column | Type | Unit | Allowed values or range | Meaning | Maps to (table.column) |
 | --- | --- | --- | --- | --- | --- |
@@ -361,9 +364,9 @@ const vehicle = { id: 'VEH901', type: 'TRUCK', temp: 'REEFER', depotId: 'PLG',
 - Where does `outlets.styleDeliveryDow` come from? `outlets.csv` has no delivery-day column. Should
   the seed derive it from history, or generate it? The team's Supabase draft keeps one
   `delivery_day` per brand, which suggests every Style outlet gets the same day.
-- How does history map exactly? Does `delivery_id` go to `orders.externalRef`? Which status and
-  `deliveryDate` do `not_run` rows get? Do the actual times in `route_legs_train.csv` fill
-  `stops.arrivedAt` and `stops.completedAt` for the 14 history days?
+- History: should `not_run` rows be stored (as CANCELLED orders?), and should the actual times in
+  `route_legs_train.csv` fill `stops.arrivedAt` and `stops.completedAt`? The seed loads neither, so
+  on-time reports over history have no actuals yet. Should history orders get receipts?
 - What is the exact literal for an available vehicle in `task2b_peak_day_fleet.csv`?
 - Does `SEED_DATA_DIR` keep the booklet's folders (`General Data/` and so on) or a flat layout, as
   the `pnpm engine:task2b` example assumes?
@@ -374,4 +377,14 @@ const vehicle = { id: 'VEH901', type: 'TRUCK', temp: 'REEFER', depotId: 'PLG',
 
 ## Changelog
 
+- 2026-10-03 History and Kandy (ROO-22): the seed loads 14 operating days of history before D−1 and a
+  Kandy demo day from the file's last dispatch day (see deliveries_train.csv above), so
+  `days_since_last_served` now comes from the seeded history. Each depot's `demo.s1` snapshot lists its
+  demo-day orders (v2), so the reset rebuilds Kandy too. The seed code moved to `src/db/seed/`
+- 2026-10-03 The seed loads the catalog, outlet names and the S1 demo day (ROO-22). Decided: S1 orders load
+  as CONFIRMED on D, or DEFERRED from D−1 with a CONFIRMED deferral on a CLOSED D−1 plan when
+  `deferred_yesterday` is 1; `days_since_last_served` is not stored (it comes from history, not built
+  yet); any fleet status other than `in_workshop` counts as available; `SEED_DATA_DIR` may be flat or keep
+  the booklet's folders. The reset rebuilds from a `demo.s1` snapshot in settings, not the CSVs. History
+  (14 days) and the Kandy day are still open
 - 2026-09-30 created from the booklet and the Build Spec
