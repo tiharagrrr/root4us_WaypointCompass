@@ -2,7 +2,7 @@ import { EngineInputError } from '../errors';
 import { resolveParams, type EngineParams } from '../params';
 import { buildLookups, type Lookups } from '../plan/measure';
 import { planDow } from '../plan/plan-date';
-import { effectiveWindow } from '../plan/stops';
+import { effectiveWindow } from '../plan/window';
 import type {
   EngineDistrict,
   EngineInput,

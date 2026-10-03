@@ -41,6 +41,14 @@ export const engineParamsSchema = z.strictObject({
   lateRiskSlackMin: z.number().min(0),
   /** An outlet deferred this many runs in a row, ending on the last run, is a repeat skip. */
   repeatSkipLookbackRuns: z.number().int().positive(),
+  /** An effective window shorter than this scores the tight-window weight. */
+  tightWindowMin: z.number().positive(),
+  /** Placements the repair pass may evaluate before it stops. Never a wall-clock limit. */
+  improveIterations: z.number().int().positive(),
+  /** What an ambient order must score to take a reefer chilled orders could still want. */
+  reeferAmbientMinPriority: z.number().min(0),
+  /** Past this, a resource that caused a deferral is a limiting resource. */
+  limitingUtilisationPct: z.number().min(0).max(100),
   priorityWeights: priorityWeightsSchema,
 });
 
@@ -58,6 +66,10 @@ export const DEFAULT_PARAMS: EngineParams = {
   techValueLimitLkr: null,
   lateRiskSlackMin: 15,
   repeatSkipLookbackRuns: 1,
+  tightWindowMin: 120,
+  improveIterations: 2000,
+  reeferAmbientMinPriority: 40,
+  limitingUtilisationPct: 90,
   priorityWeights: {
     deferredOnLastRun: 40,
     consecutiveDeferrals: 10,

@@ -16,7 +16,7 @@ import { stableSort } from '../util/stable-sort';
 import { orderOf, historyOf, type AllocContext } from './context';
 import { fits, vehicleOf } from './fits';
 import { vehicleKindFor } from './reasons';
-import { isRepeatSkip } from '../rules/repeat-skip';
+import { isRepeatSkip } from '../plan/repeat-skip';
 
 /** How each resource is named and counted in the sentences explain() writes. */
 export interface ResourceLabel {
