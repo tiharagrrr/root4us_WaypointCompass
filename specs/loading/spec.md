@@ -566,6 +566,44 @@ changing one is a behaviour change, not a bug fix.
   with (AC-LOD-19). An order every line of which was removed is never marked
   LOADED at all.
 
+## Decided while building (ROO-34)
+
+The screens' half of the module. Each of these is a decision the frames did
+not make for us; the visual ones are listed in docs/departures.md with the
+frame they depart from.
+
+- **The list is the server's and the ticks are the device's.** L2 renders the
+  shape, the copy and every action from `GET /trips/{id}/load-list`, then
+  overlays what Dexie holds, so a tick is on screen before the network is
+  asked and stays there with no signal (architecture rule 10). The fetched
+  list is mirrored into Dexie, except for a line or flag an unsent tap is
+  holding: writing the server's older answer over one of those is what makes
+  a tick blink off under a loader's hand.
+- **One control per line, and the server decides whether it exists.** The tick
+  box is the whole interaction: it checks a line that carries a `check` link
+  and undoes a line that carries `undo`, both through the outbox. A released
+  trip carries neither, so the list is read-only without the screen knowing
+  anything about trip status (AC-LOD-06).
+- **The Plan updated banner freezes the list.** AC-LOD-13 says she
+  acknowledges it before she checks another line, so while it shows, every
+  tick is disabled; Got it clears it and refetches. The banner comes from
+  `load.list_updated` over SSE, and from `upToDate: false` on the list itself
+  for a tablet that was asleep when the event went out.
+- **The dock's name lives in Dexie, not in the session.** `useCheckedByName`
+  keeps the typed name between taps and the first tick asks for it. The
+  account says whose tablet it is; this says who looked in the crate.
+- **A flag raised offline has no links, so L3a shows no Undo for it.** The
+  undo endpoint needs the server's flag id, which does not exist until the
+  tap syncs. The optimistic row is drawn in full and the Undo button appears
+  with the server's answer.
+- **L5 is a state of the release route, not a route of its own.** A trip whose
+  status is RELEASED shows it, so reopening `/dock/trips/:id/release` after a
+  release shows what happened rather than an empty checklist.
+- **A refused release re-reads the checks.** `ApiProblem` keeps only the
+  RFC 9457 members, so the 409's `checks` member does not survive the client;
+  the screen refetches `GET /trips/{id}/release-checks` on a refusal instead,
+  which is the same list by another name.
+
 ## Still open
 
 - Dates: the doc's examples call 1 Oct 2026 a Wednesday, but 30 Sep is the
@@ -587,3 +625,9 @@ changing one is a behaviour change, not a bug fix.
   `GET /load-flags/{id}` and `GET /load-lines/{id}` added to the Endpoints;
   Open questions replaced by "Decided while building" and "Still open";
   status draft to in-progress (the screens L2 to L5 are ROO-52's)
+- 2026-10-03 ROO-34: the loader screens L1 to L5, L3a to L3c and the phone
+  variants, each wired to the generated hooks and the offline outbox. The
+  dock half of AC-LOD-01, 02, 04, 06, 07, 08, 09, 10, 11, 13, 14, 15, 16 and
+  17 now has a screen test of its own; see "Decided while building (ROO-34)"
+  and docs/departures.md. Status stays in-progress: the dispatcher's flag
+  queue and decision panel on 01 and 19 are still to build
