@@ -15332,6 +15332,11 @@
               }
             ]
           },
+          "districtId": {
+            "type": "string",
+            "description": "The outlet's district, which 03 groups the queue by",
+            "example": "LK-11-GAMPAHA"
+          },
           "requestedDate": {
             "type": "string",
             "description": "The day the store asked for",
@@ -15410,6 +15415,7 @@
           "status",
           "tempClass",
           "brand",
+          "districtId",
           "requestedDate",
           "deliveryDate",
           "afterCutoff",

@@ -19,6 +19,8 @@ export interface OrderDto {
   status: OrderStatus;
   tempClass: TempClass;
   brand: Brand;
+  /** The outlet's district, which 03 groups the queue by */
+  districtId: string;
   /** The day the store asked for */
   requestedDate: string;
   /** The run it is on now */

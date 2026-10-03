@@ -34,6 +34,7 @@ export const order = (over: Partial<OrderDto> = {}): OrderDto => {
     status: 'DRAFT',
     tempClass: 'AMBIENT',
     brand: 'FRESH',
+    districtId: 'gampaha',
     requestedDate: '2026-10-01',
     deliveryDate: '2026-10-01',
     afterCutoff: false,
