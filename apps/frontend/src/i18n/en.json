@@ -107,6 +107,10 @@
     "savedOnPhone": "Saved on the phone if there’s no signal.",
     "needOutcome": "Why did it fail?",
     "needNote": "Add a note for the dispatcher",
-    "needPhoto": "Add a photo"
+    "needPhoto": "Add a photo",
+    "downloadBeforeLeaving": "Download before leaving",
+    "downloadBeforeLeavingBody": "The trip isn’t fully saved on this phone. Retry on depot Wi-Fi.",
+    "retry": "Retry",
+    "lastSaved": "Last saved {{time}}"
   }
 }

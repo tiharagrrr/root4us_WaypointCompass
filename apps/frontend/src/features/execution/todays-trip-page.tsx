@@ -13,6 +13,7 @@ import { Icon } from '@/ui/icon'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
+import { DownloadFailedCard } from './download-failed-card'
 import { cachedTripLinks } from './offline-links'
 import { useTripBundle } from './use-trip-bundle'
 
@@ -67,7 +68,7 @@ export function TodaysTripPage() {
       {cached ? <TripCard trip={cached} /> : <Skeleton className="h-[200px] w-full rounded-lg" />}
 
       {bundle.state === 'failed' ? (
-        <ErrorState error={bundle.error} onRetry={bundle.retry} />
+        <DownloadFailedCard lastBundleAt={bundle.lastBundleAt} onRetry={bundle.retry} />
       ) : (
         <SavedForOffline saving={bundle.state === 'downloading'} />
       )}
@@ -98,7 +99,15 @@ export function TodaysTripPage() {
       </section>
 
       <footer className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-2 border-t border-border bg-background px-4 pt-[13px] pb-2">
-        <Action link={startLink} onAction={start} variant="primary" className="h-[52px] w-full text-[16px]">
+        <Action
+          link={startLink}
+          onAction={start}
+          variant="primary"
+          className="h-[52px] w-full text-[16px]"
+          // D2: a trip the phone does not fully hold cannot be started, or the driver leaves the
+          // depot with half a round on board.
+          disabled={bundle.state !== 'saved'}
+        >
           {t('driver.startTrip')}
         </Action>
         <p className="type-caption m-0 text-center text-muted-foreground">{t('driver.startNote')}</p>

@@ -71,6 +71,7 @@ describe('D1 Today’s trip', () => {
   })
 
   it('AC-EXE-05 a failed download keeps the trip and offers a retry', async () => {
+    await db.meta.put({ key: 'lastBundleAt', value: '2026-10-02T03:05:00+05:30' })
     await db.trips.put({
       id: TRIP_ID,
       tripRef: 'REF-07 · Trip 1',
@@ -97,8 +98,14 @@ describe('D1 Today’s trip', () => {
 
     // The card the phone already holds stays, and nothing was queued for the failed attempt.
     expect(await screen.findByText('REF-07 · Trip 1')).toBeInTheDocument()
-    expect(await screen.findByRole('alert')).toHaveTextContent('Cannot reach the depot')
-    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+    const failure = await screen.findByRole('alert')
+    expect(failure).toHaveTextContent('Download before leaving')
+    expect(failure).toHaveTextContent('The trip isn’t fully saved on this phone. Retry on depot Wi-Fi.')
+    // The time of the last good download, so she knows what is on board (AC-EXE-05).
+    expect(failure).toHaveTextContent('Last saved 03:05')
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
+    // A trip the phone does not hold cannot be started.
+    expect(screen.getByRole('button', { name: 'Start trip' })).toBeDisabled()
     await expect(db.outbox.count()).resolves.toBe(0)
   })
 
