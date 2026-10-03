@@ -29,7 +29,11 @@ export const storeRoutes: RouteObject[] = [
             element: <NewOrderPage />,
             loader: prefetchLoader((qc) => qc.prefetchQuery(getOrdersListQueryOptions(STORE_OPEN_ORDERS))),
           },
-          { path: 'orders', handle: handle('Orders'), element: <ScreenPlaceholder code="M3" name="Orders" node="185:10924" /> },
+          {
+            path: 'orders',
+            handle: handle('Orders'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/orders-page')).OrdersPage }),
+          },
           {
             path: 'orders/:id/receipt',
             handle: handle('Confirm receipt'),
@@ -40,11 +44,16 @@ export const storeRoutes: RouteObject[] = [
             handle: handle('Report issue'),
             element: <ScreenPlaceholder code="M6" name="Report issue" node="185:11543" />,
           },
-          { path: 'deferrals', handle: handle('Deferrals'), element: <ScreenPlaceholder code="M7" name="Deferrals" node="185:11685" /> },
           {
+            path: 'deferrals',
+            handle: handle('Deferrals'),
+            lazy: async () => ({ Component: (await import('@/features/deferrals/deferrals-page')).DeferralsPage }),
+          },
+          {
+            // M4 opens over M7, so a notice has a link of its own.
             path: 'deferrals/:id',
-            handle: handle('Deferral notice'),
-            element: <ScreenPlaceholder code="M4" name="Deferral notice" node="185:11128" />,
+            handle: handle('Deferrals'),
+            lazy: async () => ({ Component: (await import('@/features/deferrals/deferrals-page')).DeferralsPage }),
           },
           // M1's sidebar has a Receipts entry; the frames only draw the per-order screen (M5).
           { path: 'receipts', handle: handle('Receipts'), element: <ScreenPlaceholder code="M5" name="Receipts" node="185:11384" /> },
