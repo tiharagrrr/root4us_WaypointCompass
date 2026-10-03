@@ -11,6 +11,8 @@ export interface PinKeypadProps {
   length?: number
   /** Called once the last digit is typed; the screen signs in from here. */
   onComplete: (pin: string) => void
+  /** Every change, so a screen with its own Sign in button knows when the PIN is whole. */
+  onChange?: (pin: string) => void
   /** Clears the entry and the dots, e.g. after a wrong PIN. */
   resetKey?: string | number
   disabled?: boolean
@@ -19,7 +21,7 @@ export interface PinKeypadProps {
   label?: string
 }
 
-export function PinKeypad({ length = 4, onComplete, resetKey, disabled = false, className, label = 'PIN keypad' }: PinKeypadProps) {
+export function PinKeypad({ length = 4, onComplete, onChange, resetKey, disabled = false, className, label = 'PIN keypad' }: PinKeypadProps) {
   const [pin, setPin] = useState('')
   const [lastReset, setLastReset] = useState(resetKey)
 
@@ -36,15 +38,16 @@ export function PinKeypad({ length = 4, onComplete, resetKey, disabled = false, 
       setPin((current) => {
         if (current.length >= length) return current
         const next = current + digit
+        onChange?.(next)
         if (next.length === length) onComplete(next)
         return next
       })
     },
-    [disabled, length, onComplete],
+    [disabled, length, onChange, onComplete],
   )
 
   const key =
-    'flex h-[72px] cursor-pointer items-center justify-center rounded-md border border-border bg-background text-foreground outline-none transition-colors hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-40'
+    'flex h-16 cursor-pointer items-center justify-center rounded-lg border border-slate-300 bg-background text-foreground sm:h-[74px] outline-none transition-colors hover:bg-slate-100 active:bg-slate-200 focus-visible:ring-2 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-40'
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -60,7 +63,15 @@ export function PinKeypad({ length = 4, onComplete, resetKey, disabled = false, 
             {digit}
           </button>
         ))}
-        <button type="button" disabled={disabled || pin === ''} onClick={() => setPin('')} className={cn(key, 'type-body')}>
+        <button
+          type="button"
+          disabled={disabled || pin === ''}
+          onClick={() => {
+            setPin('')
+            onChange?.('')
+          }}
+          className={cn(key, 'type-body')}
+        >
           Clear
         </button>
         <button type="button" disabled={disabled} onClick={() => press('0')} className={cn(key, 'font-sans text-[20px] font-bold')}>
@@ -70,7 +81,13 @@ export function PinKeypad({ length = 4, onComplete, resetKey, disabled = false, 
           type="button"
           aria-label="Backspace"
           disabled={disabled || pin === ''}
-          onClick={() => setPin((current) => current.slice(0, -1))}
+          onClick={() =>
+            setPin((current) => {
+              const next = current.slice(0, -1)
+              onChange?.(next)
+              return next
+            })
+          }
           className={key}
         >
           <Icon name="backspace" size={22} className="text-slate-700" />
