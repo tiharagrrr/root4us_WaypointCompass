@@ -23,7 +23,13 @@ export const driverRoutes: RouteObject[] = [
               Component: (await import('@/features/execution/todays-trip-page')).TodaysTripPage,
             }),
           },
-          { path: 'stops/:id', element: <ScreenPlaceholder code="D3" name="Next stop" node="185:20107" /> },
+          {
+            path: 'stops/:id',
+            handle: { tabBar: false },
+            lazy: async () => ({
+              Component: (await import('@/features/execution/next-stop-page')).NextStopPage,
+            }),
+          },
           { path: 'stops/:id/record', element: <ScreenPlaceholder code="D4" name="Record stop" node="185:20174" /> },
           { path: 'stops/:id/exception', element: <ScreenPlaceholder code="D5" name="Exception" node="185:20240" /> },
           { path: 'trips', element: <ScreenPlaceholder code="D10" name="Trips" node="245:828" /> },

@@ -48,6 +48,22 @@
     "startNote": "Start only when safely stopped.",
     "cantRunLink": "Can’t run this trip?",
     "noTripTitle": "No trip today",
-    "noTripBody": "Nothing is assigned to you yet. Pull down once you are on depot Wi-Fi."
+    "noTripBody": "Nothing is assigned to you yet. Pull down once you are on depot Wi-Fi.",
+    "stopOf": "Stop {{n}} of {{total}}",
+    "sharingLocation": "SHARING LOCATION",
+    "routeMap": "ROUTE MAP",
+    "you": "You",
+    "nextStop": "Next stop",
+    "eta": "ETA",
+    "window": "Window",
+    "dockAndAccess": "Dock & access notes",
+    "then": "Then",
+    "navigate": "Navigate",
+    "arrived": "Arrived",
+    "arrivedNote": "Arrived records the time and GPS.",
+    "outOfSequence": "Out of sequence",
+    "otherTripTitle": "That stop is not on this trip",
+    "otherTripBody": "Only the stops on the trip you are running can be recorded. Go back to your trip.",
+    "backToTrip": "Back to my trip"
   }
 }
