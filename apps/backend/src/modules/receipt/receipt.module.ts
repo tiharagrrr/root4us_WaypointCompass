@@ -5,9 +5,17 @@ import { Module, type OnModuleInit } from '@nestjs/common';
 import { EventBus } from '../../core/outbox/event-bus';
 import { AuditModule } from '../audit';
 import { OrderingModule } from '../ordering';
+import { IssuesController } from './controllers/issues.controller';
 import { ReceiptsController } from './controllers/receipts.controller';
+import { CommentLinks } from './policies/comment.links';
+import { IssueLinks } from './policies/issue.links';
 import { ReceiptLinks } from './policies/receipt.links';
+import { IssueScope } from './policies/receipt.scope';
 import { DeliveryReadModel } from './services/delivery.read-model';
+import { IssuePhotosService } from './services/issue-photos.service';
+import { IssueQueries } from './services/issue.queries';
+import { IssueThreadService } from './services/issue-thread.service';
+import { IssuesService } from './services/issues.service';
 import { ReceiptEventListener } from './services/receipt-event.listener';
 import { ReceiptQueries } from './services/receipt.queries';
 import { ReceiptService } from './services/receipt.service';
@@ -27,9 +35,16 @@ import { ReceiptService } from './services/receipt.service';
  */
 @Module({
   imports: [AuditModule, OrderingModule],
-  controllers: [ReceiptsController],
+  controllers: [ReceiptsController, IssuesController],
   providers: [
+    CommentLinks,
     DeliveryReadModel,
+    IssueLinks,
+    IssuePhotosService,
+    IssueQueries,
+    IssueScope,
+    IssueThreadService,
+    IssuesService,
     ReceiptEventListener,
     ReceiptLinks,
     ReceiptQueries,
