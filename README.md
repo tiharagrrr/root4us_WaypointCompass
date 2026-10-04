@@ -162,4 +162,3 @@ docker-compose.yml
 - Commit the lockfile (`pnpm-lock.yaml`) and every generated migration. Never commit `.env` or Datathon data.
 - **Code freeze:** Sun 4 Oct 2026, 8 PM (Asia/Colombo). Code pushed after 11:59 PM is not judged.
 
-## Deadlines (Asia/Colombo)
