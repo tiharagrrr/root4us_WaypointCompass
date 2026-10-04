@@ -1,7 +1,7 @@
 ---
 module: receipt
 owner: Harini
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [M5, M6, M4, M7]   # M4 and M7 run on planning's deferral endpoints
 depends-on: [audit, ordering, execution]
 ---
@@ -36,6 +36,9 @@ Screens (desktop 1440 x 960):
 | M6 Report issue | 185:11543 | /store/orders/:id/issue | POST /issues, /attachments/presign | Type, quantity, photos |
 | M4 Deferral notice | 185:11128 | /store/deferrals/:id | Planning: GET /deferrals/{id}, POST /deferrals/{id}/response, comments | Acknowledge, or request priority with a note |
 | M7 Deferrals | 185:11685 | /store/deferrals | Planning: GET /deferrals | History with reasons; repeat skips highlighted |
+| Receipts list | none (the sidebar's Receipts entry) | /store/receipts | GET /orders (DELIVERED, PARTIAL and RECEIVED, ISSUE_REPORTED), GET /issues | To confirm, Confirmed and Issues tabs; M5 and M6 open over it |
+| Issue dialog | none | /store/issues/:id, /dispatch/issues/:id | GET /issues/{id}, comments, resolve, reopen | The thread; the dispatcher resolves, the store reopens |
+| Dispatcher issues | none | /dispatch/issues | GET /issues | Open and Resolved tabs; alerts' "Open the issue" lands here |
 
 ## Model
 Schema file apps/backend/src/db/schema/receipt.ts. Receipt owns receipts, receipt_lines and issues; the
@@ -109,6 +112,9 @@ Invariants:
 | GET, POST | /issues/{id}/comments | issue:read; issue:create or issue:resolve to post | The store and dispatcher thread (Step 6), served by the shared comments controller, which checks read access on the issue |
 | POST | /issues/{id}/resolve | issue:resolve | Credit issued, credit requested, redelivery or no action, with a note |
 | POST | /issues/{id}/reopen | issue:create | The store, within 48 hours of resolution |
+| POST | /issues/{id}/attachments/presign | issue:create | Somewhere to put an issue photo, valid 10 minutes; the store of the outlet or the driver who raised it. Execution's attachment endpoints answer for stops and trips only |
+| POST | /issues/{id}/attachments/{attachmentId}/complete | issue:create | The file is in the store; the photo counts from now on |
+| GET | /issues/{id}/attachments/{attachmentId} | issue:read | A link to the photo, valid 5 minutes |
 
 Links (the Step 4 affordance rule): the receipt carries confirm; an issue carries comments, resolve
 and reopen. Each appears only when the state allows it, the actor holds the permission, the row is
@@ -154,6 +160,9 @@ Audit actions (same transaction as the write):
 | receipt.issue.reported | an issue is created | the issue type | the doc's log name |
 | receipt.issue.resolved | a dispatcher resolves an issue | the resolution | proposed |
 | receipt.issue.reopened | the store reopens an issue | — | proposed |
+| receipt.reconciled | `stop.completed` arrives for a receipt confirmed early | — | proposed |
+| receipt.issue.commented | a comment is posted on an issue's thread | — | proposed |
+| receipt.issue.photo_added | an issue photo's upload is confirmed | — | proposed |
 
 ## Log events
 - `receipt.confirmed` (with or without issues)
@@ -175,21 +184,21 @@ actor.outletId; dispatchers depotId = actor.depotId, or all depots when none is 
 answers 404.
 
 ## Acceptance criteria
-- [ ] AC-RCP-01  Confirm a clean delivery
-- [ ] AC-RCP-02  A short line opens an issue
-- [ ] AC-RCP-03  Confirm before the driver's record syncs
-- [ ] AC-RCP-04  A partial delivery confirmed as delivered
-- [ ] AC-RCP-05  No confirmation before delivery or ETA
-- [ ] AC-RCP-06  No auto-confirm
-- [ ] AC-RCP-07  Confirmation needs the current order version
-- [ ] AC-RCP-08  A retried confirmation applies once
-- [ ] AC-RCP-09  Who may read and confirm
-- [ ] AC-RCP-10  Report an issue after receipt
-- [ ] AC-RCP-11  Issues are scoped
-- [ ] AC-RCP-12  The issue thread
-- [ ] AC-RCP-13  The dispatcher resolves an issue
-- [ ] AC-RCP-14  Reopen within 48 hours
-- [ ] AC-RCP-15  Proof of delivery on M5
+- [x] AC-RCP-01  Confirm a clean delivery
+- [x] AC-RCP-02  A short line opens an issue (STORE_ISSUE alert and notices not asserted: alerts and notifications own them; the issue.reported payload alerts parses is checked)
+- [x] AC-RCP-03  Confirm before the driver's record syncs
+- [x] AC-RCP-04  A partial delivery confirmed as delivered
+- [x] AC-RCP-05  No confirmation before delivery or ETA
+- [x] AC-RCP-06  No auto-confirm
+- [x] AC-RCP-07  Confirmation needs the current order version
+- [x] AC-RCP-08  A retried confirmation applies once
+- [x] AC-RCP-09  Who may read and confirm
+- [x] AC-RCP-10  Report an issue after receipt (notices not asserted (notifications); the photo is checked through presign)
+- [x] AC-RCP-11  Issues are scoped
+- [x] AC-RCP-12  The issue thread (SSE delivery and the in-app notice not asserted (realtime, notifications))
+- [x] AC-RCP-13  The dispatcher resolves an issue (alert auto-resolve and notices not asserted; the issue.resolved event alerts clears by is checked)
+- [x] AC-RCP-14  Reopen within 48 hours
+- [x] AC-RCP-15  Proof of delivery on M5
 
 ```gherkin
 AC-RCP-01  Confirm a clean delivery
@@ -370,28 +379,58 @@ AC-RCP-15  Proof of delivery on M5
 - Webhook payloads carry ids, numbers and statuses only.
 - M5 and 21 are on the judge path; M6 is in the exceptions tier.
 
+## Decided while building (ROO-48)
+Answers to the open questions as built, with the person who confirmed each. Harini decided
+them; Aniqa and Nimesha own the modules that touch some.
+
+- **Issues from a confirmation: one per line.** A line is a discrepancy when its condition is not
+  `ok` or fewer packs arrived than were delivered. The condition sets the type (damaged is DAMAGED,
+  short SHORT, missing MISSING, temperature TEMPERATURE); `ok` with fewer packs is SHORT. The
+  quantity affected is what the store says, or the shortfall, or the whole line when nothing is
+  short. The description is the line's note, then the receipt's note, then "<item>: <n> <type>".
+  The check is against what the driver delivered, so a partial delivery the store accepts raises
+  nothing (AC-RCP-04).
+- **Early confirmation.** Allowed once the stop's ETA has passed while the order is IN_TRANSIT and
+  the stop PENDING or ARRIVED. It stores the receipt with `awaitingDriverSync` true and leaves the
+  order IN_TRANSIT. On `stop.completed` the listener clears the flag and moves the order, which
+  execution has already made DELIVERED or PARTIAL, to RECEIVED or ISSUE_REPORTED. A delivery that
+  differs from what the store confirmed is not compared: the store's answer stands. Nothing is
+  stored when a receipt was not confirmed early, so "opens the receipt" means only that M5's
+  confirm link appears with the order's status.
+- **Reopen.** After 48 hours it is 409 `CONFLICT_STATE`; exactly 48 hours is still inside. It emits
+  `issue.reopened` (alerts does not consume it) and does not reopen the STORE_ISSUE alert.
+- **IN_PROGRESS** is unused in the hackathon build: an issue is OPEN until a dispatcher resolves it.
+- **Driver issues.** D5 raises one through `POST /issues` with the stop id and no `If-Match`; it
+  creates a plain issue and moves the order to ISSUE_REPORTED only when that move exists, so a
+  second issue on an ISSUE_REPORTED order is allowed. D5 is not yet wired to it (Aniqa).
+- **Comments.** Only `issue.commented` drives notifications; the shared comment event is not used.
+  A comment needs `issue:read` and is allowed to the store and the dispatcher, so a driver, who has
+  no `issue:read`, is refused (403). A dispatcher's comment does not change the status.
+- **Photos.** Execution answers for stops and trips only, so issue photos have their own presign,
+  complete and download endpoints under `/issues/{id}/attachments`. A photo is added after the
+  issue exists.
+- **Reading execution.** `DeliveryReadModel` reads the stop, its delivery lines and the proof of
+  delivery read-only from execution's tables, so receipt does not import execution and
+  execution's module is unchanged. `depends-on` stays [audit, ordering, execution].
+- **Audit.** The doc's names are kept (`receipt.confirmed`, `receipt.issue.reported`), with
+  `receipt.reconciled`, `receipt.issue.commented` and `receipt.issue.photo_added` added.
+- **Scope.** A store manager reads their outlet's issues, a dispatcher their depot's (all depots
+  with none set). Receipts are read through the order's scope.
+- **Idempotency.** An `Idempotency-Key` is bound to the caller and stored for 24 hours, so a
+  retry replays and a key reused for a different request is 422.
+
 ## Open questions
-- When confirm() creates issues for discrepancies: one per line or one per receipt (the Supabase
-  draft had one per line, which receiptId and orderLineId now allow), how does the
-  line's condition map to the issue type, and where does the required description come from?
-  (Harini)
-- Early confirmation: the order has no IN_TRANSIT → RECEIVED move, so it stays IN_TRANSIT until
-  stop.completed; confirm. What does "opens the receipt" store, when a receipt row needs a status
-  and confirmedById? What if the synced delivery differs from the early receipt? (Harini, Aniqa)
-- Reopen: which problem code refuses it after 48 hours, is exactly 48 hours still inside, is there
-  an issue.reopened event, and does the STORE_ISSUE alert open again? (Harini)
-- What moves an issue to IN_PROGRESS? (Harini)
-- Driver issues: does D5's ISSUE_REPORTED stop event create an Issue, or does D5 call POST /issues?
-  And may a second issue be raised on an ISSUE_REPORTED order, which has no REPORT exit? (Harini,
-  Aniqa)
-- Issue comments: Step 6 emits comment.created and this module issue.commented. Which one drives
-  notifications, so nobody is pushed twice? (Harini, Nimesha)
-- Audit names: this spec reuses the doc's log names (receipt.confirmed, receipt.issue.reported);
-  Step 2's reason table calls the action issue.reported. Link names confirm and reopen are
-  proposed. (Nimesha)
+- Notifications, realtime and the STORE_ISSUE alert: the criteria's push, in-app, email, SSE and
+  alert clauses (AC-RCP-02, 10, 12, 13) wait for the notifications and realtime modules. The events
+  they consume are emitted and checked. (Nimesha)
+- D5: should the driver's ISSUE_REPORTED stop event create an issue, or does D5 call `POST /issues`
+  as built here? (Aniqa)
+- A delivery that syncs different from an early confirmation is not reconciled, only noted.
+  Does the dispatcher need to see the difference? (Harini)
 - Dates: the doc's examples call 1 Oct 2026 a Wednesday, but 30 Sep is the Wednesday. These
   criteria use ISO dates without weekdays. (Nimesha)
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `issues.receiptId` and `issues.orderLineId` (merged from the Supabase draft's receipt_issues)
+- 2026-10-04 AC-RCP-01..15 implemented (ROO-48): receipt confirm and early confirm, issues, thread, resolve, reopen, photos; open questions answered under "Decided while building"; screens M5, M6, the Receipts list and the issue dialog
