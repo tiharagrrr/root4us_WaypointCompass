@@ -23,5 +23,6 @@ export * from './receiving-roster/receiving-roster.zod.ts';
 export * from './reference-data/reference-data.zod.ts';
 export * from './root/root.zod.ts';
 export * from './settings/settings.zod.ts';
+export * from './sync/sync.zod.ts';
 export * from './users/users.zod.ts';
 export * from './vehicles/vehicles.zod.ts';

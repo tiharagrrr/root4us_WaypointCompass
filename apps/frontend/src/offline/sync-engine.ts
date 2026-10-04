@@ -24,21 +24,21 @@ export const backoffMs = (attempts: number): number =>
   BACKOFF_SECONDS[Math.min(attempts, BACKOFF_SECONDS.length - 1)] * 1000
 
 /**
- * POST /sync does not exist yet: ROO-44 owns it, together with widening `stopEventSchema` to carry
- * the trip-level events, deviceSeq, baseVersion, lines and attachments. Until it lands this posts
- * the batch and MSW answers it, so the queue, the ordering, the retry schedule and every per-item
- * verdict are exercised for real and only the far end is a mock.
+ * POST /sync (specs/sync/spec.md): the batch goes up as `syncBatchSchema` in @waypoint/shared
+ * describes it and comes back in the API envelope, `{ data: { results, ... }, meta }`. A 401
+ * pauses; any other failure is a network or server error the retry schedule handles.
  */
 export const postSync: SyncTransport = async (body) => {
   const response = await fetch('/api/v1/sync', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-sync-version': '1' },
+    headers: { 'content-type': 'application/json', accept: 'application/json', 'x-sync-version': '1' },
     body: JSON.stringify(body),
     credentials: 'same-origin',
   })
   if (response.status === 401) throw new PausedError()
   if (!response.ok) throw new Error(`sync failed: ${response.status}`)
-  return (await response.json()) as { results: SyncItemResult[] }
+  const envelope = (await response.json()) as { data?: { results?: SyncItemResult[] } }
+  return { results: envelope.data?.results ?? [] }
 }
 
 /** A 401 pauses sync and keeps the outbox: nothing queued is ever dropped. */
