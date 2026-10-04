@@ -165,6 +165,7 @@ function orderDto(order: DemoOrder, now: Date): OrderDto {
     status: order.status,
     tempClass: order.tempClass,
     brand: 'FRESH',
+    districtId: 'gampaha',
     requestedDate: order.requestedDate,
     deliveryDate: afterCutoff ? addDays(order.requestedDate, 1) : order.requestedDate,
     afterCutoff,

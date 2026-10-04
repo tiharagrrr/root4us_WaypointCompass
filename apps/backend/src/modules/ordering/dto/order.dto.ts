@@ -150,6 +150,12 @@ export class OrderDto {
   brand!: Brand;
 
   @ApiProperty({
+    description: "The outlet's district, which 03 groups the queue by",
+    example: 'gampaha',
+  })
+  districtId!: string;
+
+  @ApiProperty({
     description: 'The day the store asked for',
     example: '2026-10-02',
   })

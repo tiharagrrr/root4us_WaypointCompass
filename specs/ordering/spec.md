@@ -152,6 +152,10 @@ The contract adds what M1's summary card shows and the client would otherwise ha
 and `totals.valueLkr`, and `deliveryWindow { openMin, open, closeMin, close }`, the outlet's
 receiving window on the delivery day (M1's "Wed 30 Sep · 07:00–09:00").
 
+It also carries `districtId`, the slug copied from the outlet, because 03 groups the queue by
+district and brand and would otherwise have to join `GET /outlets` to draw a group header
+(ROO-35). The queue sorts on `districtId,brand,orderNo`, so the groups come back in one pass.
+
 `GET /orders/{id}/lines` answers `{ orderId, version, lines[] }`, and every write to a line answers
 with the order, whose totals and version have already moved on, so M1 redraws from one response.
 Each line carries `sku`, `name` and `packLabel` from the item, `qty`, the `unitWeightKg` and
