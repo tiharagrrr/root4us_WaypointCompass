@@ -173,7 +173,7 @@ AC-FLT-09  A low quota raises an event
 ```
 
 Checklist (tick in the PR that adds the passing test):
-- [ ] AC-FLT-01 Planned fuel counts against the quota
+- [x] AC-FLT-01 Planned fuel counts against the quota
 - [ ] AC-FLT-02 Publishing writes planned fuel
 - [ ] AC-FLT-03 A revision reverses planned fuel
 - [ ] AC-FLT-04 Closing the day records actual fuel
@@ -214,6 +214,8 @@ Checklist (tick in the PR that adds the passing test):
   fields may it change? Decides: Tihara.
 
 ## Changelog
+- 2026-10-04 AC-FLT-01 passes: planned ledger entries count against the weekly quota, and a revision
+  reverses and re-plans the trips it touches (ROO-42)
 - 2026-10-03 Fleet read side for planning: `VehicleQueries`, `FuelLedgerService`, `isoWeekOf` in shared,
   and `GET /vehicles/{id}/fuel` (AC-FLT-08). Status changes and vehicle edits still to come
 - 2026-09-30 created from the Build Spec

@@ -62,6 +62,41 @@ describe('10 and 11 View and edit vehicle', () => {
     expect(saved?.headers['if-match']).toBe('W/"7"')
   })
 
+  it('AC-PLN-21 a published plan saves a change as a revision with a reason', async () => {
+    const { calls } = stubApi({
+      [`GET /api/v1/depots/PLG/plans/${DATE}`]: () =>
+        envelope(aPlan({ status: 'PUBLISHED', revision: 1, summary: { trips: 1, plannedOrders: 2, unplanned: 0, undecided: 0 } })),
+      [`GET /api/v1/plans/${PLAN_ID}/unplanned`]: () => page([]),
+      [`GET /api/v1/plans/${PLAN_ID}/trips`]: () => page([aTrip()]),
+      [`GET /api/v1/plans/${PLAN_ID}/context`]: () => envelope(aContext({ trips: [aDraftTrip(['ord-1', 'ord-2'])] })),
+      [`GET /api/v1/plans/${PLAN_ID}/vehicle-options`]: () => page([aVehicleOption({ tripsUsed: 1, tripsLeft: 1, nextTripNo: 2 })]),
+      'GET /api/v1/deferral-reasons': () => page([{ code: 'OVER_CAPACITY', label: 'Over capacity', active: true }]),
+      [`POST /api/v1/plans/${PLAN_ID}/edits`]: () => envelope(aPlan({ status: 'PUBLISHED', revision: 2, version: 8 })),
+    })
+    const { user, dialog } = await openVehicle()
+
+    const bar = within(dialog).getByRole('region', { name: 'Revision reason' })
+    expect(within(bar).getByText('revision 2')).toBeInTheDocument()
+    const trip = within(dialog).getByRole('region', { name: 'REF-07 trip 1' })
+    await user.click(within(trip).getByRole('button', { name: 'Remove WF-0172' }))
+    const save = within(dialog).getByRole('button', { name: 'Save changes' })
+    expect(save).toBeDisabled()
+
+    await user.click(within(bar).getByRole('combobox', { name: 'Reason' }))
+    await user.click(await screen.findByRole('option', { name: 'Over capacity' }))
+    await user.type(within(bar).getByRole('textbox', { name: 'Note' }), 'Gampaha goes tomorrow')
+    await user.click(save)
+
+    expect(savedEdits(calls)[0]?.body).toEqual({
+      ops: [
+        { op: 'UNASSIGN_ORDER', orderId: 'ord-2' },
+        { op: 'RESEQUENCE', tripKey: 'REF-07#1', orderIds: ['ord-1'] },
+      ],
+      reasonCode: 'OVER_CAPACITY',
+      note: 'Gampaha goes tomorrow',
+    })
+  })
+
   it('10 removing the vehicle takes its trips off the plan', async () => {
     const { calls } = savedDay()
     const { user, dialog } = await openVehicle()

@@ -8,6 +8,7 @@ export const PLANNING_AUDIT = {
   planEdited: 'planning.plan.edited',
   softRuleOverridden: 'planning.plan.soft_rule_overridden',
   planPublished: 'planning.plan.published',
+  planRevised: 'planning.plan.revised',
   engineRunCompleted: 'planning.engine.run_completed',
   deferralConfirmed: 'planning.deferral.confirmed',
   repeatSkipOverridden: 'planning.deferral.repeat_skip_overridden',
@@ -33,6 +34,7 @@ export const PLANNING_AUDIT = {
 export const PLANNING_EVENTS = {
   planEdited: 'plan.edited',
   planPublished: 'plan.published',
+  planRevised: 'plan.revised',
   engineRunCompleted: 'plan.engine_run.completed',
   engineRunFailed: 'plan.engine_run.failed',
   deferralConfirmed: 'deferral.confirmed',

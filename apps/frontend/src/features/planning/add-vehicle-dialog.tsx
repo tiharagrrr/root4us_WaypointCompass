@@ -9,6 +9,7 @@ import { Button } from '@/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
 import { ErrorState } from '@/ui/states'
 import { canTakeTrip, kg, percent, vehicleKind } from './plan-copy'
+import { RevisionReasonBar, type RevisionReason } from './revision-reason'
 import { editsFor, fixesFor, previewDraft, savedOrders, type TripDraft } from './trip-draft'
 import type { PlanDay } from './use-plan-day'
 import { CheckStep } from './wizard-check-step'
@@ -54,6 +55,10 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   const save = usePlanBuildingEdit()
   // 10: a vehicle already on the plan. Its changes save straight to the plan, with no check step.
   const editing = start.vehicleId !== undefined
+  // After publish every save is a revision and needs a reason (AC-PLN-21).
+  const revising = plan.status === 'PUBLISHED'
+  const [reason, setReason] = useState<RevisionReason>({ note: '' })
+  const needsReason = revising && !reason.reasonCode
 
   const vehicle = vehicles.find((v) => v.vehicleId === draft?.vehicleId)
   const begin = (vehicleId: string, tripNo?: number) => setDraft(draftFor(vehicleId, tripNo))
@@ -83,7 +88,10 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   const send = async (edits: readonly EditOp[]) => {
     await save.mutateAsync({
       id: plan.id,
-      data: { ops: [...edits] },
+      data: {
+        ops: [...edits],
+        ...(revising ? { reasonCode: reason.reasonCode, ...(reason.note.trim() ? { note: reason.note.trim() } : {}) } : {}),
+      },
       headers: { 'If-Match': `W/"${plan.version}"`, 'Idempotency-Key': globalThis.crypto.randomUUID() },
     })
     await day.refresh()
@@ -159,7 +167,11 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
               outletName={outletName}
               onChange={(orderIds) => setDraft({ ...draft, orderIds })}
               onPickTrip={(tripNo) => begin(draft.vehicleId, tripNo)}
-              editing={editing ? { fixes, onApplyFix: (fix) => void applyFix(fix).catch(() => undefined), applying: save.isPending } : undefined}
+              editing={
+                editing
+                  ? { fixes, onApplyFix: (fix) => void applyFix(fix).catch(() => undefined), applying: save.isPending || needsReason }
+                  : undefined
+              }
             />
           ) : null}
           {step === 3 && draft && vehicle ? (
@@ -180,9 +192,11 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
           ) : null}
         </div>
 
+        {revising && (editing || step === 3) ? <RevisionReasonBar revision={plan.revision} value={reason} onChange={setReason} /> : null}
+
         {editing ? (
           <DialogFooter className="justify-between">
-            <Button variant="outline" loading={save.isPending} onClick={() => void removeVehicle().catch(() => undefined)}>
+            <Button variant="outline" disabled={needsReason} loading={save.isPending} onClick={() => void removeVehicle().catch(() => undefined)}>
               Remove from plan
             </Button>
             <div className="flex gap-2">
@@ -191,7 +205,7 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
               </Button>
               <Button
                 variant="primary"
-                disabled={ops.length === 0 || (preview?.problems.length ?? 0) > 0}
+                disabled={ops.length === 0 || (preview?.problems.length ?? 0) > 0 || needsReason}
                 loading={save.isPending}
                 onClick={() => void commit(false).catch(() => undefined)}
               >
@@ -234,10 +248,20 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
                 <Button variant="outline" onClick={() => setStep(2)}>
                   Back
                 </Button>
-                <Button variant="outline" disabled={blocked || introduced === undefined} loading={save.isPending} onClick={() => void commit(true).catch(() => undefined)}>
+                <Button
+                  variant="outline"
+                  disabled={blocked || introduced === undefined || needsReason}
+                  loading={save.isPending}
+                  onClick={() => void commit(true).catch(() => undefined)}
+                >
                   Save and add another vehicle
                 </Button>
-                <Button variant="primary" disabled={blocked || introduced === undefined} loading={save.isPending} onClick={() => void commit(false).catch(() => undefined)}>
+                <Button
+                  variant="primary"
+                  disabled={blocked || introduced === undefined || needsReason}
+                  loading={save.isPending}
+                  onClick={() => void commit(false).catch(() => undefined)}
+                >
                   Save Trip
                 </Button>
               </>

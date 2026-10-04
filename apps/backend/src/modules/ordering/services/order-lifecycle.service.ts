@@ -6,6 +6,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { ClockService } from '../../../core/clock/clock.service';
 import {
   NotFoundError,
+  StateConflictError,
   VersionMismatchError,
 } from '../../../core/errors/domain-errors';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
@@ -80,9 +81,46 @@ export class OrderLifecycleService {
     });
   }
 
-  /** A deferral was reversed, or a failed stop goes back in the queue. */
+  /**
+   * A deferral was reversed, a failed stop goes back in the queue, or a
+   * revision took the order off every trip: either way it has no live stop.
+   */
   requeue(id: string): Promise<OrderRow> {
-    return this.move(id, 'REQUEUE');
+    return this.move(id, 'REQUEUE', { activeStopId: null });
+  }
+
+  /**
+   * A plan revision moved a PLANNED order to another trip: the status stays,
+   * and the new stop becomes its one live stop (`activeStopId`).
+   */
+  @Transactional()
+  async moveStop(id: string, stopId: string): Promise<OrderRow> {
+    const before = await this.load(id);
+    if (before.status !== 'PLANNED')
+      throw new StateConflictError(
+        `Order ${before.orderNo} is ${before.status}; only a planned order moves trips`,
+      );
+    const [row] = await this.txHost.tx
+      .update(orders)
+      .set({
+        activeStopId: stopId,
+        version: before.version + 1,
+        updatedAt: this.clock.realNow(),
+      })
+      .where(and(eq(orders.id, id), eq(orders.version, before.version)))
+      .returning();
+    if (!row) throw new VersionMismatchError('order');
+    await this.audit.record({
+      action: ORDER_AUDIT.stopChanged,
+      entity: ['order', id],
+      before: { activeStopId: before.activeStopId, version: before.version },
+      after: { activeStopId: stopId, version: row.version },
+    });
+    this.log.info(
+      { event: ORDER_AUDIT.stopChanged, orderId: id, stopId },
+      'order moved to another stop',
+    );
+    return row;
   }
 
   markLoaded(id: string): Promise<OrderRow> {
