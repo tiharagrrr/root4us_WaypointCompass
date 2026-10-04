@@ -152,6 +152,7 @@ export class PlanViews {
         const reasonCode = deferral?.reasonCode ?? u.reasonCode;
         return {
           orderId: u.orderId,
+          orderStatus: order?.status ?? 'CONFIRMED',
           orderNo: order?.orderNo ?? '',
           outletId: order?.outletId ?? '',
           outletName: order

@@ -6,6 +6,8 @@
 export const PLANNING_AUDIT = {
   planCreated: 'planning.plan.created',
   planEdited: 'planning.plan.edited',
+  /** A store changed an open order that sat on a draft: its stop came off (StoreChangeListener). */
+  storeChangeUnplanned: 'planning.plan.store_change_unplanned',
   softRuleOverridden: 'planning.plan.soft_rule_overridden',
   planPublished: 'planning.plan.published',
   planRevised: 'planning.plan.revised',
@@ -56,4 +58,5 @@ export const PLANNING_EVENTS = {
 /** Log events that are not also audit actions. */
 export const PLANNING_LOGS = {
   engineRunFailed: 'planning.engine.run_failed',
+  storeChangeUnplanned: 'planning.plan.store_change_unplanned',
 } as const;

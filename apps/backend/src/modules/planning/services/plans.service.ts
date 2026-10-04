@@ -233,20 +233,29 @@ export class PlansService {
     const tripIds = [...new Set([...saved, ...metaTrips])].sort();
 
     // Orders follow their stops: newly carried ones are planned, moved ones
-    // take their new stop, and ones off every trip go back to the queue.
+    // take their new stop, and ones off every trip go back to the queue. An
+    // order still open before the cutoff is only linked to its stop: it stays
+    // SUBMITTED, the store's to change, until the cutoff or the publish.
     const after = await this.liveStops(ctx.plan.id);
+    const statuses = await this.lifecycle.statusesOf([
+      ...new Set([...after.keys(), ...before.keys()]),
+    ]);
+    const isPlanned = (orderId: string) => statuses.get(orderId) === 'PLANNED';
     const moved = new Set<string>();
     for (const [orderId, now] of after) {
       const was = before.get(orderId);
-      if (!was) await this.lifecycle.markPlanned(orderId, now.stopId);
-      else if (was.tripId !== now.tripId)
+      if (was && was.tripId === now.tripId) continue;
+      if (isPlanned(orderId))
         await this.lifecycle.moveStop(orderId, now.stopId);
-      else continue;
+      else if (statuses.get(orderId) === 'SUBMITTED')
+        await this.lifecycle.linkStop(orderId, now.stopId);
+      else await this.lifecycle.markPlanned(orderId, now.stopId);
       moved.add(orderId);
     }
     for (const orderId of before.keys())
       if (!after.has(orderId)) {
-        await this.lifecycle.requeue(orderId);
+        if (isPlanned(orderId)) await this.lifecycle.requeue(orderId);
+        else await this.lifecycle.linkStop(orderId, null);
         moved.add(orderId);
       }
     const outletIds = [
@@ -418,14 +427,19 @@ export class PlansService {
           ),
         );
 
+    // Publishing closes the cutoff for what it carries and defers: an order
+    // still open (no ticker ran) is confirmed first, then planned or deferred.
     for (const trip of carrying)
-      for (const stop of ctx.stopsByTrip.get(trip.id) ?? [])
+      for (const stop of ctx.stopsByTrip.get(trip.id) ?? []) {
+        await this.lifecycle.confirmIfOpen(stop.orderId);
         await this.lifecycle.markPlanned(stop.orderId, stop.id);
+      }
 
     const confirmed = [...ctx.deferrals.values()].filter(
       (d) => d.status === 'CONFIRMED',
     );
     for (const deferral of confirmed) {
+      await this.lifecycle.confirmIfOpen(deferral.orderId);
       await this.lifecycle.markDeferred(deferral.orderId, deferral.toDate);
       const order = ctx.orders.get(deferral.orderId);
       await this.outbox.add(

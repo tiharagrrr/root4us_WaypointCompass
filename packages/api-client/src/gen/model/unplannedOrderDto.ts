@@ -12,6 +12,8 @@ import type { UnplannedOrderDtoTempClass } from './unplannedOrderDtoTempClass.ts
 
 export interface UnplannedOrderDto {
   orderId: string;
+  /** SUBMITTED: still open until the cutoff, so the store may change it, which takes it off the draft */
+  orderStatus: string;
   orderNo: string;
   outletId: string;
   outletName: string;

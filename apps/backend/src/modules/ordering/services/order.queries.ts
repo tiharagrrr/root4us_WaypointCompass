@@ -99,7 +99,10 @@ export class OrderQueries {
         and(
           eq(orders.depotId, depotId),
           eq(orders.deliveryDate, date),
-          inArray(orders.status, ['CONFIRMED', 'DEFERRED']),
+          // Open orders too: a dispatcher drafts tomorrow's plan before the
+          // cutoff, and a store's later change takes its order back off the
+          // draft (planning's StoreChangeListener).
+          inArray(orders.status, ['SUBMITTED', 'CONFIRMED', 'DEFERRED']),
         ),
       )
       .orderBy(asc(orders.orderNo));

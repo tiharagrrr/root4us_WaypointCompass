@@ -602,7 +602,8 @@ AC-ORD-38  A deferred order joins the queue for its new date
   Given Peliyagoda orders with deliveryDate 2026-10-03: one CONFIRMED, one DEFERRED from an earlier plan, one SUBMITTED, one PLANNED and one CANCELLED
     And a DEFERRED Peliyagoda order with deliveryDate 2026-10-05 and a CONFIRMED Kandy order with deliveryDate 2026-10-03
   When planning asks OrderQueries.queueFor(PLG, 2026-10-03)
-  Then it gets the CONFIRMED and the DEFERRED order for that date, sorted by orderNo, and no other
+  Then it gets the SUBMITTED, the CONFIRMED and the DEFERRED order for that date, sorted by orderNo,
+      and no other (open orders are drafted too; a store's change takes one back off the draft)
     And nothing ran at the cutoff to move the DEFERRED order: it is still DEFERRED
 
 AC-ORD-39  A deferred order is planned or deferred again without returning to CONFIRMED
@@ -765,3 +766,9 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   list does not hold them: they are counted and listed from `GET /deferrals?filter[fromDate]=`. 03 and
   04 switch between each other in the header. What the frame draws and the order list does not carry
   (the vehicle, on time) is in docs/departures.md
+- 2026-10-04 Planning drafts from open orders too: `queueFor` includes SUBMITTED orders for the date
+  (AC-ORD-38 updated), so a dispatcher can draft a future day before its cutoff. An open order on a
+  draft trip stays SUBMITTED and only links to its stop (`OrderLifecycleService.linkStop`); a
+  store's later change (lines, priority, delivery date, cancel) takes it off the draft (planning's
+  StoreChangeListener). Publishing confirms any order still open before planning or deferring it
+  (`confirmIfOpen`).

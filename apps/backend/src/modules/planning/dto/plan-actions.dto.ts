@@ -204,6 +204,13 @@ export class UnplannedOrderDto {
   @ApiProperty({ example: '0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e' })
   orderId!: string;
 
+  @ApiProperty({
+    example: 'SUBMITTED',
+    description:
+      'SUBMITTED: still open until the cutoff, so the store may change it, which takes it off the draft',
+  })
+  orderStatus!: string;
+
   @ApiProperty({ example: 'WF-0171' })
   orderNo!: string;
 

@@ -30,6 +30,7 @@ export function NotPlannedCard({ orders, input, withReasons, heading }: NotPlann
   const brands = useMemo(() => ['FRESH', 'STYLE', 'TECH'].map((b) => [b, list.filter((o) => o.brand === b).length] as const), [list])
   const districts = useMemo(() => [...new Set(list.map((o) => o.districtId))].sort(), [list])
   const shown = list.filter((o) => (brand === ALL || o.brand === brand) && (district === ALL || o.districtId === district))
+  const openCount = list.filter((o) => o.orderStatus === 'SUBMITTED').length
 
   return (
     <section
@@ -50,6 +51,12 @@ export function NotPlannedCard({ orders, input, withReasons, heading }: NotPlann
             {brands.map(([b, n]) => `${BRAND_WORD[b]} ${n}`).join(' · ')}
           </p>
         )}
+        {openCount > 0 ? (
+          <p className="type-caption m-0 leading-[17.4px] text-status-info-fg">
+            {openCount === 1 ? '1 order is' : `${openCount} orders are`} still open until the cutoff. Plan them now; if the store
+            changes one, it comes off the draft and back here.
+          </p>
+        ) : null}
         {withReasons ? null : (
           <div className="flex gap-1.5">
             <Select value={brand} onValueChange={setBrand}>
@@ -104,7 +111,8 @@ export function NotPlannedCard({ orders, input, withReasons, heading }: NotPlann
 }
 
 export interface OrderCardProps {
-  order: Pick<UnplannedOrderDto, 'orderNo' | 'outletName' | 'brand' | 'tempClass' | 'weightKg'>
+  order: Pick<UnplannedOrderDto, 'orderNo' | 'outletName' | 'brand' | 'tempClass' | 'weightKg'> &
+    Partial<Pick<UnplannedOrderDto, 'orderStatus'>>
   district: string
   vanOnly?: boolean
   reason?: string
@@ -114,6 +122,8 @@ export interface OrderCardProps {
 export function OrderCard({ order, district, vanOnly, reason }: OrderCardProps) {
   const glyph = BRAND_GLYPH[order.brand] ?? BRAND_GLYPH.FRESH
   const chilled = order.tempClass === 'CHILLED'
+  // Before the cutoff the store may still change it; a change takes it off the draft.
+  const open = order.orderStatus === 'SUBMITTED'
   return (
     <article className="flex flex-col gap-1.5 rounded-md border border-slate-200 bg-background px-[13px] py-[11px]">
       <div className="flex items-start gap-2">
@@ -128,8 +138,9 @@ export function OrderCard({ order, district, vanOnly, reason }: OrderCardProps) 
         </div>
         <span className="font-mono text-[12px] font-bold leading-auto text-foreground">{kg(order.weightKg)}</span>
       </div>
-      {chilled || vanOnly ? (
+      {chilled || vanOnly || open ? (
         <div className="flex gap-1.5">
+          {open ? <StatusChip tone="info">Open until cutoff</StatusChip> : null}
           {chilled ? <StatusChip tone="neutral">Chilled</StatusChip> : null}
           {vanOnly ? <StatusChip tone="neutral">Van-only</StatusChip> : null}
         </div>
