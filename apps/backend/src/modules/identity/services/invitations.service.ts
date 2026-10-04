@@ -427,7 +427,9 @@ export class InvitationsService {
           defaultVehicleId: invitation.vehicleId,
           phoneNumber: invitation.phoneNumber,
           phoneNumberVerified: role === 'driver' ? true : null,
-          pinHash: role === 'loader' ? await this.pins.hash(dto.pin!) : null,
+          ...(role === 'loader'
+            ? await this.pins.columns(dto.pin!)
+            : { pinHash: null }),
         },
       },
     });

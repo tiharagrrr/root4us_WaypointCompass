@@ -39,6 +39,12 @@ const REASONS: { value: UserChangeReason; label: string }[] = [
   { value: 'OTHER', label: 'Other' },
 ]
 
+/** What sits under the Dock PIN field: the PIN itself in demo mode, otherwise only whether one is set. */
+function pinHint(hasPin: boolean, currentPin: string | null) {
+  if (currentPin) return `Current PIN: ${currentPin}. A new one replaces it.`
+  return hasPin ? 'A PIN is set. A new one replaces it.' : 'No PIN yet: they cannot sign in at the dock.'
+}
+
 interface EditForm {
   role: UserRole
   linkTo: string
@@ -65,6 +71,8 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
   const setPin = useUsersSetPin()
   const [pin, setPinValue] = useState('')
   const [pinError, setPinError] = useState<string | null>(null)
+  // Demo mode only: the server sends the PIN itself, so the admin can read it out to the loader.
+  const [currentPin, setCurrentPin] = useState(user.demoPin)
   const [statusError, setStatusError] = useState<string | null>(null)
   const form = useForm<EditForm>({
     defaultValues: {
@@ -125,7 +133,8 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
       return
     }
     try {
-      await setPin.mutateAsync({ id: user.id, data: { pin } })
+      const saved = await setPin.mutateAsync({ id: user.id, data: { pin } })
+      setCurrentPin(saved.data.demoPin)
     } catch (error) {
       setPinError(isApiProblem(error) ? (error.errors[0]?.message ?? error.detail ?? error.title) : 'That did not work. Try again.')
       return
@@ -210,7 +219,7 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
               </Field>
             </div>
             {getLink(user._links, 'setPin') ? (
-              <Field label="Dock PIN" hint={user.hasPin ? 'A PIN is set. A new one replaces it.' : 'No PIN yet: they cannot sign in at the dock.'} error={pinError ?? undefined}>
+              <Field label="Dock PIN" hint={pinHint(user.hasPin, currentPin)} error={pinError ?? undefined}>
                 {(control) => (
                   <div className="flex gap-2">
                     <Input

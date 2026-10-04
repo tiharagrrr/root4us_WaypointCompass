@@ -35,6 +35,7 @@ export const users = pgTable(
     outletId: text().references((): AnyPgColumn => outlets.id), // store manager
     defaultVehicleId: text().references((): AnyPgColumn => vehicles.id),
     pinHash: text(), // loader dock PIN, hashed, never returned
+    demoPin: text(), // the same PIN in clear, kept only while DEMO_MODE=true so A1 can show it
     locale: text().notNull().default('en'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

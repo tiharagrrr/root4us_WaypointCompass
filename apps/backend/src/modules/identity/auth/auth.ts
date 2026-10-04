@@ -32,7 +32,10 @@ export interface AuthDeps {
   appUrl: string;
   trustedOrigins?: string[];
   enableBearer?: boolean;
-  /** DEMO_MODE: adds /sign-in/demo, the account menu's user switch. */
+  /**
+   * DEMO_MODE: adds /sign-in/demo, the account menu's user switch, and lets a
+   * PIN sign in from any device.
+   */
   demoMode?: boolean;
   sendOtp: (phoneNumber: string, code: string) => Promise<void>;
 }
@@ -69,6 +72,12 @@ export function createAuth(deps: AuthDeps) {
         outletId: { type: 'string', required: false, input: false },
         defaultVehicleId: { type: 'string', required: false, input: false },
         pinHash: {
+          type: 'string',
+          required: false,
+          input: false,
+          returned: false,
+        },
+        demoPin: {
           type: 'string',
           required: false,
           input: false,
@@ -115,7 +124,7 @@ export function createAuth(deps: AuthDeps) {
         allowedAttempts: 5,
         sendOTP: ({ phoneNumber: phone, code }) => deps.sendOtp(phone, code),
       }),
-      loaderPin(deps.db),
+      loaderPin(deps.db, { anyDevice: deps.demoMode === true }),
       invitationSession(),
       ...(deps.demoMode ? [demoSwitch(deps.db)] : []),
       ...(deps.enableBearer ? [bearer()] : []),

@@ -19597,6 +19597,12 @@
             "type": "boolean",
             "description": "A loader has a dock PIN; the PIN itself is never returned"
           },
+          "demoPin": {
+            "type": "string",
+            "nullable": true,
+            "example": null,
+            "description": "The loader PIN in clear, only while DEMO_MODE=true; otherwise null"
+          },
           "scopeNames": {
             "$ref": "#/components/schemas/ScopeNamesDto"
           },
@@ -19623,6 +19629,7 @@
           "vehicleId",
           "banned",
           "hasPin",
+          "demoPin",
           "scopeNames",
           "createdAt",
           "_links"

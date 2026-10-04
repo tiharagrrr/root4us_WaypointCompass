@@ -48,6 +48,7 @@ export const UsersListResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),
@@ -134,6 +135,7 @@ export const UsersGetResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),
@@ -198,6 +200,7 @@ export const UsersUpdateResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),
@@ -243,6 +246,7 @@ export const UsersDeactivateResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),
@@ -285,6 +289,7 @@ export const UsersReactivateResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),
@@ -337,6 +342,7 @@ export const UsersSetPinResponse = zod.object({
   "vehicleId": zod.string().nullable(),
   "banned": zod.boolean().describe('Deactivated: cannot sign in'),
   "hasPin": zod.boolean().describe('A loader has a dock PIN; the PIN itself is never returned'),
+  "demoPin": zod.string().nullable().describe('The loader PIN in clear, only while DEMO_MODE=true; otherwise null'),
   "scopeNames": zod.object({
   "depot": zod.string().nullable(),
   "outlet": zod.string().nullable(),

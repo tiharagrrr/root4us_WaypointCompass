@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { type Actor, can, isUserRole } from '@waypoint/shared';
+import { AppConfig } from '../../../config/app-config';
 import { ClockService } from '../../../core/clock/clock.service';
 import { ForbiddenError } from '../../../core/errors/domain-errors';
 import { LinkBuilder, type LinkMap } from '../../../core/http/links';
@@ -9,7 +10,10 @@ import type { NamedUser } from '../services/user.queries';
 /** A user on A1, with the changes the admin may make now. */
 @Injectable()
 export class UserLinks extends LinkBuilder<NamedUser, Omit<UserDto, '_links'>> {
-  constructor(protected readonly clock: ClockService) {
+  constructor(
+    protected readonly clock: ClockService,
+    private readonly config: AppConfig,
+  ) {
     super();
   }
 
@@ -63,6 +67,7 @@ export class UserLinks extends LinkBuilder<NamedUser, Omit<UserDto, '_links'>> {
       vehicleId: u.defaultVehicleId,
       banned: u.banned ?? false,
       hasPin: u.pinHash !== null,
+      demoPin: this.config.demo.enabled === true ? u.demoPin : null,
       scopeNames: u.scopeNames,
       createdAt: this.clock.toIso(u.createdAt),
     };
