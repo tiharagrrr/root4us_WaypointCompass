@@ -7,13 +7,15 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "dev": "pnpm --filter @waypoint/shared build && pnpm --filter @waypoint/engine build && pnpm --parallel --filter @waypoint/shared --filter @waypoint/api --filter @waypoint/frontend dev",
+    "build:packages": "pnpm --filter @waypoint/shared build && pnpm --filter @waypoint/engine build",
+    "prepare": "pnpm build:packages",
+    "dev": "pnpm build:packages && pnpm --parallel --filter @waypoint/shared --filter @waypoint/api --filter @waypoint/frontend dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "check:boundaries": "pnpm --filter @waypoint/api check:boundaries",
-    "check": "pnpm lint && pnpm typecheck && pnpm check:boundaries && pnpm test",
+    "check": "pnpm build:packages && pnpm lint && pnpm typecheck && pnpm check:boundaries && pnpm test",
     "api:gen": "pnpm --filter @waypoint/api openapi:write && pnpm --filter @compass/api-client generate",
     "db:generate": "pnpm --filter @waypoint/api db:generate",
     "db:migrate": "pnpm --filter @waypoint/api db:migrate",
