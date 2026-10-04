@@ -120,6 +120,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "testTimeout": 30000,
+    "workerIdleMemoryLimit": "1GB",
     "setupFiles": [
       "<rootDir>/../test/setup-env.ts"
     ]
