@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { HeaderActions } from '@/app/layouts/header-actions'
+import { SimulationSection } from '@/features/simulation/simulation-section'
 import { cn } from '@/lib/cn'
 import { getLink } from '@/lib/links'
 import { Button } from '@/ui/button'
@@ -90,7 +91,7 @@ const SECTIONS: Section[] = [
   { id: 'security', title: 'Security', description: 'Which tablets loaders can sign in on with a PIN.', rows: [], extra: 'dock' },
 ]
 
-const DEMO_SECTION: Section = { id: 'demo', title: 'Demo', description: 'Time travel and a clean demo day. Demo mode only.', rows: [], extra: 'demo' }
+const DEMO_SECTION: Section = { id: 'demo', title: 'Demo', description: 'Time travel, a clean demo day and the simulator. Demo mode only.', rows: [], extra: 'demo' }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const toDraft = (kind: Kind, value: unknown): string => {
@@ -239,7 +240,12 @@ export function SettingsPage() {
                   )
                 })}
                 {section.extra === 'dock' ? <DockTabletsSection /> : null}
-                {section.extra === 'demo' && clock.data ? <TimeTravelSection clock={clock.data.data} /> : null}
+                {section.extra === 'demo' && clock.data ? (
+                  <>
+                    <TimeTravelSection clock={clock.data.data} />
+                    <SimulationSection clock={clock.data.data} />
+                  </>
+                ) : null}
               </section>
             ))
           )}

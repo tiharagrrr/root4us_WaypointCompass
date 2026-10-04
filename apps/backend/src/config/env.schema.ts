@@ -61,6 +61,25 @@ export const envSchema = z.object({
   ),
   /** Starts the demo clock at this instant; honoured only when DEMO_MODE=true. */
   DEMO_CLOCK: z.string().optional(),
+  /** The simulator (specs/simulation/spec.md); it also needs DEMO_MODE=true. */
+  SIMULATION_ENABLED: flag('false'),
+  /**
+   * The model behind the simulator's scenario director: disabled (no model is
+   * ever called), scripted (a keyless fake for local runs and tests) or
+   * anthropic (needs ANTHROPIC_API_KEY).
+   */
+  LLM_PROVIDER: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.enum(['disabled', 'scripted', 'anthropic']).default('disabled'),
+  ),
+  ANTHROPIC_API_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  LLM_MODEL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().default('claude-opus-5-5'),
+  ),
   /** pino level; defaults to debug in development, error in tests, info otherwise. */
   LOG_LEVEL: z.preprocess(
     (v) => (v === '' ? undefined : v),

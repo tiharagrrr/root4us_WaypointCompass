@@ -4,12 +4,14 @@ import { DiscoveryModule } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { NotificationsModule } from '../modules/notifications';
 import { PlanningModule } from '../modules/planning';
+import { SimulationModule } from '../modules/simulation';
 import { DemoInbox } from '../core/demo/demo-inbox';
 import { TickerService } from '../core/scheduling/ticker.service';
 import { QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
 import { NotificationsProcessor } from './notifications.processor';
 import { OutboxProcessor } from './outbox.processor';
+import { SimulationLoop } from './simulation.loop';
 import { TickerProcessor } from './ticker.processor';
 
 /**
@@ -25,6 +27,8 @@ import { TickerProcessor } from './ticker.processor';
     PlanningModule,
     // For NotificationSender, which notify.send drives.
     NotificationsModule,
+    // For SimulationRunner, which the simulation loop drives.
+    SimulationModule,
     DiscoveryModule,
     BullModule.registerQueue({ name: QUEUES.ticker }),
     BullModule.registerQueue({ name: QUEUES.outbox }),
@@ -36,6 +40,7 @@ import { TickerProcessor } from './ticker.processor';
     DemoInbox,
     TickerService,
     TickerProcessor,
+    SimulationLoop,
   ],
 })
 export class WorkerModule {}
