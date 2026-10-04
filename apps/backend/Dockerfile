@@ -28,6 +28,7 @@ RUN if [ -f pnpm-lock.yaml ]; then FROZEN=--frozen-lockfile; else FROZEN=--no-fr
 
 FROM node:22-alpine AS runtime
 ENV NODE_ENV=production
+ENV NODE_OPTIONS="--max-old-space-size=2048"
 WORKDIR /repo
 COPY --from=prod-deps --chown=node:node /repo /repo
 COPY --from=build --chown=node:node /repo/packages/shared/dist packages/shared/dist
