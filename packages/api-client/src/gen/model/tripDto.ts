@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { _TripDtoLinks } from './_tripDtoLinks.ts';
-import type { StopDto } from './stopDto.ts';
+import type { PlanStopDto } from './planStopDto.ts';
 import type { TripDtoBrand } from './tripDtoBrand.ts';
 import type { TripDtoStatus } from './tripDtoStatus.ts';
 import type { TripDtoTempClass } from './tripDtoTempClass.ts';
@@ -47,7 +47,7 @@ export interface TripDto {
   weightCapKg: number;
   volumeCapM3: number;
   version: number;
-  stops: StopDto[];
+  stops: PlanStopDto[];
   /** This trip's violations, hard and soft */
   violations: ViolationDto[];
   _links: _TripDtoLinks;

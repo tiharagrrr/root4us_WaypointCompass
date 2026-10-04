@@ -36,12 +36,13 @@ const threeStops = aTrip({
     ...aTrip().stops[0],
     id: `stop-${n}`,
     orderId: `ord-${n}`,
+    orderNo: `WF-018${n}`,
     outletName: ['Kandana', 'Ja-Ela', 'Seeduwa'][n - 1],
     seq: n,
   })),
 })
 
-function stub(links: Record<string, unknown>, routes: Record<string, () => unknown> = {}) {
+function stub(links: Record<string, unknown>, routes: Record<string, (url: URL, init?: RequestInit) => unknown> = {}) {
   return stubApi({
     [`GET /api/v1/trips/${TRIP}`]: () => envelope(summary(links)),
     [`GET /api/v1/depots/PLG/plans/${DATE}`]: () => envelope(aPlan({ status: 'PUBLISHED', revision: 1 })),
@@ -52,6 +53,19 @@ function stub(links: Record<string, unknown>, routes: Record<string, () => unkno
         aVehicleOption({ vehicleId: 'veh-ref3', code: 'REF-03' }),
         aVehicleOption({ vehicleId: 'veh-dry', code: 'DRY-31', temp: 'AMBIENT' }),
       ]),
+    [`GET /api/v1/plans/${PLAN_ID}/driver-options`]: () =>
+      page([
+        { driverId: 'drv-aniqa', name: 'Aniqa Razick', tripsOnPlan: 1 },
+        { driverId: 'drv-nuwan', name: 'Nuwan Gunasekara', tripsOnPlan: 0 },
+      ]),
+    // The server's projection: the stop sent first arrives 07:46 with 14 minutes spare, the rest later.
+    [`POST /api/v1/trips/${TRIP}/resequence/preview`]: (_url, init) => {
+      const { stopIds } = JSON.parse(String(init?.body)) as { stopIds: string[] }
+      return envelope({
+        stops: stopIds.map((stopId, i) => ({ stopId, arrivalAt: `2026-10-02T02:${16 + i * 12}:00.000Z`, spareMin: 14 - i * 12 })),
+        violations: [],
+      })
+    },
     'GET /api/v1/deferral-reasons': () => page([{ code: 'VEHICLE_BREAKDOWN', label: 'Vehicle breakdown', active: true }]),
     ...routes,
   })
@@ -107,6 +121,66 @@ describe('19b and 20 change a trip on the road', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Reassign and notify' }))
     await waitFor(() => expect(calls.some((c) => c.path.endsWith('/reassign'))).toBe(true))
     expect(calls.find((c) => c.path.endsWith('/reassign'))?.body).toEqual({ vehicleId: 'veh-ref3', reasonCode: 'VEHICLE_BREAKDOWN' })
+  })
+
+  it('AC-PLN-38 shows the projected arrival and spare for each stop as the order changes', async () => {
+    const user = userEvent.setup()
+    const { calls } = stub({ resequence: link('resequence') })
+    renderScreen(<TripOperationsCard tripId={TRIP} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Re-sequence' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Re-sequence REF-07 stops' })
+    const first = within(dialog).getByRole('row', { name: 'Kandana' })
+    expect(await within(first).findByText('14 min spare')).toBeInTheDocument()
+    expect(within(first).getByText('At risk')).toBeInTheDocument()
+    expect(within(within(dialog).getByRole('row', { name: 'Seeduwa' })).getByText('10 min late')).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Move Ja-Ela up' }))
+    await waitFor(() =>
+      expect(calls.filter((c) => c.path.endsWith('/resequence/preview')).at(-1)?.body).toEqual({ stopIds: ['stop-2', 'stop-1', 'stop-3'] }),
+    )
+    // No Defer… without the trip's deferStop link.
+    expect(within(dialog).queryByRole('button', { name: 'Defer…' })).not.toBeInTheDocument()
+  })
+
+  it('AC-PLN-25 defers one stop with a reason and the trip’s version', async () => {
+    const user = userEvent.setup()
+    const { calls } = stub(
+      { resequence: link('resequence'), deferStop: { ...link('stops/{stopId}/defer'), templated: true } },
+      { [`POST /api/v1/trips/${TRIP}/stops/stop-2/defer`]: () => envelope(threeStops) },
+    )
+    renderScreen(<TripOperationsCard tripId={TRIP} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Re-sequence' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Re-sequence REF-07 stops' })
+    await user.click(within(within(dialog).getByRole('row', { name: 'Ja-Ela' })).getByRole('button', { name: 'Defer…' }))
+    const defer = await screen.findByRole('dialog', { name: 'Defer Ja-Ela' })
+    await user.click(within(defer).getByRole('combobox', { name: 'Reason' }))
+    await user.click(await screen.findByRole('option', { name: 'Vehicle breakdown' }))
+    await user.type(within(defer).getByRole('textbox'), 'Road closed')
+    await user.click(within(defer).getByRole('button', { name: 'Defer stop' }))
+
+    await waitFor(() => expect(calls.some((c) => c.path.endsWith('/stops/stop-2/defer'))).toBe(true))
+    const sent = calls.find((c) => c.path.endsWith('/stops/stop-2/defer'))
+    expect(sent?.body).toEqual({ reasonCode: 'VEHICLE_BREAKDOWN', note: 'Road closed' })
+    expect(sent?.headers['if-match']).toBe('W/"4"')
+  })
+
+  it('AC-PLN-37 a driver-only reassign keeps the vehicle and sends the new driver', async () => {
+    const user = userEvent.setup()
+    const { calls } = stub({ reassign: link('reassign') }, { [`POST /api/v1/trips/${TRIP}/reassign`]: () => envelope(threeStops) })
+    renderScreen(<TripOperationsCard tripId={TRIP} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Reassign' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Reassign REF-07 · Trip 1' })
+    await user.click(within(dialog).getByRole('radio', { name: 'Keep REF-07' }))
+    await user.click(within(dialog).getByRole('combobox', { name: 'Driver' }))
+    await user.click(await screen.findByRole('option', { name: /Nuwan Gunasekara · on shift, no trip/ }))
+    await pickReason(user, dialog)
+    await user.click(within(dialog).getByRole('button', { name: 'Reassign and notify' }))
+
+    await waitFor(() => expect(calls.some((c) => c.path.endsWith('/reassign'))).toBe(true))
+    expect(calls.find((c) => c.path.endsWith('/reassign'))?.body).toEqual({ driverId: 'drv-nuwan', reasonCode: 'VEHICLE_BREAKDOWN' })
   })
 
   it('shows nothing for a trip with neither link', async () => {

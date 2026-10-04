@@ -16,9 +16,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  DeferStopDto,
   ProblemDto,
   ReassignTripDto,
+  ResequencePreviewRequestDto,
   ResequenceTripDto,
+  TripOperationsDeferStop200,
+  TripOperationsDeferStopHeaders,
+  TripOperationsPreview200,
   TripOperationsReassign200,
   TripOperationsReassignHeaders,
   TripOperationsResequence200,
@@ -121,6 +126,185 @@ export const useTripOperationsReassign = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getTripOperationsReassignMutationOptions(options), queryClient);
+    }
+    export const getTripOperationsPreviewUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/trips/${id}/resequence/preview`
+}
+
+/**
+ * @summary 19b: projected arrivals and violations for an order of the stops; saves nothing (AC-PLN-38).
+ */
+export const tripOperationsPreview = async (id: string,
+    resequencePreviewRequestDto: ResequencePreviewRequestDto, options?: Parameters<typeof compassFetch>[1]): Promise<TripOperationsPreview200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<TripOperationsPreview200>(getTripOperationsPreviewUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(resequencePreviewRequestDto)
+  }
+);}
+
+
+
+
+
+export const getTripOperationsPreviewMutationKey = () => ['tripOperationsPreview'] as const;
+
+export const getTripOperationsPreviewMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tripOperationsPreview>>, TError,TripOperationsPreviewMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof tripOperationsPreview>>, TError,TripOperationsPreviewMutationVariables, TContext> => {
+
+const mutationKey = getTripOperationsPreviewMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tripOperationsPreview>>, TripOperationsPreviewMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  tripOperationsPreview(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TripOperationsPreviewMutationResult = NonNullable<Awaited<ReturnType<typeof tripOperationsPreview>>>
+    export type TripOperationsPreviewMutationBody = BodyType<ResequencePreviewRequestDto>
+    export type TripOperationsPreviewMutationError = ErrorType<ProblemDto>
+    export type TripOperationsPreviewMutationVariables = {id: string;data: BodyType<ResequencePreviewRequestDto>}
+
+    /**
+ * @summary 19b: projected arrivals and violations for an order of the stops; saves nothing (AC-PLN-38).
+ */
+export const useTripOperationsPreview = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tripOperationsPreview>>, TError,TripOperationsPreviewMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof tripOperationsPreview>>,
+        TError,
+        TripOperationsPreviewMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTripOperationsPreviewMutationOptions(options), queryClient);
+    }
+    export const getTripOperationsDeferStopUrl = (id: string,
+    stopId: string,) => {
+
+
+
+
+  return `/api/v1/trips/${id}/stops/${stopId}/defer`
+}
+
+/**
+ * @summary 19a, 19b: one stop still to come is deferred to the next run (AC-PLN-25).
+ */
+export const tripOperationsDeferStop = async (id: string,
+    stopId: string,
+    deferStopDto: DeferStopDto,
+    headers: TripOperationsDeferStopHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<TripOperationsDeferStop200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<TripOperationsDeferStop200>(getTripOperationsDeferStopUrl(id,stopId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(deferStopDto)
+  }
+);}
+
+
+
+
+
+export const getTripOperationsDeferStopMutationKey = () => ['tripOperationsDeferStop'] as const;
+
+export const getTripOperationsDeferStopMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tripOperationsDeferStop>>, TError,TripOperationsDeferStopMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof tripOperationsDeferStop>>, TError,TripOperationsDeferStopMutationVariables, TContext> => {
+
+const mutationKey = getTripOperationsDeferStopMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof tripOperationsDeferStop>>, TripOperationsDeferStopMutationVariables> = (props) => {
+          const {id,stopId,data,headers} = props ?? {};
+
+          return  tripOperationsDeferStop(id,stopId,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TripOperationsDeferStopMutationResult = NonNullable<Awaited<ReturnType<typeof tripOperationsDeferStop>>>
+    export type TripOperationsDeferStopMutationBody = BodyType<DeferStopDto>
+    export type TripOperationsDeferStopMutationError = ErrorType<ProblemDto>
+    export type TripOperationsDeferStopMutationVariables = {id: string;stopId: string;data: BodyType<DeferStopDto>;headers: TripOperationsDeferStopHeaders}
+
+    /**
+ * @summary 19a, 19b: one stop still to come is deferred to the next run (AC-PLN-25).
+ */
+export const useTripOperationsDeferStop = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof tripOperationsDeferStop>>, TError,TripOperationsDeferStopMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof tripOperationsDeferStop>>,
+        TError,
+        TripOperationsDeferStopMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTripOperationsDeferStopMutationOptions(options), queryClient);
     }
     export const getTripOperationsResequenceUrl = (id: string,) => {
 

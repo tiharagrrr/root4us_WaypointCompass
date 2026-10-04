@@ -45,6 +45,7 @@ import type {
   PlanBuildingValidate200,
   PlanBuildingVehicleOptions200,
   PlansContext200,
+  PlansDriverOptions200,
   PlansEndOfDay200,
   PlansForDay200,
   PlansGet200,
@@ -665,6 +666,106 @@ export function usePlansEndOfDay<TData = Awaited<ReturnType<typeof plansEndOfDay
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getPlansEndOfDayQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPlansDriverOptionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/plans/${id}/driver-options`
+}
+
+/**
+ * @summary 20: the depot's drivers and their trips on this plan (AC-PLN-37).
+ */
+export const plansDriverOptions = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<PlansDriverOptions200> => {
+
+  return compassFetch<PlansDriverOptions200>(getPlansDriverOptionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPlansDriverOptionsQueryKey = (id: string,) => {
+    return [
+    `/api/v1/plans/${id}/driver-options`
+    ] as const;
+    }
+
+
+export const getPlansDriverOptionsQueryOptions = <TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPlansDriverOptionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof plansDriverOptions>>> = ({ signal }) => plansDriverOptions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PlansDriverOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof plansDriverOptions>>>
+export type PlansDriverOptionsQueryError = ErrorType<ProblemDto>
+
+
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansDriverOptions>>,
+          TError,
+          Awaited<ReturnType<typeof plansDriverOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansDriverOptions>>,
+          TError,
+          Awaited<ReturnType<typeof plansDriverOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 20: the depot's drivers and their trips on this plan (AC-PLN-37).
+ */
+
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPlansDriverOptionsQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

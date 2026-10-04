@@ -19,20 +19,24 @@ import type {
 } from 'msw';
 
 import type {
+  TripOperationsDeferStop200,
+  TripOperationsPreview200,
   TripOperationsReassign200,
   TripOperationsResequence200
 } from '../../model';
 
 
-export const getTripOperationsReassignResponseMock = (overrideResponse: Partial<Extract<TripOperationsReassign200, object>> = {}): TripOperationsReassign200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000d001", tripId: "0192a3f4-0000-7000-8000-00000000b001", orderId: "0192a3f4-0000-7000-8000-00000000e001", outletId: "OUT014", outletName: "Fresh Kadawatha", seq: 1, status: "ARRIVED", window: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, plannedArrivalAt: "2026-10-02T04:00:00+05:30", arrivedAt: null, completedAt: null, outcome: null, receiverName: null, exceptionNote: null, unitsDelivered: null, version: 1, _links: {
-        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
-      }})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
+export const getTripOperationsReassignResponseMock = (overrideResponse: Partial<Extract<TripOperationsReassign200, object>> = {}): TripOperationsReassign200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000c001", seq: 1, status: "PENDING", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Kadawatha", units: 24, weightKg: 312.5, volumeM3: 1.84, plannedArrivalAt: "2026-10-02T04:07:00+05:30", plannedServiceMin: 16, windowOpenMin: 210, windowCloseMin: 480})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
-export const getTripOperationsResequenceResponseMock = (overrideResponse: Partial<Extract<TripOperationsResequence200, object>> = {}): TripOperationsResequence200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000d001", tripId: "0192a3f4-0000-7000-8000-00000000b001", orderId: "0192a3f4-0000-7000-8000-00000000e001", outletId: "OUT014", outletName: "Fresh Kadawatha", seq: 1, status: "ARRIVED", window: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, plannedArrivalAt: "2026-10-02T04:00:00+05:30", arrivedAt: null, completedAt: null, outcome: null, receiverName: null, exceptionNote: null, unitsDelivered: null, version: 1, _links: {
+export const getTripOperationsPreviewResponseMock = (overrideResponse: Partial<Extract<TripOperationsPreview200, object>> = {}): TripOperationsPreview200 => ({data: {stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({stopId: "0192a3f4-0000-7000-8000-00000000d103", arrivalAt: "2026-10-02T07:46:00.000Z", spareMin: 14})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"}))}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getTripOperationsDeferStopResponseMock = (overrideResponse: Partial<Extract<TripOperationsDeferStop200, object>> = {}): TripOperationsDeferStop200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000c001", seq: 1, status: "PENDING", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Kadawatha", units: 24, weightKg: 312.5, volumeM3: 1.84, plannedArrivalAt: "2026-10-02T04:07:00+05:30", plannedServiceMin: 16, windowOpenMin: 210, windowCloseMin: 480})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
-      }})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getTripOperationsResequenceResponseMock = (overrideResponse: Partial<Extract<TripOperationsResequence200, object>> = {}): TripOperationsResequence200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000c001", seq: 1, status: "PENDING", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Kadawatha", units: 24, weightKg: 312.5, volumeM3: 1.84, plannedArrivalAt: "2026-10-02T04:07:00+05:30", plannedServiceMin: 16, windowOpenMin: 210, windowCloseMin: 480})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -44,6 +48,30 @@ export const getTripOperationsReassignMockHandler = (overrideResponse?: TripOper
     return HttpResponse.json(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getTripOperationsReassignResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getTripOperationsPreviewMockHandler = (overrideResponse?: TripOperationsPreview200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<TripOperationsPreview200> | TripOperationsPreview200), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/trips/:id/resequence/preview', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTripOperationsPreviewResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getTripOperationsDeferStopMockHandler = (overrideResponse?: TripOperationsDeferStop200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<TripOperationsDeferStop200> | TripOperationsDeferStop200), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/trips/:id/stops/:stopId/defer', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTripOperationsDeferStopResponseMock(),
       { status: 200
       })
   }, options)
@@ -62,5 +90,7 @@ export const getTripOperationsResequenceMockHandler = (overrideResponse?: TripOp
 }
 export const getTripsMock = () => [
   getTripOperationsReassignMockHandler(),
+  getTripOperationsPreviewMockHandler(),
+  getTripOperationsDeferStopMockHandler(),
   getTripOperationsResequenceMockHandler()
 ]

@@ -39,6 +39,7 @@ export const PLANNING_EVENTS = {
   planClosed: 'plan.closed',
   tripReassigned: 'trip.reassigned',
   tripResequenced: 'trip.resequenced',
+  stopDeferred: 'stop.deferred',
   engineRunCompleted: 'plan.engine_run.completed',
   engineRunFailed: 'plan.engine_run.failed',
   deferralConfirmed: 'deferral.confirmed',

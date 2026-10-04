@@ -132,33 +132,19 @@ export const PlansTripsResponse = zod.object({
   "version": zod.number(),
   "stops": zod.array(zod.object({
   "id": zod.string(),
-  "tripId": zod.string(),
-  "orderId": zod.string(),
-  "outletId": zod.string(),
-  "outletName": zod.string(),
   "seq": zod.number().nullable(),
   "status": zod.enum(['PENDING', 'ARRIVED', 'DELIVERED', 'PARTIAL', 'FAILED', 'CANCELLED']),
-  "window": zod.object({
-  "openMin": zod.number(),
-  "open": zod.string(),
-  "closeMin": zod.number(),
-  "close": zod.string()
-}),
+  "orderId": zod.string(),
+  "orderNo": zod.string(),
+  "outletId": zod.string(),
+  "outletName": zod.string(),
+  "units": zod.number(),
+  "weightKg": zod.number(),
+  "volumeM3": zod.number(),
   "plannedArrivalAt": zod.string().nullable(),
-  "arrivedAt": zod.string().nullable(),
-  "completedAt": zod.string().nullable(),
-  "outcome": zod.union([zod.literal('DELIVERED'),zod.literal('PARTIAL'),zod.literal('REFUSED'),zod.literal('DAMAGED'),zod.literal('OUTLET_CLOSED'),zod.literal(null)]).nullable(),
-  "receiverName": zod.string().nullable(),
-  "exceptionNote": zod.string().nullable(),
-  "unitsDelivered": zod.number().nullable(),
-  "version": zod.number(),
-  "_links": zod.record(zod.string(), zod.object({
-  "href": zod.string(),
-  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
-  "title": zod.string().optional(),
-  "templated": zod.boolean().optional(),
-  "requires": zod.array(zod.string()).optional()
-}))
+  "plannedServiceMin": zod.number(),
+  "windowOpenMin": zod.number().describe('Effective window, minutes after midnight'),
+  "windowCloseMin": zod.number()
 })),
   "violations": zod.array(zod.object({
   "rule": zod.enum(['CAP_WEIGHT', 'CAP_VOLUME', 'TEMP_REEFER', 'ACCESS_VAN_ONLY', 'DEPOT_HOME', 'TRIP_BRAND_DISTRICT', 'WHOLE_ORDER', 'TRIP_LIMIT', 'BUDGET_FRESH', 'BUDGET_STYLE_TECH', 'WINDOW_OUTLET', 'WINDOW_MALL', 'FUEL_WEEKLY', 'VEHICLE_AVAILABLE', 'OPERATING_DAY', 'REPEAT_SKIP', 'TECH_VALUE_LIMIT', 'LATE_RISK']),
@@ -342,6 +328,42 @@ export const PlansEndOfDayResponse = zod.object({
   "message": zod.string()
 })).optional()
 })
+})
+
+/**
+ * @summary 20: the depot's drivers and their trips on this plan (AC-PLN-37).
+ */
+export const PlansDriverOptionsParams = zod.object({
+  "id": zod.string()
+})
+
+export const PlansDriverOptionsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "driverId": zod.string(),
+  "name": zod.string(),
+  "tripsOnPlan": zod.number().describe('Trips the driver has on this plan')
+})),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional(),
+  "page": zod.object({
+  "limit": zod.number(),
+  "offset": zod.number(),
+  "total": zod.number()
+})
+}),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
 })
 
 export const PlansRevisionsParams = zod.object({

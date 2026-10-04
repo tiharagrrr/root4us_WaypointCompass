@@ -25,9 +25,18 @@ import {
 } from '../../../core/errors/domain-errors';
 import { OutboxService } from '../../../core/outbox/outbox.service';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
-import { planRevisions, plans, stops, trips, users } from '../../../db/schema';
+import {
+  deferrals,
+  planRevisions,
+  plans,
+  stops,
+  trips,
+  users,
+} from '../../../db/schema';
 import { AuditService } from '../../audit';
 import { FuelLedgerService } from '../../fleet';
+import { OrderLifecycleService } from '../../ordering';
+import { DeferralService } from './deferral.service';
 import { PLANNING_AUDIT, PLANNING_EVENTS } from '../planning.constants';
 import type { PlanContext } from './plan-context.builder';
 import { PlanContextBuilder } from './plan-context.builder';
@@ -48,6 +57,23 @@ export interface ResequenceInput {
   stopIds: readonly string[];
   reasonCode?: string;
   note?: string;
+}
+
+/** 19b's preview: each stop's projected arrival, and what the order would break. */
+export interface ResequencePreview {
+  stops: {
+    stopId: string;
+    arrivalAt: string | null;
+    spareMin: number | null;
+  }[];
+  violations: Violation[];
+}
+
+/** 20's driver picker. */
+export interface DriverOption {
+  driverId: string;
+  name: string;
+  tripsOnPlan: number;
 }
 
 /** Statuses a trip's remaining stops can be re-ordered in. */
@@ -89,6 +115,8 @@ export class TripOperationsService {
     private readonly contexts: PlanContextBuilder,
     private readonly engine: PlanEngine,
     private readonly lifecycle: TripLifecycleService,
+    private readonly orderLifecycle: OrderLifecycleService,
+    private readonly deferralRules: DeferralService,
     private readonly fuel: FuelLedgerService,
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
@@ -271,50 +299,11 @@ export class TripOperationsService {
       throw new StateConflictError(
         `A ${trip.status.toLowerCase()} trip cannot be re-sequenced.`,
       );
-    const tripStops = ctx.stopsByTrip.get(trip.id) ?? [];
-    const pending = tripStops.filter((s) => s.status === 'PENDING');
-    const wanted = [...input.stopIds];
-    const pendingIds = new Set(pending.map((s) => s.id));
-    if (
-      wanted.length !== pending.length ||
-      new Set(wanted).size !== wanted.length ||
-      !wanted.every((id) => pendingIds.has(id))
-    )
-      throw new ValidationError([
-        {
-          field: 'stopIds',
-          code: 'not_the_pending_stops',
-          message: 'List every stop still to come on this trip, once each',
-        },
-      ]);
-    const byId = new Map(pending.map((s) => [s.id, s]));
-    const orderIds = wanted.map((id) => byId.get(id)!.orderId);
-
-    // The engine checks the stops still to come, from now when the trip is on the road.
-    const code = ctx.vehicles.get(trip.vehicleId)?.code ?? trip.vehicleId;
-    const key = tripKeyOf(code, trip.tripNo ?? 1);
-    const district = ctx.districts.get(trip.districtId);
-    const started = trip.status === 'IN_PROGRESS';
-    const departMin = started
-      ? minuteOfDay(this.clock.now()) -
-        (district?.depotToDistrictMin ?? 0) +
-        (district?.interStopMin ?? 0)
-      : undefined;
-    const next: Plan = {
-      ...ctx.draft,
-      trips: ctx.draft.trips.map((d): TripDraft =>
-        (d.key ??
-          tripKeyOf(ctx.vehicles.get(d.vehicleId)?.code ?? '', d.tripNo)) ===
-        key
-          ? {
-              ...d,
-              key,
-              orderIds,
-              ...(departMin !== undefined && { departMin }),
-            }
-          : d,
-      ),
-    };
+    const { pending, byId, wanted, key, next } = this.inOrder(
+      trip,
+      ctx,
+      input.stopIds,
+    );
     this.refuse(ctx, next, [key], input);
     const measured = planSchedule(ctx.input, next).find((t) => t.key === key);
     const arrival = new Map(
@@ -395,6 +384,249 @@ export class TripOperationsService {
     return saved;
   }
 
+  /**
+   * 19b's preview (AC-PLN-38): the projected arrival of each stop in this
+   * order and what it would break, from the same engine check Apply runs.
+   * Nothing is written.
+   */
+  @Transactional()
+  async previewResequence(
+    tripId: string,
+    stopIds: readonly string[],
+    actor: Actor,
+  ): Promise<ResequencePreview> {
+    const { trip, ctx } = await this.load(tripId, undefined, actor);
+    if (!RESEQUENCEABLE.has(trip.status))
+      throw new StateConflictError(
+        `A ${trip.status.toLowerCase()} trip cannot be re-sequenced.`,
+      );
+    const { byId, wanted, key, next } = this.inOrder(trip, ctx, stopIds);
+    const measured = planSchedule(ctx.input, next).find((t) => t.key === key);
+    const atOf = new Map((measured?.stops ?? []).map((s) => [s.orderId, s]));
+    return {
+      stops: wanted.map((id) => {
+        const stop = byId.get(id)!;
+        const s = atOf.get(stop.orderId);
+        return {
+          stopId: id,
+          arrivalAt: s
+            ? instantAt(ctx.plan.date, s.arriveMin).toISOString()
+            : null,
+          spareMin: s ? Math.round(s.windowCloseMin - s.arriveMin) : null,
+        };
+      }),
+      violations: this.introduced(ctx, next, [key]),
+    };
+  }
+
+  /**
+   * 19a and 19b: one stop still to come is taken off the trip (AC-PLN-25).
+   * The stop is cancelled, its order waits as DEFERRED for the next run with
+   * a confirmed deferral the store is told about, and the plan moves to its
+   * next revision. A stop the driver has reached is theirs to finish (409).
+   */
+  @Transactional()
+  async deferStop(
+    tripId: string,
+    stopId: string,
+    version: number,
+    input: { reasonCode?: string; note?: string },
+    actor: Actor,
+  ): Promise<TripRow> {
+    const reasonCode = this.reason(input.reasonCode);
+    await this.deferralRules.assertReason(reasonCode);
+    const { trip, ctx } = await this.load(tripId, version, actor);
+    const stop = (ctx.stopsByTrip.get(trip.id) ?? []).find(
+      (s) => s.id === stopId,
+    );
+    if (!stop) throw new NotFoundError('stop');
+    if (stop.status !== 'PENDING')
+      throw new StateConflictError(
+        'The driver has reached this stop; record its outcome instead.',
+      );
+    const order = ctx.orders.get(stop.orderId);
+    if (!order) throw new NotFoundError('order');
+    const note = input.note?.trim() || null;
+    const toDate = await this.deferralRules.deferralDate(
+      order.id,
+      ctx.plan.date,
+    );
+
+    await this.lifecycle.cancelStop(stop.id, `deferred: ${reasonCode}`);
+    await this.orderLifecycle.markDeferred(order.id, toDate);
+    const [deferral] = await this.txHost.tx
+      .insert(deferrals)
+      .values({
+        orderId: order.id,
+        planId: ctx.plan.id,
+        status: 'CONFIRMED',
+        source: 'TRACKING',
+        reasonCode,
+        note,
+        fromDate: ctx.plan.date,
+        toDate,
+        decidedById: actor.id,
+        decidedAt: this.clock.now(),
+      })
+      .returning();
+    const [saved] = await this.txHost.tx
+      .update(trips)
+      .set({
+        locked: true,
+        version: trip.version + 1,
+        updatedAt: this.clock.realNow(),
+      })
+      .where(and(eq(trips.id, trip.id), eq(trips.version, trip.version)))
+      .returning();
+    if (!saved) throw new VersionMismatchError('trip');
+
+    const revision = await this.revise(ctx, actor, {
+      reasonCode,
+      note: note ?? undefined,
+      change: { op: 'DEFER_STOP', tripId: trip.id, stopId: stop.id },
+      tripId: trip.id,
+      outletIds: [stop.outletId],
+    });
+    await this.audit.record({
+      action: PLANNING_AUDIT.stopDeferred,
+      entity: ['stop', stop.id],
+      before: { status: stop.status, orderStatus: order.status },
+      after: { status: 'CANCELLED', toDate },
+      reasonCode,
+      reasonNote: note ?? undefined,
+    });
+    await this.outbox.add(
+      PLANNING_EVENTS.stopDeferred,
+      {
+        v: 1,
+        stopId: stop.id,
+        tripId: trip.id,
+        orderId: order.id,
+        planId: ctx.plan.id,
+        reasonCode,
+        toDate,
+        revision,
+      },
+      {
+        aggregate: ['stop', stop.id],
+        depotId: ctx.plan.depotId,
+        outletIds: [stop.outletId],
+      },
+    );
+    await this.outbox.add(
+      PLANNING_EVENTS.deferralConfirmed,
+      {
+        v: 1,
+        deferralId: deferral.id,
+        orderId: order.id,
+        orderNo: order.orderNo,
+        reasonCode,
+        toDate,
+      },
+      {
+        aggregate: ['deferral', deferral.id],
+        depotId: ctx.plan.depotId,
+        outletIds: [stop.outletId],
+      },
+    );
+    this.log.info(
+      {
+        event: PLANNING_AUDIT.stopDeferred,
+        tripId: trip.id,
+        stopId: stop.id,
+        orderId: order.id,
+        reason: reasonCode,
+      },
+      'stop deferred',
+    );
+    return saved;
+  }
+
+  /** 20's driver picker (AC-PLN-37): the depot's drivers and their trips on this plan. */
+  @Transactional()
+  async driverOptions(planId: string, actor: Actor): Promise<DriverOption[]> {
+    const plan = await this.plans.lock(planId, actor);
+    const drivers = await this.txHost.tx
+      .select({ id: users.id, name: users.name })
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'driver'),
+          eq(users.depotId, plan.depotId),
+          sql`coalesce(${users.banned}, false) = false`,
+        ),
+      );
+    const counts = await this.txHost.tx
+      .select({ driverId: trips.driverId, n: sql<number>`count(*)::int` })
+      .from(trips)
+      .where(
+        and(eq(trips.planId, plan.id), sql`${trips.status} <> 'CANCELLED'`),
+      )
+      .groupBy(trips.driverId);
+    const tripsOf = new Map(counts.map((c) => [c.driverId, c.n]));
+    return drivers
+      .map((d) => ({
+        driverId: d.id,
+        name: d.name,
+        tripsOnPlan: tripsOf.get(d.id) ?? 0,
+      }))
+      .sort(
+        (a, b) => a.tripsOnPlan - b.tripsOnPlan || a.name.localeCompare(b.name),
+      );
+  }
+
+  /**
+   * The plan with this trip's stops still to come in the given order: the
+   * ids must be exactly those stops. A trip on the road is scheduled from
+   * now, as if at its last stop; one not yet out keeps its planned departure.
+   */
+  private inOrder(trip: TripRow, ctx: PlanContext, stopIds: readonly string[]) {
+    const pending = (ctx.stopsByTrip.get(trip.id) ?? []).filter(
+      (s) => s.status === 'PENDING',
+    );
+    const wanted = [...stopIds];
+    const pendingIds = new Set(pending.map((s) => s.id));
+    if (
+      wanted.length !== pending.length ||
+      new Set(wanted).size !== wanted.length ||
+      !wanted.every((id) => pendingIds.has(id))
+    )
+      throw new ValidationError([
+        {
+          field: 'stopIds',
+          code: 'not_the_pending_stops',
+          message: 'List every stop still to come on this trip, once each',
+        },
+      ]);
+    const byId = new Map(pending.map((s) => [s.id, s]));
+    const orderIds = wanted.map((id) => byId.get(id)!.orderId);
+    const code = ctx.vehicles.get(trip.vehicleId)?.code ?? trip.vehicleId;
+    const key = tripKeyOf(code, trip.tripNo ?? 1);
+    const district = ctx.districts.get(trip.districtId);
+    const departMin =
+      trip.status === 'IN_PROGRESS'
+        ? minuteOfDay(this.clock.now()) -
+          (district?.depotToDistrictMin ?? 0) +
+          (district?.interStopMin ?? 0)
+        : undefined;
+    const next: Plan = {
+      ...ctx.draft,
+      trips: ctx.draft.trips.map((d): TripDraft =>
+        (d.key ??
+          tripKeyOf(ctx.vehicles.get(d.vehicleId)?.code ?? '', d.tripNo)) ===
+        key
+          ? {
+              ...d,
+              key,
+              orderIds,
+              ...(departMin !== undefined && { departMin }),
+            }
+          : d,
+      ),
+    };
+    return { pending, byId, wanted, key, next };
+  }
+
   private reason(code: string | undefined): string {
     const reasonCode = code?.trim();
     if (!reasonCode)
@@ -408,10 +640,13 @@ export class TripOperationsService {
     return reasonCode;
   }
 
-  /** The trip, at the caller's version, on a published plan in their scope. */
+  /**
+   * The trip, at the caller's version (writes; a preview passes none), on a
+   * published plan in their scope.
+   */
   private async load(
     tripId: string,
-    version: number,
+    version: number | undefined,
     actor: Actor,
   ): Promise<{ trip: TripRow; ctx: PlanContext }> {
     const [row] = await this.txHost.tx
@@ -426,8 +661,26 @@ export class TripOperationsService {
       throw new StateConflictError(
         'Change a draft plan with its edit list; this is for a published one.',
       );
-    if (row.version !== version) throw new VersionMismatchError('trip');
+    if (version !== undefined && row.version !== version)
+      throw new VersionMismatchError('trip');
     return { trip: row, ctx: await this.contexts.build(plan) };
+  }
+
+  /** What the change breaks on these trips that the plan did not break already. */
+  private introduced(
+    ctx: PlanContext,
+    next: Plan,
+    tripKeys: readonly string[],
+  ): Violation[] {
+    const before = new Set(
+      this.engine.validate(ctx.input, ctx.draft).map(keyOf),
+    );
+    return this.engine
+      .validate(ctx.input, next)
+      .filter(
+        (v) =>
+          !before.has(keyOf(v)) && (!v.tripKey || tripKeys.includes(v.tripKey)),
+      );
   }
 
   /** Refuses what the change broke on these trips, the same way an edit list does. */
@@ -437,16 +690,7 @@ export class TripOperationsService {
     tripKeys: readonly string[],
     input: { reasonCode?: string },
   ): void {
-    const before = new Set(
-      this.engine.validate(ctx.input, ctx.draft).map(keyOf),
-    );
-    const introduced = this.engine
-      .validate(ctx.input, next)
-      .filter(
-        (v) =>
-          !before.has(keyOf(v)) && (!v.tripKey || tripKeys.includes(v.tripKey)),
-      );
-    this.plans.refuseIntroduced(ctx, introduced, {
+    this.plans.refuseIntroduced(ctx, this.introduced(ctx, next, tripKeys), {
       reasonCode: input.reasonCode,
     });
   }

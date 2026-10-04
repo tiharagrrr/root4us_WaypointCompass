@@ -32,6 +32,10 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
   // 21 follows the day as trips finish, and every screen sees the plan lock when it closes.
   'trip.completed': () => ['/api/v1/plans'],
+  // 19a, 19b and 20 follow another dispatcher's change to the same trip.
+  'trip.reassigned': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
+  'trip.resequenced': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
+  'stop.deferred': (e) => ['/api/v1/plans', '/api/v1/deferrals', `/api/v1/trips/${String(e.data.tripId)}`],
   'stop.failed': () => ['/api/v1/plans'],
   'plan.closed': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/deferrals', '/api/v1/orders'],
   // 23, M4 and M7 follow a deferral as it is confirmed, answered, replied to or reversed.

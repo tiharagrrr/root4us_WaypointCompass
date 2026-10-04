@@ -3,6 +3,7 @@ import {
   getPlansTripsQueryKey,
   getTripsGetQueryKey,
   usePlanBuildingVehicleOptions,
+  usePlansDriverOptions,
   usePlansForDay,
   usePlansTrips,
   useTripsGet,
@@ -35,6 +36,7 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
   const planId = plan?.id ?? ''
   const trips = usePlansTrips(planId, { query: { enabled: planId !== '' } })
   const vehicles = usePlanBuildingVehicleOptions(planId, { query: { enabled: open === 'reassign' && planId !== '' } })
+  const drivers = usePlansDriverOptions(planId, { query: { enabled: open === 'reassign' && planId !== '' } })
   const trip = trips.data?.data.find((t) => t.id === tripId)
   const reassign = getLink(summary?._links, 'reassign')
   const resequence = getLink(summary?._links, 'resequence')
@@ -64,6 +66,7 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
         <ReassignDialog
           trip={trip}
           vehicles={vehicles.data?.data ?? []}
+          drivers={drivers.data?.data ?? []}
           link={reassign}
           version={summary.version}
           revision={plan.revision}
@@ -73,7 +76,11 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
         />
       ) : null}
       {open === 'resequence' && trip && resequence && plan ? (
-        <ResequenceDialog trip={trip} link={resequence} version={summary.version} revision={plan.revision} onClose={() => setOpen(null)} onDone={done} />
+        <ResequenceDialog
+          trip={trip}
+          link={resequence}
+          deferLink={summary._links.deferStop}
+          version={summary.version} revision={plan.revision} onClose={() => setOpen(null)} onDone={done} />
       ) : null}
     </Card>
   )
