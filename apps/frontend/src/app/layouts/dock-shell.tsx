@@ -21,8 +21,6 @@ import { isDepot } from './depot-context'
 export function DockShell() {
   const { t } = useTranslation()
   useEventStream()
-  // The tablet queues every tap in Dexie; this is what sends them to POST /sync.
-  useSyncEngine()
   const me = useMeGet()
   const signOut = useSignOut('/sign-in/dock')
   const person = me.data?.data
