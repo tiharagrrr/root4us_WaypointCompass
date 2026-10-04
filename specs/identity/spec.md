@@ -331,7 +331,7 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [ ] AC-IDN-16 Fourth code request gets 429
 - [ ] AC-IDN-17 A stale or over-tried code fails
 - [ ] AC-IDN-18 Sign-out ends the session
-- [ ] AC-IDN-19 D13 waits for an empty outbox
+- [x] AC-IDN-19 D13 waits for an empty outbox
 - [ ] AC-IDN-20 Dock signs out after 20 idle minutes
 - [ ] AC-IDN-21 Switch user returns to L1
 - [x] AC-IDN-22 /me shows role, scope and permissions
@@ -874,6 +874,8 @@ AC-IDN-60  Routes match the permission matrix
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
 
 ## Changelog
+- 2026-10-04 AC-IDN-19 has its test (`driver-account-page.test.tsx`): D12's Sign out card waits for the outbox to
+  empty before calling `/api/auth/sign-out` and offers no discard; the behaviour already existed (ROO-44)
 - 2026-10-04 Sign-in works for every role from a real browser (ROO-68 bug bash): the cookie's Secure flag
   follows APP_URL instead of being forced; the dev server is a trusted origin by default; every signed-in
   browser registers itself through POST /me/devices so A6 can mark it as a dock tablet (the PIN route had

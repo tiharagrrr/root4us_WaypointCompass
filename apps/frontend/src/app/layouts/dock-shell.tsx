@@ -6,6 +6,7 @@ import { DEPOT_NAMES } from '@waypoint/shared/domain'
 import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router'
 import { useSignOut } from '@/features/identity/sign-out'
+import { useSyncEngine } from '@/offline/use-sync-engine'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { Avatar } from '@/ui/avatar'
 import { Button } from '@/ui/button'
@@ -23,6 +24,7 @@ export function DockShell() {
   const me = useMeGet()
   const signOut = useSignOut('/sign-in/dock')
   const person = me.data?.data
+  useSyncEngine(Boolean(person))
   const depotId = person?.depotId
   const depot = isDepot(depotId) ? DEPOT_NAMES[depotId].toUpperCase() : null
 

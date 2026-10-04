@@ -87,7 +87,12 @@ export class SyncEngine {
   /** A 401 pauses; signing back in resumes without losing a single queued tap. */
   resume(): void {
     this.paused = false
+    void this.db.meta.put({ key: META_KEYS.syncPaused, value: 0 })
     void this.flush()
+  }
+
+  get isPaused(): boolean {
+    return this.paused
   }
 
   async flush(opts: { urgentOnly?: boolean } = {}): Promise<void> {
@@ -99,8 +104,15 @@ export class SyncEngine {
       if (batch.length === 0) return
       await this.send(batch)
     } catch (error) {
-      if (error instanceof PausedError) this.paused = true
-      await this.penalise()
+      if (error instanceof PausedError) {
+        // Not a failure of the network: nothing waits out a backoff, so the first push after
+        // signing back in goes at once. The rows go back to pending untouched.
+        this.paused = true
+        await this.db.meta.put({ key: META_KEYS.syncPaused, value: 1 })
+        await this.db.outbox.where('status').equals('sending').modify({ status: 'pending' })
+      } else {
+        await this.penalise()
+      }
     } finally {
       this.running = false
     }
