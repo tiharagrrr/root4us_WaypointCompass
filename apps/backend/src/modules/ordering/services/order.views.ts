@@ -18,11 +18,20 @@ import type {
   OrderView,
 } from './order.view';
 
+/**
+ * A line as `toLineView` receives it: from `?include=lines` it carries its `item`; from
+ * `withLines` it has already been flattened with the item's `sku`, `name` and `packLabel`.
+ */
+type LineInput = typeof orderLines.$inferSelect & {
+  item?: { sku: string; name: string; packLabel: string } | null;
+  sku?: string;
+  name?: string;
+  packLabel?: string;
+};
+
 /** An order row that may already carry its lines, from `?include=lines`. */
 type RowWithLines = OrderRow & {
-  lines?: (typeof orderLines.$inferSelect & {
-    item?: { sku: string; name: string; packLabel: string } | null;
-  })[];
+  lines?: LineInput[];
   outlet?: OutletRow | null;
 };
 
@@ -137,16 +146,17 @@ export class OrderViews {
   }
 }
 
-function toLineView(
-  line: typeof orderLines.$inferSelect & {
-    item?: { sku: string; name: string; packLabel: string } | null;
-  },
-): OrderLineView {
+/**
+ * The item's fields come from the embedded `item` when there is one, and otherwise from the
+ * line itself, which `withLines` has already flattened: reading them only from `item` blanked
+ * every name a line write or `getWithLines` had just loaded.
+ */
+function toLineView(line: LineInput): OrderLineView {
   return {
     ...line,
-    sku: line.item?.sku ?? '',
-    name: line.item?.name ?? '',
-    packLabel: line.item?.packLabel ?? '',
+    sku: line.item?.sku ?? line.sku ?? '',
+    name: line.item?.name ?? line.name ?? '',
+    packLabel: line.item?.packLabel ?? line.packLabel ?? '',
   };
 }
 
