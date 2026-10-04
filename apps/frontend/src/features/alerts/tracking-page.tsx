@@ -22,19 +22,10 @@ export function TrackingPage() {
       <div className={SCROLL_COLUMN}>
         <LiveTripsList depotId={depot} />
       </div>
-      <RegionPlaceholder
-        region="Live map"
-        frame="19"
-        node="185:17224"
-        owner="execution"
-        what="Vehicle positions, delivered and upcoming stops, roadworks. Waits on position ingest (ROO-37) and outlet coordinates."
-      />
+      <LiveMap depotId={depot} depotName={DEPOT_NAMES[depot] ?? depot} />
       <div className={SCROLL_COLUMN}>
         <AlertsColumn depotId={depot} />
       </div>
-      <LiveTripsList depotId={depot} />
-      <LiveMap depotId={depot} depotName={DEPOT_NAMES[depot] ?? depot} />
-      <AlertsColumn depotId={depot} />
     </div>
   )
 }
