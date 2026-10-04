@@ -23,6 +23,7 @@
     "orders": "Orders",
     "deferrals": "Deferrals",
     "receipts": "Receipts",
+    "issues": "Issues",
     "itemCatalog": "Item catalog",
     "dashboard": "Dashboard",
     "orderQueue": "Order queue",

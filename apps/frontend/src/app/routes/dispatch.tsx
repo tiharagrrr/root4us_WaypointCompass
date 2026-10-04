@@ -82,6 +82,17 @@ export const dispatchRoutes: RouteObject[] = [
           },
           { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
           {
+            // Store issues: no frame; the alerts panel's "Open the issue" lands on a row here.
+            path: 'issues',
+            handle: handle('Issues'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/dispatch-issues-page')).DispatchIssuesPage }),
+          },
+          {
+            path: 'issues/:id',
+            handle: handle('Issues'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/dispatch-issues-page')).DispatchIssuesPage }),
+          },
+          {
             // 23 (ROO-43).
             path: 'deferrals',
             handle: handle('Deferrals'),
