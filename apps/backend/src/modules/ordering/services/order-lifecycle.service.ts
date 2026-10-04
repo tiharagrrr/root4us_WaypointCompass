@@ -123,6 +123,53 @@ export class OrderLifecycleService {
     return row;
   }
 
+  /**
+   * A draft plan put this order on `stopId`, or took it off (null), without
+   * moving its status. Only for an order a draft may hold before the cutoff
+   * (SUBMITTED, still the store's to change) or a confirmed one no longer on a
+   * stop; a PLANNED order moves with `moveStop` and leaves with `requeue`.
+   */
+  @Transactional()
+  async linkStop(id: string, stopId: string | null): Promise<OrderRow> {
+    const before = await this.load(id);
+    if (before.activeStopId === stopId) return before;
+    if (before.status === 'PLANNED' && stopId !== null)
+      throw new StateConflictError(
+        `Order ${before.orderNo} is planned; it moves trips with moveStop`,
+      );
+    const [row] = await this.txHost.tx
+      .update(orders)
+      .set({
+        activeStopId: stopId,
+        version: before.version + 1,
+        updatedAt: this.clock.realNow(),
+      })
+      .where(and(eq(orders.id, id), eq(orders.version, before.version)))
+      .returning();
+    if (!row) throw new VersionMismatchError('order');
+    await this.audit.record({
+      action: ORDER_AUDIT.stopChanged,
+      entity: ['order', id],
+      before: { activeStopId: before.activeStopId, version: before.version },
+      after: { activeStopId: stopId, version: row.version },
+    });
+    this.log.info(
+      { event: ORDER_AUDIT.stopChanged, orderId: id, stopId },
+      stopId ? 'order linked to a draft stop' : 'order taken off a draft stop',
+    );
+    return row;
+  }
+
+  /**
+   * Publishing closes the cutoff for the orders it carries or defers: an order
+   * still open (the ticker never ran, as on a deploy with no worker) is
+   * confirmed first. A confirmed order is left as it is.
+   */
+  async confirmIfOpen(id: string): Promise<OrderRow> {
+    const before = await this.load(id);
+    return before.status === 'SUBMITTED' ? this.markConfirmed(id) : before;
+  }
+
   markLoaded(id: string): Promise<OrderRow> {
     return this.move(id, 'LOAD');
   }

@@ -56,6 +56,8 @@ export const ALERT_RESOLVED_BY = {
   stopDeferred: 'stop.deferred',
   deferralConfirmed: 'deferral.confirmed',
   loadFlagDecided: 'load.flag_decided',
+  /** A flag settled without a decision: the loader undid it (AC-ALR-13). */
+  loadFlagResolved: 'load.flag_resolved',
   issueResolved: 'issue.resolved',
   tripReassigned: 'trip.reassigned',
   tripCancelled: 'trip.cancelled',

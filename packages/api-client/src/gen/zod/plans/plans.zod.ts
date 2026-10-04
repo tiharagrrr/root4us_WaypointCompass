@@ -367,6 +367,7 @@ export const PlansUnplannedParams = zod.object({
 export const PlansUnplannedResponse = zod.object({
   "data": zod.array(zod.object({
   "orderId": zod.string(),
+  "orderStatus": zod.string().describe('SUBMITTED: still open until the cutoff, so the store may change it, which takes it off the draft'),
   "orderNo": zod.string(),
   "outletId": zod.string(),
   "outletName": zod.string(),

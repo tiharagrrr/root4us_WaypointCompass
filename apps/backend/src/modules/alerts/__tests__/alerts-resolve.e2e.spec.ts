@@ -185,6 +185,51 @@ describeWithDb('alerts: resolving themselves (ROO-50)', () => {
     ]);
   });
 
+  it('AC-ALR-13 an undone flag clears its shortfall', async () => {
+    const flagId = anId();
+    const tripId = anId();
+    const key = dedupeKeyFor('LOADER_SHORTFALL', {
+      kind: 'load_flag',
+      id: flagId,
+    });
+
+    // Harini flags an item at 04:58; the dispatcher has not decided yet.
+    await deliver(
+      w,
+      {
+        type: ALERT_RAISED_BY.loadFlagRaised,
+        payload: {
+          v: 1,
+          flagId,
+          tripId,
+          reason: 'DAMAGED',
+          plannedDepartAt: at('05:45:00'),
+        },
+      },
+      at('04:58:00'),
+    );
+    expect((await oneAlert(w, key)).status).toBe('OPEN');
+
+    // She undoes it at 05:00: loading says the flag is resolved, and nobody decided it.
+    await deliver(
+      w,
+      {
+        type: ALERT_RESOLVED_BY.loadFlagResolved,
+        payload: { v: 1, flagId, tripId, how: 'UNDONE' },
+      },
+      at('05:00:00'),
+    );
+
+    const closed = await oneAlert(w, key);
+    expect({
+      status: closed.status,
+      resolvedById: closed.resolvedById,
+    }).toEqual({
+      status: 'RESOLVED',
+      resolvedById: null,
+    });
+  });
+
   it('AC-ALR-11 alerts never block the fix', async () => {
     // The sync half of this criterion — Aniqa's DELIVERED event being
     // applied and stop.completed emitted — is execution's and sync's, and is

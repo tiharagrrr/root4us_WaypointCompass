@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
 import { useRouteHandle } from '../route-handle'
+import { useSyncEngine } from '@/offline'
 import { DriverOfflineBanner } from '@/features/execution/driver-offline-banner'
 import { useTripTracking } from '@/features/execution/position-sender'
 import { useEventStream } from '@/realtime/use-event-stream'
@@ -30,6 +31,8 @@ export function DriverShell() {
   // one the stop needs (the Figma component's own note).
   const { tabBar = true } = useRouteHandle()
   useEventStream()
+  // The phone queues every tap in Dexie; this is what sends them to POST /sync.
+  useSyncEngine()
   // The phone reports where it is only while a trip is IN_PROGRESS (ROO-37).
   useTripTracking()
   const me = useMeGet()
@@ -46,6 +49,8 @@ export function DriverShell() {
         </div>
         {person ? <Avatar name={person.name} size={36} /> : <Skeleton className="size-9 rounded-full" />}
       </header>
+      {/* D6: no signal, or records still on their way, on every driver screen. */}
+      <DriverOfflineBanner />
 
       <main className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-4">
         <DriverOfflineBanner />

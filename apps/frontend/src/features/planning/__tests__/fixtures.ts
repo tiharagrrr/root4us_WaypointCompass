@@ -27,6 +27,7 @@ export const aPlan = (over: Partial<PlanDto> = {}): PlanDto => ({
 /** Two chilled Fresh orders for Gampaha, each 2 m³. */
 export const anUnplanned = (n: number, over: Partial<UnplannedOrderDto> = {}): UnplannedOrderDto => ({
   orderId: `ord-${n}`,
+  orderStatus: 'CONFIRMED',
   orderNo: `WF-017${n}`,
   outletId: `out-${n}`,
   outletName: outletOf(n),

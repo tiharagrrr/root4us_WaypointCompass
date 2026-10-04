@@ -631,3 +631,4 @@ frame they depart from.
   17 now has a screen test of its own; see "Decided while building (ROO-34)"
   and docs/departures.md. Status stays in-progress: the dispatcher's flag
   queue and decision panel on 01 and 19 are still to build
+- 2026-10-04 The dispatcher's side of L3b is a Decide the flag dialog on the alert card (01 and 19): Replace, or Remove with a deferral reason, and a note (ROO-52). The tablet's flags now reach the server because the sync engine is started by the dock and driver shells

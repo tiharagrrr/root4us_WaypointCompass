@@ -109,7 +109,10 @@ export const AlertRules = {
         ]);
       case ALERT_RAISED_BY.loadFlagRaised:
         return loaderShortfall(event, ctx);
+      // A decided flag is settled, and so is one the loader undoes: nobody is left to decide
+      // it (AC-ALR-13).
       case ALERT_RESOLVED_BY.loadFlagDecided:
+      case ALERT_RESOLVED_BY.loadFlagResolved:
         return on(event, loadFlagDecidedPayload, (p) => [
           clear('LOADER_SHORTFALL', 'load_flag', p.flagId),
         ]);

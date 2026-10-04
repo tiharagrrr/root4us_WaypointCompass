@@ -101,7 +101,7 @@ export const ALERT_CATALOG: Readonly<Record<AlertType, CatalogEntry>> = {
     type: 'LOADER_SHORTFALL',
     subject: 'load_flag',
     severity: 2,
-    resolvesWhen: 'the flag is decided',
+    resolvesWhen: 'the flag is decided, or the loader undoes it',
     fixes: [
       {
         rel: 'decide',

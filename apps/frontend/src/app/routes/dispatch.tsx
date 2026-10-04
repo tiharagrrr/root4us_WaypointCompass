@@ -110,6 +110,12 @@ export const dispatchRoutes: RouteObject[] = [
             loader: prefetchLoader((qc) => qc.prefetchQuery(getDeferralReasonsListQueryOptions())),
             lazy: async () => ({ Component: (await import('@/features/deferrals/dispatch-deferrals-page')).DispatchDeferralsPage }),
           },
+          {
+            // No frame: the run panel A6 → Demo shows, on the dispatcher's own screen (ROO-55).
+            path: 'simulation',
+            handle: handle('Simulation'),
+            lazy: async () => ({ Component: (await import('@/features/simulation/simulation-page')).SimulationPage }),
+          },
         ],
       },
     ],

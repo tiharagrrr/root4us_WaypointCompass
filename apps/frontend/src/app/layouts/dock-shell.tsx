@@ -6,7 +6,7 @@ import { DEPOT_NAMES } from '@waypoint/shared/domain'
 import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router'
 import { useSignOut } from '@/features/identity/sign-out'
-import { useSyncEngine } from '@/offline/use-sync-engine'
+import { useSyncEngine } from '@/offline'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { Avatar } from '@/ui/avatar'
 import { Button } from '@/ui/button'
@@ -21,6 +21,8 @@ import { isDepot } from './depot-context'
 export function DockShell() {
   const { t } = useTranslation()
   useEventStream()
+  // The tablet queues every tap in Dexie; this is what sends them to POST /sync.
+  useSyncEngine()
   const me = useMeGet()
   const signOut = useSignOut('/sign-in/dock')
   const person = me.data?.data

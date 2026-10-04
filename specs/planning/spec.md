@@ -767,3 +767,4 @@ Checklist (tick in the PR that adds the passing test):
   planning test of their own yet
 - 2026-10-04 `GET /orders/{id}/eta` added for M3 (execution's AC-EXE-22): `TrackingQueries.orderEta` reads the
   order in the caller's scope, then projects the day under the system stamp and returns only that order's stop
+- 2026-10-04 Drafting before the cutoff: the plan's queue includes open (SUBMITTED) orders, shown as "Open until cutoff" on 05 and 09. A draft never moves an order's status, so an open order on a draft trip stays SUBMITTED; a store's change to it (lines, delivery date, cancel; not the dispatcher's urgent flag or a note) cancels that draft stop under a lock on the plan, bumps the plan's version (a dispatcher's save on the old version gets 412) and emits plan.edited (StoreChangeListener). Publishing confirms orders still open (no ticker ran) before planning or deferring them.

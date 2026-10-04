@@ -32,6 +32,9 @@ export interface ReassignDialogProps {
   revision: number
   /** Why the trip needs another vehicle, when the driver said (Can't run). */
   because?: string | null
+  /** The vehicle, driver or repair options did not load: shown instead of an empty choice. */
+  optionsError?: unknown
+  onRetryOptions?: () => void
   onClose: () => void
   onDone: () => void
 }
@@ -68,7 +71,7 @@ const KEEP = 'keep'
  * its id. A released trip on another vehicle goes back to the dock to be loaded again; a driver
  * change alone leaves it released (AC-PLN-23). The loader, the stores and the driver are told.
  */
-export function ReassignDialog({ trip, vehicles, drivers, repairs, link, version, revision, because, onClose, onDone }: ReassignDialogProps) {
+export function ReassignDialog({ trip, vehicles, drivers, repairs, link, version, revision, because, optionsError, onRetryOptions, onClose, onDone }: ReassignDialogProps) {
   const options = vehicles.filter((v) => v.vehicleId !== trip.vehicleId)
   // The options load after the dialog opens, so the first vehicle that fits is the default until
   // the dispatcher picks one.
@@ -110,6 +113,8 @@ export function ReassignDialog({ trip, vehicles, drivers, repairs, link, version
       <DialogContent className="w-[644px]">
         <DialogHeader title={`Reassign ${trip.vehicleCode} · Trip ${trip.tripNo ?? 1}`} description={because ?? 'Move this trip, with its stops, to another vehicle or driver.'} />
         <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-5 py-4">
+          {/* An empty list would read as "nothing fits"; a failed load says what it is. */}
+          {optionsError ? <ErrorState error={optionsError} onRetry={onRetryOptions} /> : null}
           <section className="flex flex-col gap-1">
             <h3 className="type-label m-0 uppercase text-muted-foreground">Trip load</h3>
             <p className="type-body m-0 text-foreground">
