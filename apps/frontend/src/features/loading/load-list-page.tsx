@@ -91,7 +91,9 @@ export function LoadListPage() {
   })
   const blocking = open[open.length - 1] ?? (cleared === settled[settled.length - 1]?.flag.id ? undefined : settled[settled.length - 1])
   const awaiting = open.filter(({ flag }) => flag.status === 'AWAITING_RECHECK' || flag.decision)
-  const blocked = (list?.releaseChecks ?? []).some((check) => !check.pass)
+  // The reefer's temperature is read on L4, where the loader types it, so "no reading yet" cannot
+  // keep Release trip greyed here: that would lock every reefer trip out of the screen that asks.
+  const blocked = (list?.releaseChecks ?? []).some((check) => !check.pass && check.id !== 'REEFER_TEMP')
 
   return (
     <div data-slot="load-list" className="flex min-h-0 flex-1 flex-col">
