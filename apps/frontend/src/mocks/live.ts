@@ -42,6 +42,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // Ordering's depot day and loading's boards (planning's day plan is below).
   { method: "all", path: "/api/v1/depots/:id/days/*" },
   { method: "all", path: "/api/v1/depots/:id/loading/*" },
+  // Planning's live day for 01, 19 and 19a (ROO-46).
+  { method: "get", path: "/api/v1/depots/:id/tracking" },
   { method: "all", path: "/api/v1/districts" },
   { method: "all", path: "/api/v1/outlets" },
   { method: "all", path: "/api/v1/outlets/*" },
@@ -88,9 +90,9 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/plans/*" },
   { method: "all", path: "/api/v1/deferrals" },
   { method: "all", path: "/api/v1/deferrals/*" },
-  // Fleet: a vehicle's fuel for a week (ROO-42). The rest of /vehicles is
-  // still mocked.
+  // Fleet: a vehicle's fuel for a week (ROO-42) and its status (ROO-56).
   { method: "get", path: "/api/v1/vehicles/:id/fuel" },
+  { method: "put", path: "/api/v1/vehicles/:id/status" },
 ];
 
 /** Pass-through handlers; they go before the mocks so they win. */

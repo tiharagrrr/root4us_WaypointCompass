@@ -38,6 +38,7 @@ import type {
   PlansEndOfDay200,
   PlansForDay200,
   PlansGet200,
+  PlansOrderEta200,
   PlansRevisions200,
   PlansTracking200,
   PlansTrips200,
@@ -55,6 +56,10 @@ export const getPlansForDayResponseMock = (overrideResponse: Partial<Extract<Pla
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getPlansTrackingResponseMock = (overrideResponse: Partial<Extract<PlansTracking200, object>> = {}): PlansTracking200 => ({data: {depotId: "PLG", date: "2026-10-02", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", planStatus: "PUBLISHED", totals: {trips: 14, onRoad: 11, released: 14, stopsPlanned: 148, stopsDelivered: 64, lateRisk: 2, deferred: 7, repeatSkips: 2}, trips: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({tripId: "0192a3f4-0000-7000-8000-00000000c101", vehicleCode: "REF-07", vehicleType: "TRUCK", vehicleTemp: "REEFER", tripNo: 1, driverName: "Aniqa Razick", brand: "FRESH", tempClass: "CHILLED", status: "IN_PROGRESS", standing: "ON_TIME", cantRunReason: null, delivered: 3, stopsTotal: 10, nextEtaAt: "2026-10-02T07:42:00+05:30", nextOutletName: "Fresh Ja-Ela", nextWindowOpenMin: 420, nextWindowCloseMin: 480, plannedDepartAt: "2026-10-02T04:40:00+05:30", loadWeightKg: 3420, loadVolumeM3: 15.8, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({stopId: "0192a3f4-0000-7000-8000-00000000d101", seq: 4, orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Ja-Ela", status: "PENDING", windowOpenMin: 330, windowCloseMin: 480, plannedArrivalAt: "2026-10-02T07:40:00+05:30", etaAt: "2026-10-02T07:42:00+05:30", spareMin: 18, arrivedAt: null, completedAt: null, standing: "NEXT"}))})), _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getPlansOrderEtaResponseMock = (overrideResponse: Partial<Extract<PlansOrderEta200, object>> = {}): PlansOrderEta200 => ({data: {orderId: "0192a3f4-0000-7000-8000-00000000o001", orderNo: "WF-0171", stopId: "0192a3f4-0000-7000-8000-00000000s001", tripStatus: "IN_PROGRESS", stopStatus: "PENDING", plannedArrivalAt: "2026-10-02T05:40:00+05:30", etaAt: "2026-10-02T05:54:00+05:30", spareMin: 6, standing: "NEXT", completedAt: "2026-10-02T05:52:00+05:30", _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -164,6 +169,18 @@ export const getPlansTrackingMockHandler = (overrideResponse?: PlansTracking200 
     return HttpResponse.json(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getPlansTrackingResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getPlansOrderEtaMockHandler = (overrideResponse?: PlansOrderEta200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PlansOrderEta200> | PlansOrderEta200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/orders/:id/eta', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getPlansOrderEtaResponseMock(),
       { status: 200
       })
   }, options)
@@ -387,6 +404,7 @@ export const getPlanBuildingCloseMockHandler = (overrideResponse?: PlanBuildingC
 export const getPlansMock = () => [
   getPlansForDayMockHandler(),
   getPlansTrackingMockHandler(),
+  getPlansOrderEtaMockHandler(),
   getPlansGetMockHandler(),
   getPlansTripsMockHandler(),
   getPlansContextMockHandler(),

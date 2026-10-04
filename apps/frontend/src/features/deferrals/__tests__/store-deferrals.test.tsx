@@ -62,6 +62,29 @@ describe('M3, M4 and M7 store orders and deferrals', () => {
     expect(within(notice).getByText('REF-02 is in the workshop until Wednesday.')).toBeInTheDocument()
   })
 
+  it('AC-EXE-22 M3 shows the order’s ETA once it is on a trip, and a dash before that', async () => {
+    store({
+      'GET /api/v1/orders/o-planned/eta': () =>
+        envelope({
+          orderId: 'o-planned',
+          orderNo: 'WF-0224',
+          stopId: 's-1',
+          tripStatus: 'IN_PROGRESS',
+          stopStatus: 'PENDING',
+          plannedArrivalAt: '2026-10-02T05:40:00+05:30',
+          etaAt: '2026-10-02T05:54:00+05:30',
+          spareMin: 6,
+          standing: 'NEXT',
+          completedAt: null,
+          _links: { self: { href: '/api/v1/orders/o-planned/eta' } },
+        }),
+    })
+    at('/store/orders')
+
+    const plannedCard = await screen.findByRole('article', { name: 'WF-0224' })
+    expect(await within(plannedCard).findByText('05:54')).toBeInTheDocument()
+  })
+
   it('AC-PLN-27 the store requests priority with a note, once', async () => {
     const user = userEvent.setup()
     const { calls } = store({

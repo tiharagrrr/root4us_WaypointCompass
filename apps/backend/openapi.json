@@ -8005,6 +8005,90 @@
         ]
       }
     },
+    "/api/v1/orders/{id}/eta": {
+      "get": {
+        "description": "When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.",
+        "operationId": "plansOrderEta",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderEtaDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's ETA",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/plans/{id}": {
       "get": {
         "operationId": "plansGet",
@@ -20637,6 +20721,90 @@
           "planStatus",
           "totals",
           "trips",
+          "_links"
+        ]
+      },
+      "OrderEtaDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "stopId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stop the order is on; null until it is planned",
+            "example": "0192a3f4-0000-7000-8000-00000000s001"
+          },
+          "tripStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "IN_PROGRESS"
+          },
+          "stopStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PENDING"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:54:00+05:30",
+            "description": "When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 6,
+            "description": "Minutes between the ETA and the window closing; negative is late"
+          },
+          "standing": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
+            ],
+            "type": "string",
+            "example": "NEXT"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:52:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "orderId",
+          "orderNo",
+          "stopId",
+          "tripStatus",
+          "stopStatus",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "standing",
+          "completedAt",
           "_links"
         ]
       },

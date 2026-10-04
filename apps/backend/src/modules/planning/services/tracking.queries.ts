@@ -7,10 +7,11 @@ import {
   type TripDraft,
 } from '@waypoint/engine';
 import { type Actor, businessDateOf, instantAt } from '@waypoint/shared';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { ClockService } from '../../../core/clock/clock.service';
 import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
+import { stampActor, SYSTEM_ACTOR } from '../../../db/actor';
 import {
   deferrals,
   orders,
@@ -22,11 +23,13 @@ import {
   vehicles,
 } from '../../../db/schema';
 import type {
+  OrderEtaDto,
   TrackingDayDto,
   TrackingStopDto,
   TrackingTripDto,
 } from '../dto/tracking.dto';
 import { PlanScope } from '../policies/plan.scope';
+import { OrderQueries } from '../../ordering';
 import { PlanContextBuilder, type PlanContext } from './plan-context.builder';
 
 type StopRow = typeof stops.$inferSelect;
@@ -58,6 +61,7 @@ export class TrackingQueries {
     private readonly clock: ClockService,
     private readonly scope: PlanScope,
     private readonly contexts: PlanContextBuilder,
+    private readonly orderQueries: OrderQueries,
   ) {}
 
   @Transactional()
@@ -68,6 +72,97 @@ export class TrackingQueries {
   ): Promise<TrackingDayDto> {
     if (!this.scope.allowsDepot(depotId, actor))
       throw new NotFoundError('depot');
+    return this.dayOf(depotId, date);
+  }
+
+  /**
+   * M3: when one order is due (AC-EXE-22). The order is read inside the caller's own scope,
+   * so another outlet's order is 404; the answer is the order's stop out of the same
+   * projection the dispatcher sees, without the vehicle or its position.
+   */
+  @Transactional()
+  async orderEta(orderId: string, actor: Actor): Promise<OrderEtaDto> {
+    const order = await this.orderQueries.get(orderId, actor);
+    const base = {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      _links: {
+        self: { href: `/api/v1/orders/${order.id}/eta` },
+        order: { href: `/api/v1/orders/${order.id}` },
+      },
+    };
+    const none: OrderEtaDto = {
+      ...base,
+      stopId: null,
+      tripStatus: null,
+      stopStatus: null,
+      plannedArrivalAt: null,
+      etaAt: null,
+      spareMin: null,
+      standing: null,
+      completedAt: null,
+    };
+    const tx = this.txHost.tx;
+    const [stop] = await tx
+      .select({ id: stops.id, tripId: stops.tripId })
+      .from(stops)
+      .where(and(eq(stops.orderId, order.id), ne(stops.status, 'CANCELLED')))
+      .orderBy(desc(stops.createdAt))
+      .limit(1);
+    if (!stop) return none;
+    const [trip] = await tx
+      .select({
+        status: trips.status,
+        date: plans.date,
+        depotId: plans.depotId,
+      })
+      .from(trips)
+      .innerJoin(plans, eq(plans.id, trips.planId))
+      .where(eq(trips.id, stop.tripId));
+    if (!trip) return none;
+    const day = await this.asSystem(actor, () =>
+      this.dayOf(trip.depotId, trip.date),
+    );
+    const view = day.trips
+      .flatMap((t) => t.stops)
+      .find((s) => s.stopId === stop.id);
+    if (!view) return none;
+    const pending = view.completedAt === null && view.status !== 'FAILED';
+    return {
+      ...base,
+      stopId: view.stopId,
+      tripStatus: trip.status,
+      stopStatus: view.status,
+      plannedArrivalAt: view.plannedArrivalAt,
+      etaAt: pending ? (view.etaAt ?? view.plannedArrivalAt) : null,
+      spareMin: view.spareMin,
+      standing: view.standing,
+      completedAt: view.completedAt,
+    };
+  }
+
+  /**
+   * Runs a read with the transaction stamped as the system, then stamps the caller back.
+   * The projection needs every order on the trip, and row-level security hides other
+   * outlets' orders from a store; the caller has already been checked against the one
+   * order she asked about, and only that order's stop leaves this class.
+   */
+  private async asSystem<T>(actor: Actor, work: () => Promise<T>): Promise<T> {
+    const tx = this.txHost.tx;
+    await stampActor(tx, SYSTEM_ACTOR);
+    try {
+      return await work();
+    } finally {
+      // A failed transaction cannot be stamped again, and is rolled back anyway.
+      await stampActor(tx, actor).catch(() => undefined);
+    }
+  }
+
+  /** The day's trips and totals, with no scope check: callers decide who may see what. */
+  private async dayOf(
+    depotId: string,
+    date: string | undefined,
+  ): Promise<TrackingDayDto> {
     const now = this.clock.now();
     const day = date ?? businessDateOf(now);
     const self = `/api/v1/depots/${depotId}/tracking?date=${day}`;
