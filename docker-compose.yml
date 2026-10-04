@@ -132,6 +132,11 @@ services:
       <<: *api-env
       DIRECT_URL: postgres://compass_owner:${COMPASS_OWNER_PASSWORD:-compass_owner}@postgres:5432/${POSTGRES_DB:-waypoint}
       SEED_PASSWORD: ${SEED_PASSWORD:-Waypoint@2026}
+    # The dataset CSVs are confidential and git-ignored, so a fresh clone's image holds none of
+    # them: the seed reads them from the host folder instead. Copy the files into data/seed
+    # (flat, or in the dataset's own folders) before `docker compose up`.
+    volumes:
+      - ${SEED_DATA_DIR:-./data/seed}:/repo/data/seed:ro
     depends_on:
       postgres:
         condition: service_healthy
