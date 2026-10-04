@@ -3,6 +3,7 @@ import { Link as RouterLink, useParams } from 'react-router'
 import { useDepot } from '@/app/layouts/depot-context'
 import { RegionPlaceholder } from '@/app/screen-placeholder'
 import { Card, CardContent } from '@/ui/card'
+import { TripOperationsCard } from '@/features/planning/trip-operations-card'
 import { AlertsColumn } from './alerts-column'
 import { TripAlertChips } from './trip-alert-chips'
 
@@ -52,6 +53,8 @@ export function TripDetailsPage() {
         </Card>
 
         <AlertsColumn depotId={depot} tripId={id} />
+
+        <TripOperationsCard tripId={id} />
 
         <RegionPlaceholder
           region="Stop timeline"

@@ -90,6 +90,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | GET | `/plans/{id}/publish-preview` | `plan:publish` | 17, 18: blockers, who gets notified, when publishing opens |
 | POST | `/plans/{id}/publish` | `plan:publish` | 409 `PLAN_LOCKED` with `opensAt` before it opens; creates revision 1 |
 | GET | `/plans/{id}/revisions` | `plan:read` | Change history with reasons |
+| GET | `/plans/{id}/end-of-day` | `plan:read` | 21: per-trip results, follow-ups, close blockers and the `close` link |
 | POST | `/plans/{id}/close` | `plan:close` | 21: unfinished stops become deferrals; actual fuel recorded |
 | GET, POST | `/depots/{id}/plans/{date}/reservations` | `plan:read`, `plan:build` | 12, 13: reserve vehicles against the forecast |
 | GET | `/deferrals`, `/deferrals/{id}` | `deferral:read` | 23 for dispatchers, M4 and M7 for stores (scoped: a store sees only its outlet's CONFIRMED or REVERSED deferrals on a published or closed plan). Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10` |
@@ -98,7 +99,9 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | POST | `/deferrals/{id}/reply` | `deferral:decide` | 23: the dispatcher's one reply to the store, shown on M4 |
 | POST | `/trips/{id}/reassign` | `trip:reassign` | 20: new vehicle or driver, validated, with a reason |
 | POST | `/trips/{id}/resequence` | `trip:resequence` | 19b: stop ids in their new order, with a reason |
-| POST | `/trips/{id}/stops/{stopId}/defer` | `deferral:decide` | Defer one stop mid-route from 19a |
+| POST | `/trips/{id}/stops/{stopId}/defer` | `deferral:decide` | Defer one stop mid-route from 19a and 19b, with a reason and the trip's If-Match |
+| POST | `/trips/{id}/resequence/preview` | `trip:resequence` | 19b: the projected arrivals and any violations for an order of the stops, saving nothing |
+| GET | `/plans/{id}/driver-options` | `plan:read` | 20: the depot's drivers and how many trips each has on the plan |
 | POST | `/trips/{id}/cancel` | `plan:revise` | Before the trip starts |
 
 Errors used: `PLAN_RULE_VIOLATION` (422, with `violations[]` and a `fixes` link), `PLAN_LOCKED`
@@ -526,6 +529,17 @@ AC-PLN-36  The deferral log answers the dispatcher's questions
   Then only Kadawatha's over-capacity deferrals come back, each with decidedByName "Tihara Egodage", outletBrand FRESH, skips30d 2, recentSkips 2 and recentRuns 5
     And filter[outletId]=<Kadawatha> returns that outlet's deferrals, newest first, for the history panel, and filter[depotId]=PLG only Peliyagoda's
     And Nimesha's skip counts are null, so the store never sees the dispatcher's numbers
+
+AC-PLN-37  The dispatcher picks a driver for a reassign
+  Given Peliyagoda has drivers Dinushi, on REF-07's trip in the published plan for 2026-10-02, and Nuwan, on no trip
+  When Tihara opens 20 and reads GET /plans/{id}/driver-options
+  Then both drivers are listed with Dinushi's tripsOnPlan 1 and Nuwan's 0, and no Kandy driver appears
+
+AC-PLN-38  Re-sequencing shows its projected arrivals first
+  Given REF-07 trip 1 is IN_PROGRESS with three PENDING stops whose windows close at 07:30
+  When Tihara previews a new order on 19b (POST /trips/{id}/resequence/preview) at 05:00 and again at 07:20
+  Then the first preview lists each stop's projected arrival and minutes spare, with no violations
+    And the second lists a WINDOW_OUTLET violation, and neither preview changes the stops or the trip's version
 ```
 
 Checklist (tick in the PR that adds the passing test):
@@ -550,14 +564,14 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-19 Publishing commits the day
 - [x] AC-PLN-20 Other blockers stop publishing
 - [x] AC-PLN-21 A change after publishing is a revision
-- [ ] AC-PLN-22 Released trips take three changes only
-- [ ] AC-PLN-23 Reassigning a released trip
-- [ ] AC-PLN-24 Re-sequencing the stops left
-- [ ] AC-PLN-25 Deferring a stop mid-route
+- [x] AC-PLN-22 Released trips take three changes only
+- [x] AC-PLN-23 Reassigning a released trip
+- [x] AC-PLN-24 Re-sequencing the stops left
+- [x] AC-PLN-25 Deferring a stop mid-route
 - [ ] AC-PLN-26 Cancelling a trip before it starts
 - [x] AC-PLN-27 The store requests priority
 - [x] AC-PLN-28 Reversing a deferral keeps the delivery
-- [ ] AC-PLN-29 Closing the day
+- [x] AC-PLN-29 Closing the day
 - [ ] AC-PLN-30 Reserving vehicles ahead
 - [ ] AC-PLN-31 A draft follows order changes
 - [ ] AC-PLN-32 Permissions and scope hold
@@ -565,6 +579,8 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-PLN-34 Other modules move trips through the lifecycle
 - [x] AC-PLN-35 The dispatcher replies to the store
 - [x] AC-PLN-36 The deferral log answers the dispatcher's questions
+- [x] AC-PLN-37 The dispatcher picks a driver for a reassign
+- [x] AC-PLN-38 Re-sequencing shows its projected arrivals first
 
 ## Non-functional
 - Engine speed: an S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms
@@ -578,6 +594,19 @@ Checklist (tick in the PR that adds the passing test):
   (05 to 09, 15, 17, 18) are snapshotted in CI with the demo clock frozen.
 - Row-level security on `deferrals` re-checks the store scope in Postgres.
 - Logs carry ids only; no names, phone numbers or notes.
+
+## Decided 2026-10-04 (closing the day)
+- Close is refused (409) while a trip is LOADING, RELEASED or IN_PROGRESS, or a sync conflict on the
+  plan's trips is OPEN: the day's record is not final until those settle.
+- At close, every stop nobody served (PENDING or ARRIVED) and every FAILED stop whose order still holds
+  it becomes a CONFIRMED deferral (source TRACKING) to the next run, and the store is told
+  (`deferral.confirmed`). The reason follows the outcome: OUTLET_CLOSED gives ACCESS_ISSUE, REFUSED
+  gives STORE_REQUEST, anything else OTHER; the note carries the driver's exception note. A PENDING
+  stop is cancelled; an ARRIVED one with no outcome is recorded FAILED.
+- Trips that never left (RESERVED, PLANNED) are cancelled. Each COMPLETED trip's planned fuel is
+  reversed and booked as ACTUAL at the engine's figures, since there is no telematics distance yet.
+- `GET /plans/{id}/end-of-day` serves 21: totals, per-trip results, follow-ups, close blockers and a
+  `close` link only when closing would be accepted.
 
 ## Decided 2026-10-04 (ROO-42)
 - A revision is the same edit list on a PUBLISHED plan, with a required `reasonCode` and an optional
@@ -634,6 +663,19 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Stop deferral, the driver picker and the re-sequence preview (AC-PLN-25, AC-PLN-37,
+  AC-PLN-38; AC-PLN-22 now passes in full): `POST /trips/{id}/stops/{stopId}/defer`, `GET
+  /plans/{id}/driver-options`, `POST /trips/{id}/resequence/preview`; execution's trip carries a
+  templated `deferStop` link. Planning's stop DTO is renamed `PlanStopDto`: the duplicate `StopDto`
+  name gave the web execution's stop shape for `TripDto.stops`
+- 2026-10-04 Reassign and re-sequence (AC-PLN-23, AC-PLN-24; 20 and 19b, opened from 19a): `POST
+  /trips/{id}/reassign` and `/resequence` with a reason and the trip's If-Match, validated by the
+  engine (re-sequence from now for a trip on the road), each a plan revision with audit and
+  `trip.reassigned` / `trip.resequenced`. Execution's trip carries the `reassign` and `resequence`
+  links. AC-PLN-22 waits only on stop deferral (AC-PLN-25)
+- 2026-10-04 Closing the day (AC-PLN-29) and screen 21: `GET /plans/{id}/end-of-day`, `POST
+  /plans/{id}/close`, audit `planning.plan.closed`, outbox `plan.closed`; TripLifecycleService gains
+  `cancelTrip` and `cancelStop`, fleet's FuelLedgerService `recordActual`
 - 2026-10-04 ROO-42: edits on a published plan are revisions (AC-PLN-21): reason required, revision + 1,
   a `plan_revisions` row, audit `planning.plan.revised`, outbox `plan.revised` routed to the affected
   outlets, orders following their stops, and fuel reversed and re-planned. The edit list refuses a

@@ -22,6 +22,7 @@ import type {
   AddTripOpDto,
   AssignOrderOpDto,
   MoveOrderOpDto,
+  PlanBuildingClose200,
   PlanBuildingDecide200,
   PlanBuildingEdit200,
   PlanBuildingOrderOptions200,
@@ -33,6 +34,8 @@ import type {
   PlanBuildingValidate200,
   PlanBuildingVehicleOptions200,
   PlansContext200,
+  PlansDriverOptions200,
+  PlansEndOfDay200,
   PlansForDay200,
   PlansGet200,
   PlansRevisions200,
@@ -54,9 +57,7 @@ export const getPlansGetResponseMock = (overrideResponse: Partial<Extract<PlansG
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
-export const getPlansTripsResponseMock = (overrideResponse: Partial<Extract<PlansTrips200, object>> = {}): PlansTrips200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000d001", tripId: "0192a3f4-0000-7000-8000-00000000b001", orderId: "0192a3f4-0000-7000-8000-00000000e001", outletId: "OUT014", outletName: "Fresh Kadawatha", seq: 1, status: "ARRIVED", window: {openMin: 420, open: "07:00", closeMin: 540, close: "09:00"}, plannedArrivalAt: "2026-10-02T04:00:00+05:30", arrivedAt: null, completedAt: null, outcome: null, receiverName: null, exceptionNote: null, unitsDelivered: null, version: 1, _links: {
-        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
-      }})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
+export const getPlansTripsResponseMock = (overrideResponse: Partial<Extract<PlansTrips200, object>> = {}): PlansTrips200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000d001", key: "REF-07#1", planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", vehicleId: "VEH014", vehicleCode: "REF-07", driverId: null, driverName: "Aniqa Razick", tripNo: 1, brand: "FRESH", districtId: "gampaha", districtName: "Gampaha", tempClass: "CHILLED", status: "PLANNED", locked: false, isReserved: false, waveId: null, plannedDepartAt: "2026-10-02T03:30:00+05:30", minutes: 213, budgetMinutes: 270, plannedKm: 64, plannedFuelL: 12.8, loadWeightKg: 2840, loadVolumeM3: 11.6, weightCapKg: 3000, volumeCapM3: 12, version: 3, stops: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-00000000c001", seq: 1, status: "PENDING", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Kadawatha", units: 24, weightKg: 312.5, volumeM3: 1.84, plannedArrivalAt: "2026-10-02T04:07:00+05:30", plannedServiceMin: 16, windowOpenMin: 210, windowCloseMin: 480})), violations: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({rule: "CAP_VOLUME", severity: "HARD", scope: "trip", tripKey: "REF-07#1", vehicleId: "VEH014", orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", actual: 12.42, limit: 12, message: "Over volume by 0.42 m³"})), _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
@@ -65,6 +66,14 @@ export const getPlansTripsResponseMock = (overrideResponse: Partial<Extract<Plan
 export const getPlansContextResponseMock = (overrideResponse: Partial<Extract<PlansContext200, object>> = {}): PlansContext200 => ({data: {planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", version: 7, engineVersion: "0.3.0", input: {}, plan: {}}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getPlansUnplannedResponseMock = (overrideResponse: Partial<Extract<PlansUnplanned200, object>> = {}): PlansUnplanned200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({orderId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", orderNo: "WF-0171", outletId: "OUT014", outletName: "Fresh Kadawatha", brand: "FRESH", districtId: "gampaha", tempClass: "CHILLED", units: 24, weightKg: 312.5, volumeM3: 1.84, priority: 58, repeatSkip: false, reasonCode: "OVER_CAPACITY", reasonLabel: "Fleet full", bindingRule: "CAP_VOLUME", choice: "UNAVOIDABLE", deferralStatus: "PROPOSED", deferralId: null, note: null, toDate: "2026-10-03"})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }, ...overrideResponse})
+
+export const getPlansEndOfDayResponseMock = (overrideResponse: Partial<Extract<PlansEndOfDay200, object>> = {}): PlansEndOfDay200 => ({data: {planId: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", depotId: "PLG", date: "2026-10-02", status: "PUBLISHED", closedAt: null, totals: {stops: 148, delivered: 144, partial: 3, failed: 2, unserved: 0, onTimePct: 93, deferred: 7}, trips: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({tripId: "0192a3f4-0000-7000-8000-00000000c101", vehicleCode: "REF-07", tripNo: 1, driverName: "Aniqa Razick", status: "COMPLETED", stops: 10, delivered: 8, partial: 1, failed: 1, onTimePct: 90, openConflicts: 0})), followUps: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({kind: "FAILED_STOP", title: "Failed stop · Tech Negombo", detail: "Outlet closed on arrival.", tripId: null, orderId: null})), closeBlockers: ["REF-03 is still on the road"], _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getPlansDriverOptionsResponseMock = (overrideResponse: Partial<Extract<PlansDriverOptions200, object>> = {}): PlansDriverOptions200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({driverId: "drv-nuwan", name: "Nuwan Gunasekara", tripsOnPlan: 0})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }, ...overrideResponse})
 
@@ -126,6 +135,10 @@ export const getPlanBuildingPublishResponseMock = (overrideResponse: Partial<Ext
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
+export const getPlanBuildingCloseResponseMock = (overrideResponse: Partial<Extract<PlanBuildingClose200, object>> = {}): PlanBuildingClose200 => ({data: {id: "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", depotId: "PLG", date: "2026-10-02", status: "DRAFT", revision: 0, version: 7, publishOpensAt: "2026-10-01T16:00:00+05:30", publishedAt: null, publishedById: null, closedAt: null, summary: {trips: 14, plannedOrders: 71, unplanned: 12, undecided: 3}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
 
 export const getPlansForDayMockHandler = (overrideResponse?: PlansForDay200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PlansForDay200> | PlansForDay200), options?: RequestHandlerOptions) => {
   return http.get('*/api/v1/depots/:depotId/plans/:date', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
@@ -182,6 +195,30 @@ export const getPlansUnplannedMockHandler = (overrideResponse?: PlansUnplanned20
     return HttpResponse.json(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getPlansUnplannedResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getPlansEndOfDayMockHandler = (overrideResponse?: PlansEndOfDay200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PlansEndOfDay200> | PlansEndOfDay200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/plans/:id/end-of-day', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getPlansEndOfDayResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getPlansDriverOptionsMockHandler = (overrideResponse?: PlansDriverOptions200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<PlansDriverOptions200> | PlansDriverOptions200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/plans/:id/driver-options', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getPlansDriverOptionsResponseMock(),
       { status: 200
       })
   }, options)
@@ -318,12 +355,26 @@ export const getPlanBuildingPublishMockHandler = (overrideResponse?: PlanBuildin
       })
   }, options)
 }
+
+export const getPlanBuildingCloseMockHandler = (overrideResponse?: PlanBuildingClose200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<PlanBuildingClose200> | PlanBuildingClose200), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/plans/:id/close', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getPlanBuildingCloseResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getPlansMock = () => [
   getPlansForDayMockHandler(),
   getPlansGetMockHandler(),
   getPlansTripsMockHandler(),
   getPlansContextMockHandler(),
   getPlansUnplannedMockHandler(),
+  getPlansEndOfDayMockHandler(),
+  getPlansDriverOptionsMockHandler(),
   getPlansRevisionsMockHandler(),
   getPlanBuildingStartRunMockHandler(),
   getPlanBuildingRunMockHandler(),
@@ -334,5 +385,6 @@ export const getPlansMock = () => [
   getPlanBuildingSuggestFixesMockHandler(),
   getPlanBuildingDecideMockHandler(),
   getPlanBuildingPublishPreviewMockHandler(),
-  getPlanBuildingPublishMockHandler()
+  getPlanBuildingPublishMockHandler(),
+  getPlanBuildingCloseMockHandler()
 ]

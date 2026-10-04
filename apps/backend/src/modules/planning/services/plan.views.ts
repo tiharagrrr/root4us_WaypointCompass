@@ -4,7 +4,7 @@ import { resolveParams, type Violation } from '@waypoint/engine';
 import { inArray } from 'drizzle-orm';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
 import { deferralReasons, users } from '../../../db/schema';
-import type { PlanDto, StopDto, TripDto } from '../dto/plan.dto';
+import type { PlanDto, PlanStopDto, TripDto } from '../dto/plan.dto';
 import type { UnplannedOrderDto } from '../dto/plan-actions.dto';
 import type { PlanContext } from './plan-context.builder';
 
@@ -68,7 +68,7 @@ export class PlanViews {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, trip]) => {
         const vehicle = ctx.vehicles.get(trip.vehicleId);
-        const stops: StopDto[] = (ctx.stopsByTrip.get(trip.id) ?? []).map(
+        const stops: PlanStopDto[] = (ctx.stopsByTrip.get(trip.id) ?? []).map(
           (s) => {
             const order = ctx.orders.get(s.orderId);
             return {

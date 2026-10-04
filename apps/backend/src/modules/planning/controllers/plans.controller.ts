@@ -8,9 +8,13 @@ import {
   ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
+import { EndOfDayDto } from '../dto/end-of-day.dto';
 import { PlanRevisionDto, UnplannedOrderDto } from '../dto/plan-actions.dto';
 import { PlanContextDto } from '../dto/plan-engine.dto';
 import { PlanDayParamsDto, PlanDto, TripDto } from '../dto/plan.dto';
+import { DriverOptionDto } from '../dto/trip-ops.dto';
+import { DayCloseService } from '../services/day-close.service';
+import { TripOperationsService } from '../services/trip-operations.service';
 import { PlanQueries } from '../services/plan.queries';
 import { PlansService } from '../services/plans.service';
 
@@ -21,6 +25,8 @@ export class PlansController {
   constructor(
     private readonly plans: PlansService,
     private readonly queries: PlanQueries,
+    private readonly dayClose: DayCloseService,
+    private readonly tripOps: TripOperationsService,
   ) {}
 
   /** The plan, created as a DRAFT on first access (AC-PLN-08). */
@@ -69,6 +75,32 @@ export class PlansController {
   @ApiProblems(404)
   unplanned(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
     return this.queries.unplanned(id, actor);
+  }
+
+  /** 21: each trip's results, what to follow up, and whether the day can close. */
+  @Get('plans/:id/end-of-day')
+  @RequirePermission('plan:read')
+  @ApiResource(EndOfDayDto)
+  @ApiProblems(404)
+  endOfDay(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
+    return this.dayClose.endOfDay(id, actor);
+  }
+
+  /** 20: the depot's drivers and their trips on this plan (AC-PLN-37). */
+  @Get('plans/:id/driver-options')
+  @RequirePermission('plan:read')
+  @ApiPaginated(DriverOptionDto)
+  @ApiProblems(404)
+  async driverOptions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Actor() actor: SignedIn,
+  ) {
+    const items = await this.tripOps.driverOptions(id, actor);
+    return {
+      items,
+      page: { limit: items.length, offset: 0, total: items.length },
+      links: { self: { href: `/api/v1/plans/${id}/driver-options` } },
+    };
   }
 
   @Get('plans/:id/revisions')

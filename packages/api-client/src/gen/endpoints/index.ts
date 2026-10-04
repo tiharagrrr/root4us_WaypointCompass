@@ -23,5 +23,6 @@ export * from './receiving-roster/receiving-roster.ts';
 export * from './reference-data/reference-data.ts';
 export * from './root/root.ts';
 export * from './settings/settings.ts';
+export * from './trips/trips.ts';
 export * from './users/users.ts';
 export * from './vehicles/vehicles.ts';

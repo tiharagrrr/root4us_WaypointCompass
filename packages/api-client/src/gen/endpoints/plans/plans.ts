@@ -27,6 +27,8 @@ import type {
 import type {
   DeferralDecisionsDto,
   EditPlanDto,
+  PlanBuildingClose200,
+  PlanBuildingCloseHeaders,
   PlanBuildingDecide200,
   PlanBuildingDecideHeaders,
   PlanBuildingEdit200,
@@ -43,6 +45,8 @@ import type {
   PlanBuildingValidate200,
   PlanBuildingVehicleOptions200,
   PlansContext200,
+  PlansDriverOptions200,
+  PlansEndOfDay200,
   PlansForDay200,
   PlansGet200,
   PlansRevisions200,
@@ -562,6 +566,206 @@ export function usePlansUnplanned<TData = Awaited<ReturnType<typeof plansUnplann
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getPlansUnplannedQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPlansEndOfDayUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/plans/${id}/end-of-day`
+}
+
+/**
+ * @summary 21: each trip's results, what to follow up, and whether the day can close.
+ */
+export const plansEndOfDay = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<PlansEndOfDay200> => {
+
+  return compassFetch<PlansEndOfDay200>(getPlansEndOfDayUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPlansEndOfDayQueryKey = (id: string,) => {
+    return [
+    `/api/v1/plans/${id}/end-of-day`
+    ] as const;
+    }
+
+
+export const getPlansEndOfDayQueryOptions = <TData = Awaited<ReturnType<typeof plansEndOfDay>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPlansEndOfDayQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof plansEndOfDay>>> = ({ signal }) => plansEndOfDay(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PlansEndOfDayQueryResult = NonNullable<Awaited<ReturnType<typeof plansEndOfDay>>>
+export type PlansEndOfDayQueryError = ErrorType<ProblemDto>
+
+
+export function usePlansEndOfDay<TData = Awaited<ReturnType<typeof plansEndOfDay>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansEndOfDay>>,
+          TError,
+          Awaited<ReturnType<typeof plansEndOfDay>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansEndOfDay<TData = Awaited<ReturnType<typeof plansEndOfDay>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansEndOfDay>>,
+          TError,
+          Awaited<ReturnType<typeof plansEndOfDay>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansEndOfDay<TData = Awaited<ReturnType<typeof plansEndOfDay>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 21: each trip's results, what to follow up, and whether the day can close.
+ */
+
+export function usePlansEndOfDay<TData = Awaited<ReturnType<typeof plansEndOfDay>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansEndOfDay>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPlansEndOfDayQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPlansDriverOptionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/plans/${id}/driver-options`
+}
+
+/**
+ * @summary 20: the depot's drivers and their trips on this plan (AC-PLN-37).
+ */
+export const plansDriverOptions = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<PlansDriverOptions200> => {
+
+  return compassFetch<PlansDriverOptions200>(getPlansDriverOptionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPlansDriverOptionsQueryKey = (id: string,) => {
+    return [
+    `/api/v1/plans/${id}/driver-options`
+    ] as const;
+    }
+
+
+export const getPlansDriverOptionsQueryOptions = <TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPlansDriverOptionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof plansDriverOptions>>> = ({ signal }) => plansDriverOptions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PlansDriverOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof plansDriverOptions>>>
+export type PlansDriverOptionsQueryError = ErrorType<ProblemDto>
+
+
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansDriverOptions>>,
+          TError,
+          Awaited<ReturnType<typeof plansDriverOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansDriverOptions>>,
+          TError,
+          Awaited<ReturnType<typeof plansDriverOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 20: the depot's drivers and their trips on this plan (AC-PLN-37).
+ */
+
+export function usePlansDriverOptions<TData = Awaited<ReturnType<typeof plansDriverOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansDriverOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPlansDriverOptionsQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1628,4 +1832,96 @@ export const usePlanBuildingPublish = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getPlanBuildingPublishMutationOptions(options), queryClient);
+    }
+    export const getPlanBuildingCloseUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/plans/${id}/close`
+}
+
+/**
+ * @summary 21: close the day (AC-PLN-29). Unserved stops become deferrals, finished
+trips record their fuel, and the plan is CLOSED. 409 while a trip is on
+the road or a sync conflict is open.
+ */
+export const planBuildingClose = async (id: string,
+    headers: PlanBuildingCloseHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<PlanBuildingClose200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<PlanBuildingClose200>(getPlanBuildingCloseUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { ...headers, ...getHeaders(options?.headers) }
+
+  }
+);}
+
+
+
+
+
+export const getPlanBuildingCloseMutationKey = () => ['planBuildingClose'] as const;
+
+export const getPlanBuildingCloseMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof planBuildingClose>>, TError,PlanBuildingCloseMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof planBuildingClose>>, TError,PlanBuildingCloseMutationVariables, TContext> => {
+
+const mutationKey = getPlanBuildingCloseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof planBuildingClose>>, PlanBuildingCloseMutationVariables> = (props) => {
+          const {id,headers} = props ?? {};
+
+          return  planBuildingClose(id,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PlanBuildingCloseMutationResult = NonNullable<Awaited<ReturnType<typeof planBuildingClose>>>
+
+    export type PlanBuildingCloseMutationError = ErrorType<ProblemDto>
+    export type PlanBuildingCloseMutationVariables = {id: string;headers: PlanBuildingCloseHeaders}
+
+    /**
+ * @summary 21: close the day (AC-PLN-29). Unserved stops become deferrals, finished
+trips record their fuel, and the plan is CLOSED. 409 while a trip is on
+the road or a sync conflict is open.
+ */
+export const usePlanBuildingClose = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof planBuildingClose>>, TError,PlanBuildingCloseMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof planBuildingClose>>,
+        TError,
+        PlanBuildingCloseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPlanBuildingCloseMutationOptions(options), queryClient);
     }
