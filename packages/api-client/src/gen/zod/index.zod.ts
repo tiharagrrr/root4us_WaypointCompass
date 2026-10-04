@@ -1,4 +1,5 @@
 export * from './alerts/alerts.zod.ts';
+export * from './audit/audit.zod.ts';
 export * from './calendar/calendar.zod.ts';
 export * from './clock/clock.zod.ts';
 export * from './deferral-reasons/deferral-reasons.zod.ts';

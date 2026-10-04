@@ -1,7 +1,7 @@
 ---
 module: audit
 owner: Nimesha
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [M8, "04", "23"]
 depends-on: [core]
 ---
@@ -124,6 +124,21 @@ The order timeline, `GET /timelines/order/{id}`, merges the order, its stops, tr
 and receipt by occurredAt, with who, role, device and reason, and a Synced late badge when recordedAt
 trails occurredAt by more than 5 minutes.
 
+Decided with the order timeline (ROO-23, 2026-10-04):
+- **Entry shape.** `id, seq, action, entityType, entityId, actorId, actorName, actorRole, deviceId, source,
+  status, reasonCode, reasonNote, occurredAt, recordedAt, syncedLate, _links`. `status` is the status the
+  step set (read from the row's `after`), or null. Before and after snapshots are not returned: a trip's
+  snapshot carries other outlets' stops, which a store must not see.
+- **Merged rows.** Entity types `order`, `stop` and `trip` (of the order's stops), `deferral`, `load_line`,
+  `receipt` and `issue`, sorted by occurredAt, then seq. Not paged; `meta.page.total` is the count.
+- **Synced late.** `syncedLate` is true when the row's source is OFFLINE_SYNC (execution and loading mark a
+  late replay that way, judged on one clock as it arrived), or, while the demo clock is off, when recordedAt
+  trails occurredAt by more than 5 minutes. With the demo clock on, occurredAt is demo time and recordedAt
+  wall time, so the two are not compared: every row would otherwise read as late.
+- **Boundaries.** `TimelineService` reads the related ids straight from the other modules' tables,
+  read-only, and applies its own `OrderTimelineScope` (the same rule as ordering's `OrderScope`). Audit
+  imports no module, because every module that records already imports audit.
+
 ## Services and helpers
 - `AuditService.record(input)`: checks `txHost.isTransactionActive()` (throws
   `audit.record() must run inside a transaction`); throws `ValidationError([{ field: 'reasonCode', code:
@@ -183,7 +198,7 @@ Times are Asia/Colombo. "Real time" means `ClockService.realNow()`; "the demo cl
 
 - [ ] AC-AUD-01 Audit rows can't be changed
 - [ ] AC-AUD-02 Chain check finds a tampered row
-- [ ] AC-AUD-03 Order timeline merges four modules
+- [x] AC-AUD-03 Order timeline merges four modules
 - [ ] AC-AUD-04 Nightly check records the head hash
 - [ ] AC-AUD-05 Audit row rolls back with its change
 - [ ] AC-AUD-06 A missing reason is refused
@@ -200,8 +215,8 @@ Times are Asia/Colombo. "Real time" means `ClockService.realNow()`; "the demo cl
 - [ ] AC-AUD-17 Field roles can't read the feed
 - [ ] AC-AUD-18 Store managers can't export or verify
 - [ ] AC-AUD-19 Dispatcher exports the feed as CSV
-- [ ] AC-AUD-20 Out-of-scope timeline is not found
-- [ ] AC-AUD-21 Drivers can't read order timelines
+- [x] AC-AUD-20 Out-of-scope timeline is not found
+- [x] AC-AUD-21 Drivers can't read order timelines
 - [ ] AC-AUD-22 Drivers read their own trip timeline
 
 ```gherkin
@@ -365,10 +380,9 @@ AC-AUD-22  Drivers read their own trip timeline
 - audit_events has no depotId column. How do the depot filter and a dispatcher's depot scope work on GET /audit-events? Decides: Nimesha.
 - The scope of GET /audit-events for a store manager, who holds audit:read, is not specified. Decides: Nimesha.
 - AC-AUD-13, 14: the feed's default sort (seq, or recordedAt descending) is not given. Decides: Nimesha.
-- AC-AUD-02, 03: the response shape of POST /audit/chain/verify and the field that carries Synced late on a timeline entry are not specified. Decides: Nimesha.
+- AC-AUD-02: the response shape of POST /audit/chain/verify is not specified. Decides: Nimesha.
 - AC-AUD-12: the value of GENESIS_HASH is not specified. Decides: Nimesha.
-- AC-AUD-22: which rows the trip, stop and outlet timelines merge; the doc spells this out only for orders. Decides: Nimesha.
-- The boundaries table lets audit import only core, yet TimelineService needs an order's stops, trip, deferrals, load lines and receipt ids. Read model, exported query services, or audit rows only? Decides: Nimesha.
+- AC-AUD-22: which rows the trip, stop and outlet timelines merge; the doc spells this out only for orders. Only `GET /timelines/order/{id}` exists so far. Decides: Nimesha.
 - AC-AUD-04: does the 02:00 job follow the demo clock or the wall clock, and is `<date>` in audit-heads/<date>.json the business date? Decides: Nimesha.
 - No Figma frame is named for the audit feed (GET /audit-events). Which screen hosts it? Decides: Nimesha.
 - Payload fields for audit.chain.verified and audit.chain.broken are not given. Decides: Nimesha with Harini (alerts).
@@ -379,3 +393,7 @@ AC-AUD-22  Drivers read their own trip timeline
   user.role_changed and user.scope_changed only (matched on the action without its module), advisory lock 4747,
   GENESIS_HASH, canonicalJson and the sha256 chain. The rest of the reason table, clientUuid idempotency, the feed,
   the export, timelines and the chain verifier are still open (ROO-23). No AC-AUD criterion is ticked yet
+- 2026-10-04 `GET /timelines/order/{id}` landed (ROO-23): AC-AUD-03, 20 and 21 pass. Status in-progress. The
+  entry shape, the merged entity types, the Synced late rule under the demo clock and the read-model boundary
+  are decided (see Endpoints). The trip, stop and outlet timelines, the feed, the export and the chain
+  verifier are still open

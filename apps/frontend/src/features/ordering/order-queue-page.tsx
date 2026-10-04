@@ -4,8 +4,10 @@ import { addDays } from '@waypoint/shared'
 import { useState } from 'react'
 import { usePageHeader } from '@/app/layouts/header-slot'
 import { toColomboDate } from '@/lib/format-colombo'
+import { getLink } from '@/lib/links'
 import { serverNow } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
+import { Button } from '@/ui/button'
 import { Input } from '@/ui/input'
 import { Pagination } from '@/ui/pagination'
 import { Skeleton } from '@/ui/skeleton'
@@ -21,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/ui/table'
+import { OrderTimelineDialog } from '@/features/audit/order-timeline-dialog'
 import { CancelOrderDialog } from './cancel-order-dialog'
 import { brandWord, districtLabel } from './order-copy'
 import { classLabel, dayLabel, deliveryLabel, kg } from './order-format'
@@ -68,6 +71,7 @@ export function OrderQueuePage() {
   const [offset, setOffset] = useState(0)
   const [limit, setLimit] = useState(25)
   const [cancelling, setCancelling] = useState<OrderDto | null>(null)
+  const [timeline, setTimeline] = useState<OrderDto | null>(null)
 
   const orders = useOrdersList({
     'filter[deliveryDate]': date,
@@ -183,6 +187,11 @@ export function OrderQueuePage() {
                     </TableCell>
                     <TableCell>
                       <span className="flex items-center justify-end gap-2">
+                        {getLink(order._links, 'timeline') ? (
+                          <Button variant="ghost" size="sm" onClick={() => setTimeline(order)}>
+                            Timeline
+                          </Button>
+                        ) : null}
                         <Action
                           link={order._links.priority}
                           variant="outline"
@@ -232,6 +241,7 @@ export function OrderQueuePage() {
           onClose={() => setCancelling(null)}
         />
       ) : null}
+      {timeline ? <OrderTimelineDialog orderId={timeline.id} orderNo={timeline.orderNo} onClose={() => setTimeline(null)} /> : null}
     </div>
   )
 }

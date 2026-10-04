@@ -3096,6 +3096,100 @@
         ]
       }
     },
+    "/api/v1/timelines/order/{id}": {
+      "get": {
+        "description": "The order merged with its stops, trip, deferrals, load lines, receipt and issues, by occurredAt. syncedLate marks an offline event recorded more than 5 minutes after it happened.",
+        "operationId": "timelinesOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimelineEntryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's timeline, oldest first",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/calendar": {
       "get": {
         "operationId": "calendarList",
@@ -18162,6 +18256,116 @@
         },
         "required": [
           "mode"
+        ]
+      },
+      "TimelineEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Position in the audit chain",
+            "example": 4211
+          },
+          "action": {
+            "type": "string",
+            "description": "<module>.<entity>.<verb>",
+            "example": "ordering.order.submitted"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "The entity the step was recorded on",
+            "example": "order"
+          },
+          "entityId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "example": "usr_nimesha"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a step the system took",
+            "example": "Nimesha Periyapperuma"
+          },
+          "actorRole": {
+            "type": "string",
+            "nullable": true,
+            "example": "store_manager"
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true,
+            "example": "dev_7f3a"
+          },
+          "source": {
+            "type": "string",
+            "description": "WEB, PWA, OFFLINE_SYNC, ENGINE, SYSTEM, SIMULATION or WEBHOOK",
+            "example": "WEB"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "The status the entity moved to, when the step set one",
+            "example": "SUBMITTED"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "reasonNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "When it happened: device or business time",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "When the server recorded it",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "syncedLate": {
+            "type": "boolean",
+            "description": "True when recordedAt trails occurredAt by more than 5 minutes: an offline event that synced late",
+            "example": false
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "action",
+          "entityType",
+          "entityId",
+          "actorId",
+          "actorName",
+          "actorRole",
+          "deviceId",
+          "source",
+          "status",
+          "reasonCode",
+          "reasonNote",
+          "occurredAt",
+          "recordedAt",
+          "syncedLate",
+          "_links"
         ]
       },
       "CalendarDayDto": {

@@ -6,3 +6,4 @@
  */
 export * as execution from '../src/modules/execution/__tests__/execution.world';
 export * as loading from '../src/modules/loading/__tests__/loading.world';
+export * as receipt from '../src/modules/receipt/__tests__/receipt.world';
