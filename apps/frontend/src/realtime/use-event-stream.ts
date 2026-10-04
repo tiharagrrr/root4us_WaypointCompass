@@ -23,7 +23,8 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'load.flag_resolved': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`],
   'load.flag_decided': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`, '/api/v1/depots'],
   'trip.released': (e) => [`/api/v1/trips/${e.aggregate.id}`, '/api/v1/depots'],
-  'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders'],
+  // The live day (01, 19, 19a) lives under /depots/{id}/tracking.
+  'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders', '/api/v1/depots'],
   'eta.updated': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, `/api/v1/orders/${String(e.data.orderId)}/eta`],
   'alert.raised': () => ['/api/v1/alerts'],
   // So another dispatcher's 01 shows who is on it without a reload (AC-ALR-08).
@@ -31,12 +32,14 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'alert.resolved': () => ['/api/v1/alerts'],
   'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
   // 21 follows the day as trips finish, and every screen sees the plan lock when it closes.
-  'trip.completed': () => ['/api/v1/plans'],
+  'trip.completed': () => ['/api/v1/plans', '/api/v1/depots'],
+  'trip.started': () => ['/api/v1/depots'],
+  'stop.arrived': () => ['/api/v1/depots'],
   // 19a, 19b and 20 follow another dispatcher's change to the same trip.
   'trip.reassigned': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
   'trip.resequenced': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
   'stop.deferred': (e) => ['/api/v1/plans', '/api/v1/deferrals', `/api/v1/trips/${String(e.data.tripId)}`],
-  'stop.failed': () => ['/api/v1/plans'],
+  'stop.failed': () => ['/api/v1/plans', '/api/v1/depots'],
   'plan.closed': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/deferrals', '/api/v1/orders'],
   // 23, M4 and M7 follow a deferral as it is confirmed, answered, replied to or reversed.
   'deferral.confirmed': () => ['/api/v1/deferrals', '/api/v1/orders'],

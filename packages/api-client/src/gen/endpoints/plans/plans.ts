@@ -50,6 +50,8 @@ import type {
   PlansForDay200,
   PlansGet200,
   PlansRevisions200,
+  PlansTracking200,
+  PlansTrackingParams,
   PlansTrips200,
   PlansUnplanned200,
   ProblemDto,
@@ -178,6 +180,121 @@ export function usePlansForDay<TData = Awaited<ReturnType<typeof plansForDay>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getPlansForDayQueryOptions(depotId,date,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPlansTrackingUrl = (depotId: string,
+    params?: PlansTrackingParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/depots/${depotId}/tracking?${stringifiedParams}` : `/api/v1/depots/${depotId}/tracking`
+}
+
+/**
+ * @summary 01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).
+ */
+export const plansTracking = async (depotId: string,
+    params?: PlansTrackingParams, options?: Parameters<typeof compassFetch>[1]): Promise<PlansTracking200> => {
+
+  return compassFetch<PlansTracking200>(getPlansTrackingUrl(depotId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPlansTrackingQueryKey = (depotId: string,
+    params?: PlansTrackingParams,) => {
+    return [
+    `/api/v1/depots/${depotId}/tracking`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getPlansTrackingQueryOptions = <TData = Awaited<ReturnType<typeof plansTracking>>, TError = ErrorType<ProblemDto>>(depotId: string,
+    params?: PlansTrackingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPlansTrackingQueryKey(depotId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof plansTracking>>> = ({ signal }) => plansTracking(depotId,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: depotId !== null && depotId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PlansTrackingQueryResult = NonNullable<Awaited<ReturnType<typeof plansTracking>>>
+export type PlansTrackingQueryError = ErrorType<ProblemDto>
+
+
+export function usePlansTracking<TData = Awaited<ReturnType<typeof plansTracking>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    params: undefined |  PlansTrackingParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansTracking>>,
+          TError,
+          Awaited<ReturnType<typeof plansTracking>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansTracking<TData = Awaited<ReturnType<typeof plansTracking>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    params?: PlansTrackingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansTracking>>,
+          TError,
+          Awaited<ReturnType<typeof plansTracking>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansTracking<TData = Awaited<ReturnType<typeof plansTracking>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    params?: PlansTrackingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).
+ */
+
+export function usePlansTracking<TData = Awaited<ReturnType<typeof plansTracking>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    params?: PlansTrackingParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansTracking>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPlansTrackingQueryOptions(depotId,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

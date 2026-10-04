@@ -57,6 +57,93 @@ export const PlansForDayResponse = zod.object({
 })
 })
 
+/**
+ * @summary 01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).
+ */
+export const PlansTrackingParams = zod.object({
+  "depotId": zod.string()
+})
+
+export const plansTrackingQueryDateRegExp = new RegExp('^\\d{4}-\\d{2}-\\d{2}$');
+
+
+export const PlansTrackingQueryParams = zod.object({
+  "date": zod.string().regex(plansTrackingQueryDateRegExp).optional().describe('Business date; today by default')
+})
+
+export const PlansTrackingResponse = zod.object({
+  "data": zod.object({
+  "depotId": zod.string(),
+  "date": zod.string(),
+  "planId": zod.string().nullable(),
+  "planStatus": zod.string().nullable(),
+  "totals": zod.object({
+  "trips": zod.number(),
+  "onRoad": zod.number().describe('Trips in progress'),
+  "released": zod.number().describe('Trips released, on the road or done'),
+  "stopsPlanned": zod.number(),
+  "stopsDelivered": zod.number(),
+  "lateRisk": zod.number().describe('Stops still to come projected past their window'),
+  "deferred": zod.number().describe('Confirmed deferrals on the plan'),
+  "repeatSkips": zod.number()
+}),
+  "trips": zod.array(zod.object({
+  "tripId": zod.string(),
+  "vehicleCode": zod.string(),
+  "vehicleType": zod.string(),
+  "vehicleTemp": zod.string(),
+  "tripNo": zod.number().nullable(),
+  "driverName": zod.string().nullable(),
+  "brand": zod.string(),
+  "tempClass": zod.string(),
+  "status": zod.string(),
+  "standing": zod.enum(['ON_TIME', 'LATE_RISK', 'LOADING', 'PLANNED', 'COMPLETE']),
+  "cantRunReason": zod.string().nullable().describe('Why the trip cannot run, when the driver or a breakdown said'),
+  "delivered": zod.number(),
+  "stopsTotal": zod.number(),
+  "nextEtaAt": zod.string().nullable(),
+  "nextOutletName": zod.string().nullable(),
+  "nextWindowOpenMin": zod.number().nullable(),
+  "nextWindowCloseMin": zod.number().nullable(),
+  "plannedDepartAt": zod.string().nullable(),
+  "loadWeightKg": zod.number(),
+  "loadVolumeM3": zod.number(),
+  "stops": zod.array(zod.object({
+  "stopId": zod.string(),
+  "seq": zod.number().nullable(),
+  "orderNo": zod.string(),
+  "outletId": zod.string(),
+  "outletName": zod.string(),
+  "status": zod.string(),
+  "windowOpenMin": zod.number().describe('Window opens, minutes after midnight'),
+  "windowCloseMin": zod.number().describe('Window closes, minutes after midnight'),
+  "plannedArrivalAt": zod.string().nullable(),
+  "etaAt": zod.string().nullable().describe('Projected arrival for a stop still to come; from the engine, from now when the trip is on the road'),
+  "spareMin": zod.number().nullable().describe('Minutes between the projected (or planned) arrival and the window closing; negative is late'),
+  "arrivedAt": zod.string().nullable(),
+  "completedAt": zod.string().nullable(),
+  "standing": zod.enum(['DELIVERED', 'PARTIAL', 'FAILED', 'NEXT', 'AT_RISK', 'LATE', 'PLANNED'])
+}))
+})),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+})).describe('self, plan, endOfDay.')
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
 export const PlansGetParams = zod.object({
   "id": zod.string()
 })
