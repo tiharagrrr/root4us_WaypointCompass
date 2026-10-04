@@ -60,7 +60,7 @@ Sixteen modules under `apps/backend/src/modules`, each with a spec in [`specs/`]
 | ordering | orders, order lines, presets | Place and edit before the 4 PM cutoff, cutoff close, the dispatcher's queue; exports `OrderLifecycleService` |
 | fleet | vehicles, fuel ledger | Vehicle status, weekly fuel quota, breakdowns as events |
 | planning | plans, trips, stops, deferrals | Wraps the engine: allocation, manual edits, publish, revisions, live-day tracking, closing the day; exports `TripLifecycleService` |
-| forecasting | forecasts | Volume against fleet capacity. Scaffold only: no endpoints yet |
+| forecasting | forecasts | The weeks ahead against fleet capacity (22): imported forecast rows, or a baseline from order history. The import and plan ahead's expected demand are specified, not built |
 | loading | load lists, load checks, load flags | Load list in reverse stop order, the flag-and-decide loop, release |
 | execution | stop events, proof of delivery, positions | Arrive, deliver, fail, POD, pings, ETA |
 | sync | sync batches, idempotency | `POST /sync` replays a device's offline records exactly once, in device order |

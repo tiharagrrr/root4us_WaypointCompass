@@ -10,6 +10,7 @@ export * from './depots/depots.ts';
 export * from './devices/devices.ts';
 export * from './districts/districts.ts';
 export * from './execution/execution.ts';
+export * from './forecasts/forecasts.ts';
 export * from './health/health.ts';
 export * from './invitations/invitations.ts';
 export * from './issues/issues.ts';

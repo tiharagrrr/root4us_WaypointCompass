@@ -45,6 +45,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/depots/:id/loading/*" },
   // Planning's live day for 01, 19 and 19a (ROO-46).
   { method: "get", path: "/api/v1/depots/:id/tracking" },
+  // 22's weeks ahead against fleet capacity (ROO-58).
+  { method: "get", path: "/api/v1/depots/:id/forecasts" },
   { method: "all", path: "/api/v1/districts" },
   { method: "all", path: "/api/v1/outlets" },
   { method: "all", path: "/api/v1/outlets/*" },

@@ -72,6 +72,8 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   // 02: the bell's badge and list follow new and read notifications, on every tab.
   'notification.created': () => ['/api/v1/me/notifications'],
   'notification.read': () => ['/api/v1/me/notifications'],
+  // 22 redraws when a forecast is imported.
+  'forecast.updated': (e) => [`/api/v1/depots/${String(e.routing.depotId)}/forecasts`],
   'clock.changed': () => ['/api/v1/clock'],
   'settings.changed': () => ['/api/v1/settings'],
   'identity.user.role_changed': () => ['/api/v1/me'],
