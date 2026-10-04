@@ -97,6 +97,31 @@ export class ResequencePreviewDto {
   violations!: ViolationDto[];
 }
 
+/** 20's repair (AC-PLN-06): one other vehicle, as the engine sees it for this trip. */
+export class RepairOptionDto {
+  @ApiProperty({ example: 'VEH018' })
+  vehicleId!: string;
+
+  @ApiProperty({ example: 'DRY-18' })
+  code!: string;
+
+  @ApiProperty({ example: 1, description: 'The trip number it would run as' })
+  tripNo!: number;
+
+  @ApiProperty({ example: true, description: 'No hard rule broken' })
+  fits!: boolean;
+
+  @ApiProperty({
+    type: [String],
+    example: [],
+    description: 'Hard rules it breaks',
+  })
+  rules!: string[];
+
+  @ApiProperty({ type: [String], example: [] })
+  messages!: string[];
+}
+
 /** 20's driver picker (AC-PLN-37). */
 export class DriverOptionDto {
   @ApiProperty({ example: 'drv-nuwan' })

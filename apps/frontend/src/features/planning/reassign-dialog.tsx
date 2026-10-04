@@ -1,5 +1,11 @@
 // Figma: 20 Reassign trip · 185:17727
-import { useTripOperationsReassign, type DriverOptionDto, type PlanVehicleOptionDto, type TripDto } from '@compass/api-client'
+import {
+  useTripOperationsReassign,
+  type DriverOptionDto,
+  type PlanVehicleOptionDto,
+  type RepairOptionDto,
+  type TripDto,
+} from '@compass/api-client'
 import { RadioGroup } from 'radix-ui'
 import { useState } from 'react'
 import type { Link } from '@/lib/links'
@@ -10,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
 import { toast } from '@/ui/toast-store'
-import { BRAND_WORD, clock, kg, vehicleKind } from './plan-copy'
+import { BRAND_WORD, clock, kg, RULE_CHIP, vehicleKind } from './plan-copy'
 import { RevisionReasonBar, type RevisionReason } from './revision-reason'
 
 export interface ReassignDialogProps {
@@ -18,6 +24,8 @@ export interface ReassignDialogProps {
   vehicles: readonly PlanVehicleOptionDto[]
   /** The depot's drivers (GET /plans/{id}/driver-options). */
   drivers: readonly DriverOptionDto[]
+  /** The engine's check of each other vehicle for this trip (GET /trips/{id}/repair-options). */
+  repairs?: readonly RepairOptionDto[]
   /** The trip's `reassign` link; the dialog exists only when the trip carries it. */
   link: Link
   version: number
@@ -31,10 +39,21 @@ export interface ReassignDialogProps {
 type Fit = { label: string; tone: 'success' | 'danger' }
 
 /**
- * How a vehicle looks for this trip at a glance, from the options the plan already sends. The
- * server's engine has the final say when the dispatcher presses Reassign (AC-PLN-23).
+ * How a vehicle looks for this trip: the engine's check from the repair options when they have
+ * come (AC-PLN-06), otherwise a first look from the plan's vehicle options. The server checks again
+ * when the dispatcher presses Reassign (AC-PLN-23).
  */
-function fitOf(trip: TripDto, v: PlanVehicleOptionDto): Fit {
+function fitOf(trip: TripDto, v: PlanVehicleOptionDto, repair?: RepairOptionDto): Fit {
+  if (repair) {
+    if (repair.fits) return { label: 'Fits', tone: 'success' }
+    const windows = repair.rules.filter((r) => r.startsWith('WINDOW')).length
+    const missed = repair.messages.filter((m) => m.includes('window')).length || windows
+    const rule = repair.rules[0] ?? ''
+    if (rule === 'TEMP_REEFER') return { label: 'Needs a reefer', tone: 'danger' }
+    if (rule.startsWith('CAP_')) return { label: 'Too small', tone: 'danger' }
+    if (rule.startsWith('WINDOW')) return { label: `Misses ${missed} window${missed === 1 ? '' : 's'}`, tone: 'danger' }
+    return { label: RULE_CHIP[rule] ?? rule, tone: 'danger' }
+  }
   if (!v.available) return { label: v.unavailableReason ?? 'Unavailable', tone: 'danger' }
   if (trip.tempClass === 'CHILLED' && v.temp !== 'REEFER') return { label: 'Needs a reefer', tone: 'danger' }
   if (v.tripsLeft < 1) return { label: 'No trips left', tone: 'danger' }
@@ -49,11 +68,12 @@ const KEEP = 'keep'
  * its id. A released trip on another vehicle goes back to the dock to be loaded again; a driver
  * change alone leaves it released (AC-PLN-23). The loader, the stores and the driver are told.
  */
-export function ReassignDialog({ trip, vehicles, drivers, link, version, revision, because, onClose, onDone }: ReassignDialogProps) {
+export function ReassignDialog({ trip, vehicles, drivers, repairs, link, version, revision, because, onClose, onDone }: ReassignDialogProps) {
   const options = vehicles.filter((v) => v.vehicleId !== trip.vehicleId)
   // The options load after the dialog opens, so the first vehicle that fits is the default until
   // the dispatcher picks one.
-  const first = options.find((v) => fitOf(trip, v).tone === 'success')
+  const repairOf = new Map((repairs ?? []).map((r) => [r.vehicleId, r]))
+  const first = options.find((v) => fitOf(trip, v, repairOf.get(v.vehicleId)).tone === 'success')
   const [chosen, setVehicleId] = useState<string | undefined>(undefined)
   const vehicleId = chosen ?? first?.vehicleId ?? KEEP
   const [driverId, setDriverId] = useState<string | undefined>(trip.driverId ?? undefined)
@@ -103,7 +123,7 @@ export function ReassignDialog({ trip, vehicles, drivers, link, version, revisio
             </h3>
             <RadioGroup.Root aria-labelledby="move-to" value={vehicleId} onValueChange={setVehicleId} className="flex flex-col gap-2">
               {options.map((v) => {
-                const fit = fitOf(trip, v)
+                const fit = fitOf(trip, v, repairOf.get(v.vehicleId))
                 return (
                   <RadioGroup.Item
                     key={v.vehicleId}

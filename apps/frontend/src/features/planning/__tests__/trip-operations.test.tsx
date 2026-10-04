@@ -183,6 +183,28 @@ describe('19b and 20 change a trip on the road', () => {
     expect(calls.find((c) => c.path.endsWith('/reassign'))?.body).toEqual({ driverId: 'drv-nuwan', reasonCode: 'VEHICLE_BREAKDOWN' })
   })
 
+  it('AC-PLN-06 the repair shows the engine’s verdict for each vehicle', async () => {
+    const user = userEvent.setup()
+    stub(
+      { reassign: link('reassign') },
+      {
+        [`GET /api/v1/trips/${TRIP}/repair-options`]: () =>
+          page([
+            { vehicleId: 'veh-ref3', code: 'REF-03', tripNo: 2, fits: false, rules: ['WINDOW_OUTLET'], messages: ['A misses its window', 'B misses its window'] },
+            { vehicleId: 'veh-dry', code: 'DRY-31', tripNo: 1, fits: false, rules: ['TEMP_REEFER'], messages: ['Needs a reefer'] },
+          ]),
+      },
+    )
+    renderScreen(<TripOperationsCard tripId={TRIP} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Reassign' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Reassign REF-07 · Trip 1' })
+    // REF-03 has the room, but the engine says its second run misses two windows.
+    expect(await within(dialog).findByText('Misses 2 windows')).toBeInTheDocument()
+    expect(within(dialog).getByRole('radio', { name: 'REF-03' })).toBeDisabled()
+    expect(within(dialog).getByRole('radio', { name: 'Keep REF-07' })).toBeChecked()
+  })
+
   it('shows nothing for a trip with neither link', async () => {
     stub({})
     renderScreen(<TripOperationsCard tripId={TRIP} />)

@@ -177,7 +177,7 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-FLT-02 Publishing writes planned fuel
 - [ ] AC-FLT-03 A revision reverses planned fuel
 - [ ] AC-FLT-04 Closing the day records actual fuel
-- [ ] AC-FLT-05 A breakdown takes a vehicle out
+- [x] AC-FLT-05 A breakdown takes a vehicle out
 - [ ] AC-FLT-06 Who may change a status
 - [ ] AC-FLT-07 Only admins edit vehicle details
 - [x] AC-FLT-08 Only planners read fuel
@@ -214,6 +214,10 @@ Checklist (tick in the PR that adds the passing test):
   fields may it change? Decides: Tihara.
 
 ## Changelog
+- 2026-10-04 AC-FLT-05 passes: `PUT /vehicles/{id}/status` (`VehicleStatusService`) with a reason and
+  If-Match, for `masterData:manage` or `plan:revise` (the 403 and 404 cases of AC-FLT-06 are tested;
+  its link on `GET /vehicles/{id}` waits for that endpoint), audit `fleet.vehicle.status_changed` and
+  outbox `vehicle.status_changed`, which planning consumes for repair (ROO-56)
 - 2026-10-04 AC-FLT-01 passes: planned ledger entries count against the weekly quota, and a revision
   reverses and re-plans the trips it touches (ROO-42)
 - 2026-10-03 Fleet read side for planning: `VehicleQueries`, `FuelLedgerService`, `isoWeekOf` in shared,

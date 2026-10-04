@@ -7252,6 +7252,128 @@
         ]
       }
     },
+    "/api/v1/vehicles/{id}/status": {
+      "put": {
+        "operationId": "vehicleStatusSetStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetVehicleStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VehicleStatusDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set a vehicle's status, with a reason",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
     "/api/v1/deferral-reasons": {
       "get": {
         "operationId": "deferralReasonsList",
@@ -10319,6 +10441,109 @@
         "summary": "23: the dispatcher's one reply to the store, shown on M4 (AC-PLN-35).",
         "tags": [
           "deferrals"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/repair-options": {
+      "get": {
+        "operationId": "tripOperationsRepairOptions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RepairOptionDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06).",
+        "tags": [
+          "trips"
         ]
       }
     },
@@ -16365,7 +16590,7 @@
           "districtId": {
             "type": "string",
             "description": "The outlet's district, which 03 groups the queue by",
-            "example": "LK-11-GAMPAHA"
+            "example": "gampaha"
           },
           "requestedDate": {
             "type": "string",
@@ -17196,6 +17421,86 @@
           "usedL",
           "leftL",
           "_links"
+        ]
+      },
+      "VehicleStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "VEH007"
+          },
+          "code": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "WORKSHOP",
+              "BREAKDOWN"
+            ],
+            "example": "BREAKDOWN"
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Compressor fault"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:40:00+05:30"
+          },
+          "version": {
+            "type": "number",
+            "example": 4
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            },
+            "description": "self, status (PUT, If-Match)."
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "depotId",
+          "status",
+          "statusReason",
+          "statusChangedAt",
+          "version",
+          "_links"
+        ]
+      },
+      "SetVehicleStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "WORKSHOP",
+              "BREAKDOWN"
+            ],
+            "type": "string",
+            "example": "BREAKDOWN"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Compressor fault",
+            "description": "Required"
+          }
+        },
+        "required": [
+          "status"
         ]
       },
       "DeferralReasonDto": {
@@ -19488,6 +19793,52 @@
         },
         "required": [
           "text"
+        ]
+      },
+      "RepairOptionDto": {
+        "type": "object",
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "example": "VEH018"
+          },
+          "code": {
+            "type": "string",
+            "example": "DRY-18"
+          },
+          "tripNo": {
+            "type": "number",
+            "example": 1,
+            "description": "The trip number it would run as"
+          },
+          "fits": {
+            "type": "boolean",
+            "example": true,
+            "description": "No hard rule broken"
+          },
+          "rules": {
+            "example": [],
+            "description": "Hard rules it breaks",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messages": {
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "vehicleId",
+          "code",
+          "tripNo",
+          "fits",
+          "rules",
+          "messages"
         ]
       },
       "ReassignTripDto": {

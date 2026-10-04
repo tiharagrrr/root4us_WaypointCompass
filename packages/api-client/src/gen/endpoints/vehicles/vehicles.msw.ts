@@ -19,11 +19,16 @@ import type {
 } from 'msw';
 
 import type {
-  VehicleFuelFuel200
+  VehicleFuelFuel200,
+  VehicleStatusSetStatus200
 } from '../../model';
 
 
 export const getVehicleFuelFuelResponseMock = (overrideResponse: Partial<Extract<VehicleFuelFuel200, object>> = {}): VehicleFuelFuel200 => ({data: {vehicleId: "VEH014", isoYear: 2026, isoWeek: 40, quotaL: 400, plannedL: 120, actualL: 46.5, adjustmentL: 0, usedL: 166.5, leftL: 233.5, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getVehicleStatusSetStatusResponseMock = (overrideResponse: Partial<Extract<VehicleStatusSetStatus200, object>> = {}): VehicleStatusSetStatus200 => ({data: {id: "VEH007", code: "REF-07", depotId: "PLG", status: "BREAKDOWN", statusReason: "Compressor fault", statusChangedAt: "2026-10-02T04:40:00+05:30", version: 4, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -39,6 +44,19 @@ export const getVehicleFuelFuelMockHandler = (overrideResponse?: VehicleFuelFuel
       })
   }, options)
 }
+
+export const getVehicleStatusSetStatusMockHandler = (overrideResponse?: VehicleStatusSetStatus200 | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<VehicleStatusSetStatus200> | VehicleStatusSetStatus200), options?: RequestHandlerOptions) => {
+  return http.put('*/api/v1/vehicles/:id/status', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getVehicleStatusSetStatusResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getVehiclesMock = () => [
-  getVehicleFuelFuelMockHandler()
+  getVehicleFuelFuelMockHandler(),
+  getVehicleStatusSetStatusMockHandler()
 ]

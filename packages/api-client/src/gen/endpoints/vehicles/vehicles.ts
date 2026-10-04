@@ -6,28 +6,35 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ProblemDto,
+  SetVehicleStatusDto,
   VehicleFuelFuel200,
-  VehicleFuelFuelParams
+  VehicleFuelFuelParams,
+  VehicleStatusSetStatus200,
+  VehicleStatusSetStatusHeaders
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
-import type { ErrorType } from '../../../mutator.ts';
+import type { ErrorType , BodyType } from '../../../mutator.ts';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -164,3 +171,92 @@ export function useVehicleFuelFuel<TData = Awaited<ReturnType<typeof vehicleFuel
 
 
 
+export const getVehicleStatusSetStatusUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/vehicles/${id}/status`
+}
+
+/**
+ * @summary Set a vehicle's status, with a reason
+ */
+export const vehicleStatusSetStatus = async (id: string,
+    setVehicleStatusDto: SetVehicleStatusDto,
+    headers: VehicleStatusSetStatusHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<VehicleStatusSetStatus200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<VehicleStatusSetStatus200>(getVehicleStatusSetStatusUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(setVehicleStatusDto)
+  }
+);}
+
+
+
+
+
+export const getVehicleStatusSetStatusMutationKey = () => ['vehicleStatusSetStatus'] as const;
+
+export const getVehicleStatusSetStatusMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vehicleStatusSetStatus>>, TError,VehicleStatusSetStatusMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof vehicleStatusSetStatus>>, TError,VehicleStatusSetStatusMutationVariables, TContext> => {
+
+const mutationKey = getVehicleStatusSetStatusMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof vehicleStatusSetStatus>>, VehicleStatusSetStatusMutationVariables> = (props) => {
+          const {id,data,headers} = props ?? {};
+
+          return  vehicleStatusSetStatus(id,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VehicleStatusSetStatusMutationResult = NonNullable<Awaited<ReturnType<typeof vehicleStatusSetStatus>>>
+    export type VehicleStatusSetStatusMutationBody = BodyType<SetVehicleStatusDto>
+    export type VehicleStatusSetStatusMutationError = ErrorType<ProblemDto>
+    export type VehicleStatusSetStatusMutationVariables = {id: string;data: BodyType<SetVehicleStatusDto>;headers: VehicleStatusSetStatusHeaders}
+
+    /**
+ * @summary Set a vehicle's status, with a reason
+ */
+export const useVehicleStatusSetStatus = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vehicleStatusSetStatus>>, TError,VehicleStatusSetStatusMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof vehicleStatusSetStatus>>,
+        TError,
+        VehicleStatusSetStatusMutationVariables,
+        TContext
+      > => {
+      return useMutation(getVehicleStatusSetStatusMutationOptions(options), queryClient);
+    }

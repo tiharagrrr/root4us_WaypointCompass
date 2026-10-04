@@ -40,6 +40,11 @@ export const PLANNING_EVENTS = {
   tripReassigned: 'trip.reassigned',
   tripResequenced: 'trip.resequenced',
   stopDeferred: 'stop.deferred',
+  /**
+   * Execution emits it when a driver reports it; planning when a vehicle is
+   * taken out under a published trip (ROO-56). Same payload either way.
+   */
+  tripCantRun: 'trip.cant_run',
   engineRunCompleted: 'plan.engine_run.completed',
   engineRunFailed: 'plan.engine_run.failed',
   deferralConfirmed: 'deferral.confirmed',
