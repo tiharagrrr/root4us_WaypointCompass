@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { describeWithDb } from '../../../test/create-test-app';
 import { AllocationProcessor } from '../allocation.processor';
 import { OutboxProcessor } from '../outbox.processor';
+import { SimulationLoop } from '../simulation.loop';
 import { WorkerModule } from '../worker.module';
 
 /**
@@ -17,6 +18,7 @@ describeWithDb('worker module', () => {
     try {
       expect(moduleRef.get(AllocationProcessor)).toBeDefined();
       expect(moduleRef.get(OutboxProcessor)).toBeDefined();
+      expect(moduleRef.get(SimulationLoop)).toBeDefined();
     } finally {
       await moduleRef.close();
     }

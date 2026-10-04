@@ -2,13 +2,19 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { DiscoveryModule } from '@nestjs/core';
 import { AppModule } from '../app.module';
+import { ExecutionModule } from '../modules/execution';
+import { NotificationsModule } from '../modules/notifications';
 import { PlanningModule } from '../modules/planning';
+import { SimulationModule } from '../modules/simulation';
 import { DemoInbox } from '../core/demo/demo-inbox';
+import { ProvidersModule } from '../core/providers/providers.module';
 import { TickerService } from '../core/scheduling/ticker.service';
 import { QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
 import { NotificationsProcessor } from './notifications.processor';
 import { OutboxProcessor } from './outbox.processor';
+import { PositionSimulatorRunner } from './position-simulator.runner';
+import { SimulationLoop } from './simulation.loop';
 import { TickerProcessor } from './ticker.processor';
 
 /**
@@ -22,6 +28,15 @@ import { TickerProcessor } from './ticker.processor';
     AppModule,
     // For EngineRunner, which the allocation processor drives.
     PlanningModule,
+    // For PositionSimulator, which moves the demo's running trips.
+    ExecutionModule,
+    // For NotificationSender, which notify.send drives.
+    NotificationsModule,
+    // SMS_PROVIDER, for the sign-in codes and invitation links the
+    // notifications processor sends outside the catalog.
+    ProvidersModule,
+    // For SimulationRunner, which the simulation loop drives.
+    SimulationModule,
     DiscoveryModule,
     BullModule.registerQueue({ name: QUEUES.ticker }),
     BullModule.registerQueue({ name: QUEUES.outbox }),
@@ -30,9 +45,11 @@ import { TickerProcessor } from './ticker.processor';
     AllocationProcessor,
     NotificationsProcessor,
     OutboxProcessor,
+    PositionSimulatorRunner,
     DemoInbox,
     TickerService,
     TickerProcessor,
+    SimulationLoop,
   ],
 })
 export class WorkerModule {}

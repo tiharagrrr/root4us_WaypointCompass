@@ -103,6 +103,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | POST | `/trips/{id}/resequence/preview` | `trip:resequence` | 19b: the projected arrivals and any violations for an order of the stops, saving nothing |
 | GET | `/plans/{id}/driver-options` | `plan:read` | 20: the depot's drivers and how many trips each has on the plan |
 | GET | `/depots/{id}/tracking?date=` | `plan:read` | 01, 19, 19a: the day's trips with stops planned, projected (engine, from now) and actual, standing and totals |
+| GET | `/orders/{id}/eta` | `tracking:read` | M3: one order's ETA from the same projection, with no vehicle or position (execution's AC-EXE-22). The order is read in the caller's scope; the projection then runs with the transaction stamped as the system, because row-level security hides the trip's other orders from a store |
 | POST | `/trips/{id}/cancel` | `plan:revise` | Before the trip starts |
 
 Errors used: `PLAN_RULE_VIOLATION` (422, with `violations[]` and a `fixes` link), `PLAN_LOCKED`
@@ -774,3 +775,6 @@ Checklist (tick in the PR that adds the passing test):
   `markReleased` and `markReloading`, and `DeferralService.deferPartially`, both exported from
   `index.ts`. Tihara owns them from here; they are covered by AC-LOD-04, 12, 16 and 19 and have no
   planning test of their own yet
+- 2026-10-04 `GET /orders/{id}/eta` added for M3 (execution's AC-EXE-22): `TrackingQueries.orderEta` reads the
+  order in the caller's scope, then projects the day under the system stamp and returns only that order's stop
+- 2026-10-04 Drafting before the cutoff: the plan's queue includes open (SUBMITTED) orders, shown as "Open until cutoff" on 05 and 09. A draft never moves an order's status, so an open order on a draft trip stays SUBMITTED; a store's change to it (lines, delivery date, cancel; not the dispatcher's urgent flag or a note) cancels that draft stop under a lock on the plan, bumps the plan's version (a dispatcher's save on the old version gets 412) and emits plan.edited (StoreChangeListener). Publishing confirms orders still open (no ticker ran) before planning or deferring them.

@@ -73,7 +73,7 @@ Alert catalog:
 | --- | --- | --- | --- | --- | --- |
 | LATE_RISK | eta.updated at or above tracking.lateRiskThreshold (0.5) | 2 | The ETA is back inside the window, or the stop is done or deferred | Re-sequence (19b), defer the stop | LATE_RISK:stop:<id> (doc) |
 | FAILED_STOP | stop.failed | 2 | A redelivery is planned or a deferral confirmed | Plan redelivery, defer | FAILED_STOP:stop:<id> (proposed) |
-| LOADER_SHORTFALL | load.flag_raised | 1 if the wave leaves within 30 minutes, else 2 | The flag is decided | Decide the flag (L3b) | LOADER_SHORTFALL:load_flag:<id> (proposed) |
+| LOADER_SHORTFALL | load.flag_raised | 1 if the wave leaves within 30 minutes, else 2 | The flag is decided, or the loader undoes it | Decide the flag (L3b) | LOADER_SHORTFALL:load_flag:<id> (proposed) |
 | STORE_ISSUE | issue.reported | 2 for temperature, else 3 | The issue is resolved | Open the issue | STORE_ISSUE:issue:<id> (proposed) |
 | DRIVER_CANT_RUN | trip.cant_run | 1 | The trip is reassigned or cancelled | Reassign (20) | DRIVER_CANT_RUN:trip:<id> (proposed) |
 | VEHICLE_OFFLINE | vehicle.offline | 2 | vehicle.back_online | Trip details, call the driver | VEHICLE_OFFLINE:trip:<id> (proposed) |
@@ -123,7 +123,7 @@ The web invalidates its alerts queries on alert.raised and alert.resolved.
 Consumes every event in the catalog, to raise: eta.updated, stop.failed, load.flag_raised,
 issue.reported, trip.cant_run, vehicle.offline, deferral.store_responded, sync.conflict_detected.
 And to resolve: eta.updated, stop.completed, stop.failed and stop.deferred for the stop,
-deferral.confirmed, load.flag_decided, issue.resolved, trip.reassigned, trip.cancelled,
+deferral.confirmed, load.flag_decided, load.flag_resolved, issue.resolved, trip.reassigned, trip.cancelled,
 vehicle.back_online, sync.conflict_resolved, and the events that plan an order or carry the
 dispatcher's reply (see Open questions).
 
@@ -155,13 +155,19 @@ actor.depotId, or all depots when none is set. Out of scope answers 404.
 - [x] AC-ALR-03  Late risk clears itself
 - [x] AC-ALR-04  Can't run clears on reassign
 - [x] AC-ALR-05  Loader shortfall severity follows departure
-- [x] AC-ALR-06  Store issue severity and clearing
+- [x] AC-ALR-13  An undone flag clears its shortfall
+  Given Harini De Mel raised a DAMAGED flag at 04:58 and its LOADER_SHORTFALL alert is OPEN
+  When she undoes the flag at 05:00 and load.flag_resolved arrives with how UNDONE
+  Then the alert is RESOLVED with no resolvedById, because nobody is left to decide the flag
+
+AC-ALR-06  Store issue severity and clearing
 - [x] AC-ALR-07  Fix links follow the affordance rule
 - [x] AC-ALR-08  Acknowledge and resolve by hand
 - [x] AC-ALR-09  The list, its order and access
 - [x] AC-ALR-10  Replays dedupe; a new episode opens a new alert
 - [~] AC-ALR-11  Alerts never block the fix — alerts' half only; see the note below
 - [x] AC-ALR-12  A broken audit chain is not an alert
+- [x] AC-ALR-13  An undone flag clears its shortfall
 
 Tests are in `apps/backend/src/modules/alerts/__tests__`, one `it()` per id.
 
@@ -392,3 +398,4 @@ Still open, and not decided here:
   severity as a word and can say what will close the alert on its own
 - 2026-10-02 Open questions: all eight answered as build decisions; what is still genuinely open
   (the relay, the unpublished events, the push, the unbuilt fix endpoints) is listed separately
+- 2026-10-04 AC-ALR-13 added: an undone flag left its LOADER_SHORTFALL open, because only load.flag_decided cleared it (ROO-52)

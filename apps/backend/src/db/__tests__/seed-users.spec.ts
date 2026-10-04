@@ -10,6 +10,7 @@ import {
   depots,
   devices,
   districts,
+  notifications,
   outlets,
   users,
   vehicles,
@@ -111,12 +112,21 @@ suite('seedUsers', () => {
         },
       ])
       .onConflictDoNothing();
-    // Start from no personas, so the create path runs.
+    // Start from no personas, so the create path runs. Their notifications go
+    // first: that foreign key does not cascade.
+    const isPersona = or(
+      inArray(users.email, EMAILS),
+      inArray(users.phoneNumber, PHONES),
+    );
     await tx
-      .delete(users)
+      .delete(notifications)
       .where(
-        or(inArray(users.email, EMAILS), inArray(users.phoneNumber, PHONES)),
+        inArray(
+          notifications.userId,
+          tx.select({ id: users.id }).from(users).where(isPersona),
+        ),
       );
+    await tx.delete(users).where(isPersona);
   }
 
   const personas = (tx: Database) =>

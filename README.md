@@ -6,10 +6,10 @@ Waypoint Compass connects **ordering, planning, loading, delivery and receipt** 
 
 | | |
 | --- | --- |
-| **Live URL** | _https://…_ |
+| **Live URL** | https://waypoint-root4us.up.railway.app |
 | **Demo video** | _YouTube (unlisted) link_ |
 | **Designathon prototype** | _Figma link_ |
-| **Docs** | [Architecture](docs/architecture.md) · [Data model](docs/data-model.md) · [AI tool disclosure](docs/ai-tool-disclosure.md) · [Deployment](docs/deployment.md) |
+| **Docs** | [Architecture](docs/architecture.md) · [Data model](docs/data-model.md) · [Decisions](docs/decisions.md) · [Departures](docs/departures.md) · [AI tool disclosure](docs/ai-tool-disclosure.md) · [Deployment](docs/deployment.md) |
 
 ---
 
@@ -20,6 +20,9 @@ Requirements: Docker with Compose v2.
 ```bash
 git clone <repo-url> && cd <repo>
 cp .env.example .env      # optional: defaults work as-is
+# Copy the dataset CSVs (outlets, vehicles, calendar, district_travel, service_allowance,
+# traffic_speed, road_conditions, deliveries_train, task2b_peak_day_*) into data/seed.
+# They are confidential, so the repository does not carry them; the seed reads them from there.
 docker compose up --build
 ```
 
@@ -71,19 +74,19 @@ trusted automatically.
 
 > Seeded demo day D: the day after the demo clock's date, at Peliyagoda, from scenario S1 (the seed prints D, its order count and the fleet it checks them against). Every S1 order is CONFIRMED on D; outlets skipped on the run before wait as DEFERRED with a deferral on D−1; the S1 workshop vehicles are out; Fresh Kadawatha has a draft dry order for D+1. Kandy has an ordinary day on D (its orders from the last day of the delivery history, whole fleet in service), and both depots have 14 closed operating days of history before D−1. Set `DEMO_CLOCK` to test the 4 PM cutoff at any time of day, and run `pnpm db:reset-demo` (or POST /demo/reset as admin in demo mode) to start the day again.
 
-1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`, place an order before the cutoff and see it confirmed. _…_
-2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`, close the cutoff, run allocation, review deferred orders and their reasons, then publish the plan. _…_
-3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle. _…_
-4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync. _…_
-5. **Dispatcher**: see live progress, the synced events (device time vs. sync time), and the outlet deferral history. _…_
-6. **Store manager**: see the ETA and deferral notice, confirm receipt, and report an issue. _…_
-7. **Order timeline**: open any order to see every step with who, when, device and reason. _…_
+1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`. **New order**: pick the delivery day (tomorrow or up to two weeks ahead), start the dry or chilled order, add items and send it before the 4 PM cutoff. **Orders** shows the order's progress, and **Timeline** on its card shows who did what and when. **History** lists past orders, each with Reorder and its timeline.
+2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`. **Order queue** lists the day's orders (mark one urgent, or cancel one with a reason). **Plan** opens the demo day: close the cutoff, run the allocation, review the deferred orders and their reasons, fix or override what the checks flag, then confirm and publish.
+3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle.
+4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync.
+5. **Dispatcher**: **Dashboard** and **Tracking** show live progress, projected arrivals and late risk; a trip opens its stops with planned, projected and actual times. **Deferrals** holds the outlet deferral history with repeat skips, **Issues** what stores reported, and the end-of-day summary closes the day.
+6. **Store manager**: **Orders** shows the ETA of an order that is on a trip, and a deferred order opens its notice with the reason. **Receipts** lists deliveries to confirm; confirm one line by line against the driver's proof, or report an issue and follow its thread.
+7. **Order timeline**: **Timeline** on any order (the store's Orders and Receipts, the dispatcher's Order queue) lists every step with who, when, device and reason; a delivery recorded offline keeps its device time and is marked Synced late.
+
+Not built yet, shown as placeholders: the dispatcher's Past orders (04), Plan ahead (12, 13) and Forecast (22), and the driver's Trips and Past trip (D10, D11). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
 
 ## Departures from the Designathon submission
 
-| Screen / flow | Designed (Day 5) | Built | Why |
-| --- | --- | --- | --- |
-| _…_ | | | |
+Every deliberate difference from the Figma frames is logged, screen by screen, with the reason, in [docs/departures.md](docs/departures.md).
 
 ---
 
@@ -131,11 +134,13 @@ apps/
   backend/        NestJS REST API + BullMQ worker (Drizzle ORM, PostgreSQL)
   frontend/       React PWA: dispatcher, loader, driver and store manager views
 packages/
-  shared/         Domain types, constraint validator, trip-time rules, Zod schemas
-data/seed/        Shared challenge datasets (outlets, vehicles, calendar, ...)
-datathon/         Datathon notebooks, models and submissions (data git-ignored)
-deploy/           Caddyfile, database roles, observability configs, Kubernetes manifests
-docs/             Architecture, data model, AI disclosure, ADRs, spec, brief
+  engine/         Planning rules, validator and allocator (pure TypeScript)
+  shared/         Enums, state machines, permission matrix, Zod schemas
+  api-client/     Hooks and MSW mocks generated from openapi.json
+  ui-tokens/      Compass design tokens
+data/seed/        Shared challenge datasets (git-ignored; copy them in before seeding)
+deploy/           Caddyfile, database roles, object storage setup, observability configs
+docs/             Architecture, data model, decisions, departures, AI disclosure, deployment
 specs/            One spec per module with acceptance criteria, plus API, data, engine and screen references
 .claude/          Shared Claude Code settings, hooks, commands and skills (CLAUDE.md at the root)
 docker-compose.yml

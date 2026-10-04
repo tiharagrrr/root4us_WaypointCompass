@@ -16,6 +16,8 @@ import type { Database } from '../../../db/client';
 import {
   auditEvents,
   deliveryLines,
+  positionPings,
+  vehiclePositions,
   outlets as outletsTable,
   orderLines,
   orders,
@@ -403,6 +405,15 @@ export async function resetTrips(world: World): Promise<void> {
     await world.db
       .delete(stopEvents)
       .where(inArray(stopEvents.tripId, tripIds));
+    // Pings point at trips; the latest positions at this world's vehicles.
+    await world.db
+      .delete(positionPings)
+      .where(inArray(positionPings.tripId, tripIds));
+    await world.db
+      .delete(vehiclePositions)
+      .where(
+        inArray(vehiclePositions.vehicleId, Object.values(world.vehicles)),
+      );
     if (stopIds.length) {
       await world.db
         .delete(deliveryLines)

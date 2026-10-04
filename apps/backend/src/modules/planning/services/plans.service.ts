@@ -418,14 +418,19 @@ export class PlansService {
           ),
         );
 
+    // Publishing closes the cutoff for what it carries and defers: an order
+    // still open (no ticker ran) is confirmed first, then planned or deferred.
     for (const trip of carrying)
-      for (const stop of ctx.stopsByTrip.get(trip.id) ?? [])
+      for (const stop of ctx.stopsByTrip.get(trip.id) ?? []) {
+        await this.lifecycle.confirmIfOpen(stop.orderId);
         await this.lifecycle.markPlanned(stop.orderId, stop.id);
+      }
 
     const confirmed = [...ctx.deferrals.values()].filter(
       (d) => d.status === 'CONFIRMED',
     );
     for (const deferral of confirmed) {
+      await this.lifecycle.confirmIfOpen(deferral.orderId);
       await this.lifecycle.markDeferred(deferral.orderId, deferral.toDate);
       const order = ctx.orders.get(deferral.orderId);
       await this.outbox.add(

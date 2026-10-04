@@ -1,9 +1,9 @@
 ---
 module: notifications
 owner: Nimesha
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: ["02", D12]
-depends-on: [identity]
+depends-on: [identity, audit, webhooks, realtime]
 ---
 
 # Notifications
@@ -38,11 +38,17 @@ switched off.
 ## Endpoints
 | Method | Path | Permission | Notes |
 | --- | --- | --- | --- |
-| GET | /me/notifications | any signed-in user | 02 bell; own rows only; cursor pages (limit default 50, max 200) |
+| GET | /me/notifications | any signed-in user | 02 bell; own in-app rows only; cursor pages (limit default 50, max 200), newest first |
+| GET | /me/notifications/summary | any signed-in user | `unread` for the badge; `_links.readAll` while there is something to mark |
+| POST | /me/notifications/{id}/read | any signed-in user | Own row, else 404; audited; announces `notification.read` to the user |
+| POST | /me/notifications/read-all | any signed-in user | Marks every unread in-app row read; one audit row |
+| GET | /me/notification-preferences | any signed-in user | One row per catalog event that reaches the caller's role: defaults, available channels, current channels, `_links.update`; `emailSuppressed` with `_links.resumeEmail` |
+| PUT | /me/notification-preferences/{eventType} | any signed-in user | `{ channels }`, a subset of the event's channels for that role; in-app always kept; 404 for an event that doesn't reach the role; audited |
+| POST | /me/notification-preferences/resume-email | any signed-in user | Email back on after a bounce or complaint; audited |
 | GET | /notifications | admin (no matrix entry yet) | Delivery log, filterable; see Open questions |
-| GET | /dev/notifications/preview/{event} | development only | `?channel=email&locale=en`; renders a template with fixture data |
+| GET | /dev/notifications/preview/{event} | any signed-in user; 404 in production unless DEMO_MODE | `?channel=sms&locale=en`; renders every audience's message from `domain/fixtures.ts` |
 
-Marking an item read (02, M4) and editing preferences (D12) need endpoints; see Open questions.
+Preferences are edited on D12 (phone) and from 02's Settings (desktop).
 
 ## Services and helpers
 - `modules/notifications/catalog.ts`: one entry per event with its recipients and default channels.
@@ -58,11 +64,15 @@ Marking an item read (02, M4) and editing preferences (D12) need endpoints; see 
   non-retryable one fails at once with the reason.
 - Templates: React Email in `modules/notifications/templates/email/`; SMS, push and in-app per
   event; copy under `notifications/<event>.<channel>` in `packages/shared/i18n/{en,si,ta}.json`.
-- Providers from core/providers: EMAIL_PROVIDER (smtp, resend, console), SMS_PROVIDER (demo-inbox,
-  twilio, notifylk), PUSH_PROVIDER (webpush, disabled), DemoInbox.
+- Providers from core/providers: EMAIL_PROVIDER (resend, demo-inbox), SMS_PROVIDER (demo-inbox,
+  notifylk, textlk, twilio), PUSH_PROVIDER (webpush, disabled), DemoInbox.
 
 ## Events
-Emits: `notification.*` (names not listed yet; see Open questions).
+Emits, both routed to the one user (userIds) so only their stream carries them:
+- `notification.created` `{ notificationId, eventType }` for each new in-app row: the 02 badge and
+  list refetch.
+- `notification.read` `{ notificationIds }` when rows are read: the user's other tabs clear the
+  badge.
 
 Consumes, per the catalog:
 
@@ -107,21 +117,23 @@ Consumes, per the catalog:
 
 Progress: tick a criterion in the same PR as its passing test.
 
-- [ ] AC-NTF-01 One notification per event, person and channel
-- [ ] AC-NTF-02 A replayed event never sends twice
-- [ ] AC-NTF-03 Preferences drop a channel but never in-app
-- [ ] AC-NTF-04 Channels a person can't receive are dropped
-- [ ] AC-NTF-05 Security messages ignore preferences
-- [ ] AC-NTF-06 Retryable failures back off, then fail
-- [ ] AC-NTF-07 A permanent failure is not retried
-- [ ] AC-NTF-08 Provider receipts move the status
-- [ ] AC-NTF-09 Reading a store's deferral notice is audited
-- [ ] AC-NTF-10 Small ETA slips stay quiet and bursts collapse
-- [ ] AC-NTF-11 A revision reaches only the people it affects
-- [ ] AC-NTF-12 No push while the person is watching
-- [ ] AC-NTF-13 The bell lists only my notifications
-- [ ] AC-NTF-14 Templates fit their channel
-- [ ] AC-NTF-15 The demo inbox shows what each person received
+- [x] AC-NTF-01 One notification per event, person and channel
+- [x] AC-NTF-02 A replayed event never sends twice
+- [x] AC-NTF-03 Preferences drop a channel but never in-app
+- [x] AC-NTF-04 Channels a person can't receive are dropped
+- [x] AC-NTF-05 Security messages ignore preferences
+- [x] AC-NTF-06 Retryable failures back off, then fail
+- [x] AC-NTF-07 A permanent failure is not retried
+- [x] AC-NTF-08 Provider receipts move the status
+- [x] AC-NTF-09 Reading a store's deferral notice is audited
+- [x] AC-NTF-10 Small ETA slips stay quiet and bursts collapse
+- [x] AC-NTF-11 A revision reaches only the people it affects
+- [x] AC-NTF-12 No push while the person is watching
+- [x] AC-NTF-13 The bell lists only my notifications
+- [x] AC-NTF-14 Templates fit their channel
+- [x] AC-NTF-15 The demo inbox shows what each person received
+- [x] AC-NTF-16 A sign-in code takes the configured SMS gateway
+- [x] AC-NTF-17 A local gateway's refusal inside a 200 is permanent
 ```gherkin
 AC-NTF-01  One notification per event, person and channel
   Given Nimesha Periyapperuma, store manager for Fresh Kadawatha, with an email address, a push
@@ -224,10 +236,27 @@ AC-NTF-15  The demo inbox shows what each person received
   When a judge opens /demo/inbox
   Then it lists the last 50 SMS and emails, newest first, grouped by recipient
     And after POST /demo/reset it is empty
+
+AC-NTF-16  A sign-in code takes the configured SMS gateway
+  Given SMS_PROVIDER names a gateway, with the keys that gateway needs
+  When the worker runs the auth.otp job for 0776041932
+  Then that gateway is sent the code's message for 94776041932, in the shape it asks for
+    And the job writes nothing to the demo inbox
+    And its log line carries the provider and "+94 77 ••• 1932", never the number or the code
+    And the idempotency key is the job's, so a BullMQ retry cannot send a second code
+
+AC-NTF-17  A local gateway's refusal inside a 200 is permanent
+  Given SMS_PROVIDER=notifylk
+  When Notify.lk answers 200 with {"status":"error","message":"Insufficient balance"}
+  Then the send raises a ProviderError with retryable false, so AC-NTF-07 fails the row at once
+    And its message names the reason and the masked number
+    And a 429, a 503 or a timeout from the same gateway is retryable instead
 ```
 
 ## Non-functional
-- Providers run only inside worker jobs, so a slow provider never slows a screen.
+- Providers run only inside worker jobs, so a slow provider never slows a screen. A sign-in code
+  takes the same SmsProvider as every other message, so there is one gateway to configure and one
+  place a number is normalised.
 - Each adapter's health() feeds /health/ready as a warning, not a failure; the jobs retry.
 - Tests never touch the internet; real sends run only with PROVIDER_LIVE_TEST=1.
 - Email: send from a subdomain such as notify.waypoint.lk with SPF, provider-managed DKIM and DMARC
@@ -238,23 +267,84 @@ AC-NTF-15  The demo inbox shows what each person received
 - Push on iPhone works only once the PWA is on the home screen (iOS 16.4 and later).
 - English ships first; Sinhala and Tamil are Saturday's stretch.
 
+## Built (ROO-26)
+- `domain/catalog.ts` holds the catalog above for the events that fire today: order.submitted,
+  order.rolled_to_next_run, plan.published (loaders, drivers with trips, stores), plan.revised
+  (only the drivers of the revised trips and the stores on them), deferral.confirmed,
+  deferral.store_responded, load.flag_raised, load.flag_decided, trip.released, stop.completed,
+  trip.cant_run and trip.reassigned. Recipients come from the event's routing: store managers of
+  its outlets, dispatchers of its depot (and unscoped ones), loaders of its depot, the drivers of
+  its trips, the payload's driver, the loader who raised a flag.
+- `NotificationDispatcher` runs as an EventBus consumer inside the relay's transaction. In-app rows
+  are written SENT (they need no provider); email, SMS and push rows are QUEUED and sent by the
+  worker's `notify.send` job on the notifications queue, retried after 30 s, 2 min and 10 min.
+- Providers (`services/providers.ts`): email goes through Resend's REST API when
+  EMAIL_PROVIDER=resend (or RESEND_API_KEY is set and no provider named), with the row id as
+  Idempotency-Key; 429 and 5xx retry, other 4xx fail at once. Otherwise email goes to the demo
+  inbox (DEMO_MODE=true), and with DEMO_MODE a copy of every real email lands there too.
+  No provider at all fails at once. Push rows are SUPPRESSED until a push provider exists.
+- SMS goes through the `SmsProvider` port in `core/providers/ports.ts`, so `services/providers.ts`
+  and the worker's sign-in-code and invitation jobs never name a vendor. SMS_PROVIDER picks the
+  adapter: `demo-inbox` (the default: keyless, writes to /api/v1/demo/inbox, needs DEMO_MODE=true),
+  `notifylk` (Notify.lk, local +94 routes), `textlk` (Text.lk) or `twilio` (international numbers).
+  Each adapter normalises what it is given to E.164 and then to the shape its gateway wants -
+  `94771234932` for the Sri Lankan gateways, `+94771234932` for Twilio - with `core/phone/
+  sri-lanka-phone.ts`, which reads 0771234932, 94771234932 and +94 77 123 4932 the same and keeps a
+  foreign country code rather than assuming +94. Both Sri Lankan gateways report refusals in a 200
+  body (`{"status":"error"}`), so the body decides the outcome, not the status code; neither has an
+  idempotency key, so BullMQ's attempt cap is what stops a double send. Only Twilio honours one.
+  Refusals carry the masked number (`+94 77 ••• 1932`), never the number or the code.
+- Production setup for SMS: a gateway's key works the day the account is made, but a sender id
+  (the mask the recipient sees) needs the operators' approval, roughly 3-7 business days on
+  Notify.lk and Text.lk with a letter on company letterhead. Until it is through, Notify.lk's
+  NotifyDEMO sender reaches only the numbers verified in that account, and a Twilio trial only
+  its verified numbers; Sri Lanka takes no alphanumeric sender on Twilio at all. So demo-inbox
+  stays the default, and switching to a real gateway is one variable on the day approval lands.
+- Receipts (AC-NTF-08): webhooks' `POST /webhooks/resend` verifies Svix, stores the event once and
+  emits `email.delivered`, `email.bounced` or `email.complained`; notifications consumes them.
+  Delivered sets DELIVERED. A bounce or complaint sets FAILED and writes a `*` preference row
+  without EMAIL: the suppression list is that row, so no new table. `resume-email` deletes it.
+- Quiet rules (AC-NTF-10): a catalog entry may have `when` (eta.updated: slipMin at least
+  tracking.etaSlipNotifyMinutes) and `collapse` (eta.updated: one notice per stop per 10 minutes,
+  keyed in `data.collapseKey`). Rows are stamped with ClockService time, so the burst window and the
+  bell's days follow the demo clock.
+- Watching (AC-NTF-12): realtime's PresenceService keeps `presence:user:<id>` in Redis while any of
+  the person's streams is open (40 s TTL, refreshed by the heartbeat). A person with the app open
+  gets in-app and no push. "Watching" is the app being open, not one record.
+- Templates (AC-NTF-14): `domain/render.ts` shapes a message per channel: SMS GSM-7 only, at most
+  160 characters with the "Waypoint: " prefix; push title at most 40, body at most 120, a deep link
+  and a tag `<eventType>:<entityId>`. A test checks every catalog entry's fixture against these
+  limits. Copy is English only; other locales fall back.
+- A placeholder address (`*.waypoint.local`, every driver's) counts as no email; SMS needs a
+  verified phone; push needs a device with a subscription.
+- A channel dropped by preferences or reachability is not written at all.
+- Not yet: Web Push, the admin delivery log, the cutoff
+  reminder, issue.*, sync.conflict_detected, vehicle.offline and comment.created entries, and
+  Sinhala and Tamil copy (ROO-66). Nothing emits eta.updated yet (ETA with ROO-37); the rule
+  expects `{ stopId, orderId, outletId, etaAt, slipMin }`.
+
 ## Open questions
-- Which endpoint marks an in-app notification READ (02, M4), and with what permission?
-- Which endpoints read and edit NotificationPreference, and is D12 the screen for it?
 - Which permission guards GET /notifications? The Step 2 matrix has no notification resource.
-- What are the notification.* event names, including the one that drives the 02 unread count?
-- Is a channel dropped by preferences written as a SUPPRESSED row, or not written at all?
-- What are the burst window and the event groups for quiet rules?
-- How does the server know a user has "that record open" on a live stream?
-- Where does the email suppression list live? notifications.ts has no table for it.
-- What is the audit action name for reading a store's deferral notice?
-- Which loaders count as "affected" by plan.revised?
-- Is the eta.updated slip measured against the planned ETA or the last one notified?
-- trip.released lists Push and SMS only, while in-app is "always on": does it get an in-app row?
-- How does the webhooks.inbound job update Notification rows when webhooks may import only core?
 - Which event and recipients carry "admins are notified" for a DEAD webhook delivery?
 - Which event triggers the 15:30 cutoff reminder from the ticker?
-- Which log event names does the module write?
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 ROO-26: catalog, dispatcher, notify.send with backoff, demo-inbox delivery, the bell
+  endpoints and the 02 panel. Reading is audited as `notifications.notification.read` (and
+  `notifications.notification.all_read`); plan.revised reaches drivers and stores only, since the
+  dock already follows load.list_updated live; trip.released gets an in-app row too, since in-app
+  is always on. Logs: notifications.event.dispatched and notifications.notification.{sent,
+  retrying, failed, suppressed, read}.
+- 2026-10-04 ROO-26 (second part): Resend email, receipts through webhooks (AC-NTF-08), quiet rules
+  and burst collapse (AC-NTF-10), presence for "no push while watching" (AC-NTF-12), per-channel
+  rendering and the preview endpoint (AC-NTF-14), preference endpoints, D12's Notifications sheet
+  and 02's Settings dialog. depends-on gains webhooks (receipt event names) and realtime
+  (presence). The slip is measured against the planned arrival; bursts are the 10 minutes after
+  the last notice.
+- 2026-10-04 SMS behind a port (AC-NTF-16, 17): the `SmsProvider` port in core/providers with four
+  adapters (demo-inbox, notifylk, textlk, twilio), picked by SMS_PROVIDER. Sign-in codes and
+  invitation links now take the same gateway as notifications instead of only the demo inbox, so a
+  driver can receive a code from a real number. demo-inbox stays the default because a Sri Lankan
+  sender id needs 3-7 business days of operator approval. Number handling moved into
+  core/phone/sri-lanka-phone.ts, which identity's maskPhone now re-exports.

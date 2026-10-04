@@ -188,6 +188,13 @@ export function ResequenceDialog({ trip, link, deferLink, version, revision, onC
           <p className="type-body-small m-0 text-muted-foreground">
             The driver of {trip.vehicleCode} gets the new order on the phone, and the stores on this trip see their new times.
           </p>
+          {/* The projection could not be checked: say so, rather than leaving the times blank. */}
+          {preview.isError ? (
+            <ErrorState
+              error={preview.error}
+              onRetry={() => runPreview({ id: trip.id, data: { stopIds: order } })}
+            />
+          ) : null}
           {resequence.isError ? <ErrorState error={resequence.error} /> : null}
         </DialogBody>
         <RevisionReasonBar revision={revision} value={reason} onChange={setReason} />

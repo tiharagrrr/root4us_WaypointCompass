@@ -368,9 +368,10 @@ describeWithDb('ordering cutoff job, day summary and lifecycle', () => {
       `Q1${w.sfx}`,
     );
     const deferred = await seed(otherFresh, 'DEFERRED', SATURDAY, `Q2${w.sfx}`);
-    // None of these is in Saturday's PLG queue.
+    // Of these, only the open one is in Saturday's PLG queue.
     await seed(kadawatha, 'DEFERRED', '2026-10-05', `Q3${w.sfx}`);
-    await seed(kadawatha, 'SUBMITTED', SATURDAY, `Q4${w.sfx}`);
+    // Open orders are drafted too (planning's StoreChangeListener takes back a changed one).
+    const open = await seed(kadawatha, 'SUBMITTED', SATURDAY, `Q4${w.sfx}`);
     await seed(kadawatha, 'PLANNED', SATURDAY, `Q5${w.sfx}`);
     await seed(kadawatha, 'CANCELLED', SATURDAY, `Q6${w.sfx}`);
     await seed(kandy, 'CONFIRMED', SATURDAY, `Q7${w.sfx}`);
@@ -382,7 +383,11 @@ describeWithDb('ordering cutoff job, day summary and lifecycle', () => {
       txHost.withTransaction(() => queries.queueFor(w.depot.plg, SATURDAY)),
     );
 
-    expect(queue.map((o) => o.id)).toEqual([confirmed.id, deferred.id]);
+    expect(queue.map((o) => o.id)).toEqual([
+      confirmed.id,
+      deferred.id,
+      open.id,
+    ]);
   });
 
   it('AC-ORD-39 a deferred order is planned or deferred again without returning to CONFIRMED', async () => {

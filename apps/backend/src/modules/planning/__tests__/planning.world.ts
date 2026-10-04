@@ -61,7 +61,7 @@ export interface OrderSpec {
   tempClass?: 'CHILLED' | 'AMBIENT';
   volumeM3: number;
   weightKg?: number;
-  status?: 'CONFIRMED' | 'DEFERRED';
+  status?: 'SUBMITTED' | 'CONFIRMED' | 'DEFERRED';
   deferredCount?: number;
 }
 

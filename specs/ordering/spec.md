@@ -602,7 +602,8 @@ AC-ORD-38  A deferred order joins the queue for its new date
   Given Peliyagoda orders with deliveryDate 2026-10-03: one CONFIRMED, one DEFERRED from an earlier plan, one SUBMITTED, one PLANNED and one CANCELLED
     And a DEFERRED Peliyagoda order with deliveryDate 2026-10-05 and a CONFIRMED Kandy order with deliveryDate 2026-10-03
   When planning asks OrderQueries.queueFor(PLG, 2026-10-03)
-  Then it gets the CONFIRMED and the DEFERRED order for that date, sorted by orderNo, and no other
+  Then it gets the SUBMITTED, the CONFIRMED and the DEFERRED order for that date, sorted by orderNo,
+      and no other (open orders are drafted too; a store's change takes one back off the draft)
     And nothing ran at the cutoff to move the DEFERRED order: it is still DEFERRED
 
 AC-ORD-39  A deferred order is planned or deferred again without returning to CONFIRMED
@@ -753,3 +754,20 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   `ordering.order.backordered` audit action and `order.backordered` event, because only ordering
   may write `orders`: a dispatcher's REMOVE at the dock owes the store the goods that stayed
   behind. Harini owns them from here; covered by AC-LOD-12, with no ordering test of its own yet
+- 2026-10-04 M8 Order history built at `/store/history`: past orders with Reorder (AC-ORD-07's screen side) and the order timeline; departures logged
+- 2026-10-04 M1 lets the store pick the delivery day (`/store/orders/new?date=`) and start that day's dry or
+  chilled order with `POST /orders` (AC-ORD-09's screen side); before this the screen only showed drafts
+  that already existed. The picker offers tomorrow to 14 days ahead; that horizon is the screen's, the API
+  still accepts any date (see the open question on past dates). Chilled is offered to Fresh outlets only,
+  and a Style outlet is told its delivery weekday. `STORE_OPEN_ORDERS` reads up to 50 orders
+- 2026-10-04 04 Past orders built (ROO-35): one past run a day at a time, read only, with the result
+  tabs' counts read from one-row pages, AC-ORD-31's search, the timeline from each order's link and a
+  CSV export of the day. Orders the day deferred carry the later run's delivery date, so the day's
+  list does not hold them: they are counted and listed from `GET /deferrals?filter[fromDate]=`. 03 and
+  04 switch between each other in the header. What the frame draws and the order list does not carry
+  (the vehicle, on time) is in docs/departures.md
+- 2026-10-04 Planning drafts from open orders too: `queueFor` includes SUBMITTED orders for the date
+  (AC-ORD-38 updated), so a dispatcher can draft a future day before its cutoff. A draft never moves
+  an order's status, so an open order on a draft trip stays SUBMITTED; a store's later change (lines, delivery date, cancel) takes it off the draft (planning's
+  StoreChangeListener). Publishing confirms any order still open before planning or deferring it
+  (`confirmIfOpen`).

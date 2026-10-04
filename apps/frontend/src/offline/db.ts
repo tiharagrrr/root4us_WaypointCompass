@@ -120,6 +120,19 @@ export interface AttachmentRow {
   attachmentId: string | null
 }
 
+/** A GPS fix waiting to go to POST /telematics/pings (ROO-37), oldest first. */
+export interface PingRow {
+  seq?: number
+  tripId: string
+  lat: number
+  lng: number
+  accuracyM: number | null
+  speedKmh: number | null
+  heading: number | null
+  /** Server-aligned time of the fix, like every other queued record. */
+  recordedAt: string
+}
+
 /** Single-row bookkeeping, keyed by name. */
 export interface MetaRow {
   key: string
@@ -135,6 +148,7 @@ export class CompassDb extends Dexie {
   outbox!: EntityTable<OutboxRow, 'deviceSeq'>
   attachments!: EntityTable<AttachmentRow, 'clientUuid'>
   meta!: EntityTable<MetaRow, 'key'>
+  pings!: EntityTable<PingRow, 'seq'>
 
   constructor(name = 'compass') {
     super(name)
@@ -148,6 +162,8 @@ export class CompassDb extends Dexie {
       attachments: 'clientUuid, status',
       meta: 'key',
     })
+    // Version 2 only adds the GPS queue; every version-1 table stays as it is.
+    this.version(2).stores({ pings: '++seq, tripId' })
   }
 }
 

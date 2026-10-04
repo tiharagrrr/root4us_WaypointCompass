@@ -91,9 +91,10 @@ limit 10 by default, 100 at most). Minutes of the day go out as integers beside 
 | --- | --- | --- | --- |
 | GET | `/depots`, `/depots/{id}` | `masterData:read` | A4 |
 | PATCH | `/depots/{id}` | `masterData:manage` | Docks, chilled docks, cutoff override |
-| GET, POST, PATCH, DELETE | `/depots/{id}/waves` | `masterData:manage` | Run 1 and Run 2 departure bands |
+| GET, POST | `/depots/{id}/waves` | `masterData:manage` | Run 1 and Run 2 departure bands; POST answers 201 with Location |
+| GET, PATCH, DELETE | `/depots/{id}/waves/{waveId}` | `masterData:manage` | DELETE answers 204; 409 while trips sit in the wave |
 | GET | `/districts` | `masterData:read` | Travel figures, read-only from the dataset |
-| GET | `/outlets` | `masterData:read` | A3: filter by brand, district, depot, dock type, parking, has manager |
+| GET | `/outlets` | `masterData:read` | A3: filter by brand, district, depot, dock type, parking, `hasManager`. Every outlet carries `manager` ({ id, name }) or null |
 | GET, PATCH | `/outlets/{id}` | `masterData:read`, `masterData:manage` | Windows, dock, parking, receiving contact, access notes; audited |
 | GET | `/items` | `catalog:read` | M9 and the M1a picker (`GET /items?filter[tempClass]=`): filter by brand, class, category; search |
 | POST, PATCH | `/items`, `/items/{id}` | `catalog:manage` | Admin only; POST answers 201 with Location |
@@ -285,9 +286,9 @@ Checklist (tick in the same PR as the passing test):
 - [x] AC-MD-02 Outlet edits are audited and announced
 - [x] AC-MD-03 Outlet times carry minutes and labels
 - [x] AC-MD-04 A3 outlet list filters and pages
-- [ ] AC-MD-05 Outlets without a manager are flagged
+- [x] AC-MD-05 Outlets without a manager are flagged
 - [x] AC-MD-06 Depot settings are audited (A4)
-- [ ] AC-MD-07 Depot waves have unique labels
+- [x] AC-MD-07 Depot waves have unique labels
 - [x] AC-MD-08 Item picker filters the catalog (M1a)
 - [ ] AC-MD-09 Only admins change the catalog
 - [x] AC-MD-10 Operating days and the fallback
@@ -326,24 +327,37 @@ each criterion in the checklist above.
   `{ v: 1, id }`; depot edits audit `master_data.depot.updated` and emit `depot.updated`. Log lines
   carry the outlet or depot id and the names of the fields that changed, never a contact's name or
   phone number.
-- **Still to come.** The catalog's writes (AC-MD-09), depot waves (AC-MD-07), the has-manager filter
-  (AC-MD-05) and the CSV seed (AC-MD-14) are not built yet, so `/depots/{id}/waves`,
-  `POST /items` and `PATCH /items/{id}` are not mounted.
+- **Still to come.** The catalog's writes (AC-MD-09) and the CSV seed (AC-MD-14) are not built yet,
+  so `POST /items` and `PATCH /items/{id}` are not mounted.
+
+## Decided while building (ROO-81)
+- **The manager comes from a table read, not from identity's module.** `OutletQueries` reads
+  `users` for the active store manager of each outlet on the page and puts it on the row as
+  `manager`, and `filter[hasManager]` is an `exists (...)` subquery on the same table. Reading
+  another module's table is allowed (architecture rule 2 is about writes), so `depends-on` stays
+  `[core, audit]` and no endpoint has to be called twice. Deactivated managers do not count: a
+  banned user cannot place an order, so the outlet still needs one.
+- **Waves.** `GET` needs `masterData:manage` as Step 4's table says, so A4 asks for them only when
+  the depot carries its `edit` link and a dispatcher never sees a half-loaded panel. A wave trips are
+  planned in is not deleted: `DELETE` answers 409 `CONFLICT_STATE` and names the way out (move the
+  trips first), which keeps `trips.waveId` pointing at a row that exists. Each change audits
+  `master_data.depot_wave.created|updated|removed` and emits one `depot.waves_updated` for the
+  depot, so a screen refreshes the depot's waves rather than one row of them.
 
 ## Open questions
 - Item changes have no audit action or event yet, because the catalog's writes are not built. Is the
   item entity type "catalog", as the module tab's `catalog.updated` suggests? (Harini)
-- The has-manager filter needs identity's users, but master-data may import only core and audit
-  (Step 2). Where does the flag come from, and what is the filter called (this spec uses
-  `hasManager`)? `ResourceSpec` filters are column-based, so it needs a home of its own either way.
-  (Harini, Nimesha)
-- Waves need `masterData:manage` even for GET, so dispatchers can't read them there. Intended? May a
-  wave that trips reference be deleted? (Harini)
+- Whether a wave's brands may leave a brand with no wave at the depot, and what planning should do
+  with a trip whose wave was edited to a band the trip no longer departs in. (Harini, Tihara)
 - Limits: window minutes and `cutoffMin` are checked as 0 to 1439, `chilledDocks` may not exceed
-  `dockCount`, `/items` pages with a maximum of 200 and `q` searches an item's name and SKU. Still
-  open: `departFromMin` before `departToMin`, when the waves land. (Harini)
+  `dockCount`, `/items` pages with a maximum of 200 and `q` searches an item's name and SKU.
+  `departToMin` must be at or after `departFromMin` (the database check and a 400 on `departToMin`).
 
 ## Changelog
+- 2026-10-04 ROO-81: AC-MD-05 and AC-MD-07 pass. `filter[hasManager]` and the `manager` field on
+  every outlet, and the run waves (`GET, POST /depots/{id}/waves`,
+  `GET, PATCH, DELETE /depots/{id}/waves/{waveId}`). A3 Outlets and A4 Depots are built at
+  `/admin/outlets` and `/admin/depots`; both still need `/fidelity` against their frames
 - 2026-10-03 AC-MD-13: `effectiveWindow` narrows by the mall window only at a MALL_DOCK outlet,
   matching the engine (`packages/engine/src/plan/window.ts`) and `specs/engine/rules.md`; before,
   mall times on any other outlet narrowed the window the order showed
@@ -353,3 +367,4 @@ each criterion in the checklist above.
   ordering. AC-MD-01 to 04, 06, 08 and 10 to 13 pass
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `depots.kind`, `districts.province`, allowance and weekday checks (merged from the Supabase draft)
+- 2026-10-04 M9 Item catalog built at `/store/catalog` on `GET /items` (the outlet's brand, active items): search, category and storage filters, paging, and Add onto the open order of the item's class; departures logged. The store shell now names the outlet over the nav and in every page eyebrow

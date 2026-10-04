@@ -100,3 +100,210 @@ export const VehicleStatusSetStatusResponse = zod.object({
 })
 })
 
+/**
+ * @summary List vehicles
+ */
+export const vehiclesListQueryLimitMax = 1000;
+
+export const vehiclesListQueryOffsetMin = 0;
+
+export const vehiclesListQueryCursorMax = 512;
+
+export const vehiclesListQuerySortMax = 200;
+
+export const vehiclesListQueryQMax = 100;
+
+export const vehiclesListQueryIncludeMax = 200;
+
+
+
+export const VehiclesListQueryParams = zod.object({
+  "limit": zod.number().min(1).max(vehiclesListQueryLimitMax).optional().describe('Page size'),
+  "offset": zod.number().min(vehiclesListQueryOffsetMin).optional().describe('Tables: rows to skip'),
+  "cursor": zod.string().max(vehiclesListQueryCursorMax).optional().describe('Feeds: meta.page.nextCursor of the previous page'),
+  "sort": zod.string().max(vehiclesListQuerySortMax).optional().describe('Comma-separated fields, "-" for descending'),
+  "q": zod.string().max(vehiclesListQueryQMax).optional().describe('Search text'),
+  "include": zod.string().max(vehiclesListQueryIncludeMax).optional().describe('Comma-separated related resources'),
+  "filter[depotId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.'),
+  "filter[status]": zod.string().optional().describe('one of ACTIVE, WORKSHOP, BREAKDOWN; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.'),
+  "filter[type]": zod.string().optional().describe('one of TRUCK, VAN; comma-separated for any of. Also filter[type][op] with op in eq, ne, null.'),
+  "filter[temp]": zod.string().optional().describe('one of AMBIENT, REEFER; comma-separated for any of. Also filter[temp][op] with op in eq, ne, null.')
+})
+
+export const VehiclesListResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "registrationNo": zod.string(),
+  "type": zod.enum(['TRUCK', 'VAN']),
+  "temp": zod.enum(['AMBIENT', 'REEFER']),
+  "weightCapKg": zod.number(),
+  "volumeCapM3": zod.number(),
+  "fuelType": zod.string(),
+  "kmPerL": zod.number(),
+  "weeklyFuelQuotaL": zod.number(),
+  "depotId": zod.string(),
+  "status": zod.enum(['ACTIVE', 'WORKSHOP', 'BREAKDOWN']),
+  "statusReason": zod.string().nullable(),
+  "statusChangedAt": zod.string().nullable(),
+  "driver": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The driver linked to this vehicle; null when none is'),
+  "version": zod.number().describe('Send back as If-Match on a write'),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional(),
+  "page": zod.object({
+  "limit": zod.number(),
+  "offset": zod.number(),
+  "total": zod.number()
+})
+}),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})
+
+/**
+ * @summary One vehicle
+ */
+export const VehiclesGetParams = zod.object({
+  "id": zod.string()
+})
+
+export const VehiclesGetResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "registrationNo": zod.string(),
+  "type": zod.enum(['TRUCK', 'VAN']),
+  "temp": zod.enum(['AMBIENT', 'REEFER']),
+  "weightCapKg": zod.number(),
+  "volumeCapM3": zod.number(),
+  "fuelType": zod.string(),
+  "kmPerL": zod.number(),
+  "weeklyFuelQuotaL": zod.number(),
+  "depotId": zod.string(),
+  "status": zod.enum(['ACTIVE', 'WORKSHOP', 'BREAKDOWN']),
+  "statusReason": zod.string().nullable(),
+  "statusChangedAt": zod.string().nullable(),
+  "driver": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The driver linked to this vehicle; null when none is'),
+  "version": zod.number().describe('Send back as If-Match on a write'),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Edit a vehicle
+ */
+export const VehiclesUpdateParams = zod.object({
+  "id": zod.string()
+})
+
+export const VehiclesUpdateHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded')
+})
+
+export const vehiclesUpdateBodyCodeMax = 20;
+
+export const vehiclesUpdateBodyRegistrationNoMax = 20;
+
+export const vehiclesUpdateBodyWeightCapKgMax = 100000;
+
+export const vehiclesUpdateBodyVolumeCapM3Max = 1000;
+
+export const vehiclesUpdateBodyFuelTypeMax = 40;
+
+export const vehiclesUpdateBodyKmPerLMax = 100;
+
+export const vehiclesUpdateBodyWeeklyFuelQuotaLMin = 0;
+export const vehiclesUpdateBodyWeeklyFuelQuotaLMax = 100000;
+
+
+
+export const VehiclesUpdateBody = zod.object({
+  "code": zod.string().min(1).max(vehiclesUpdateBodyCodeMax).optional(),
+  "registrationNo": zod.string().min(1).max(vehiclesUpdateBodyRegistrationNoMax).optional(),
+  "weightCapKg": zod.number().min(1).max(vehiclesUpdateBodyWeightCapKgMax).optional(),
+  "volumeCapM3": zod.number().min(1).max(vehiclesUpdateBodyVolumeCapM3Max).optional(),
+  "fuelType": zod.string().min(1).max(vehiclesUpdateBodyFuelTypeMax).optional(),
+  "kmPerL": zod.number().min(1).max(vehiclesUpdateBodyKmPerLMax).optional(),
+  "weeklyFuelQuotaL": zod.number().min(vehiclesUpdateBodyWeeklyFuelQuotaLMin).max(vehiclesUpdateBodyWeeklyFuelQuotaLMax).optional()
+})
+
+export const VehiclesUpdateResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "registrationNo": zod.string(),
+  "type": zod.enum(['TRUCK', 'VAN']),
+  "temp": zod.enum(['AMBIENT', 'REEFER']),
+  "weightCapKg": zod.number(),
+  "volumeCapM3": zod.number(),
+  "fuelType": zod.string(),
+  "kmPerL": zod.number(),
+  "weeklyFuelQuotaL": zod.number(),
+  "depotId": zod.string(),
+  "status": zod.enum(['ACTIVE', 'WORKSHOP', 'BREAKDOWN']),
+  "statusReason": zod.string().nullable(),
+  "statusChangedAt": zod.string().nullable(),
+  "driver": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The driver linked to this vehicle; null when none is'),
+  "version": zod.number().describe('Send back as If-Match on a write'),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+

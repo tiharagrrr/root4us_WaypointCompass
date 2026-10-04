@@ -32,7 +32,12 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('Order queue'),
             lazy: async () => ({ Component: (await import('@/features/ordering/order-queue-page')).OrderQueuePage }),
           },
-          { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
+          {
+            // 04 (ROO-35).
+            path: 'past-orders',
+            handle: handle('Past orders'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/past-orders-page')).PastOrdersPage }),
+          },
           {
             path: 'plan',
             handle: handle('Plan'),
@@ -88,11 +93,28 @@ export const dispatchRoutes: RouteObject[] = [
           },
           { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
           {
+            // Store issues: no frame; the alerts panel's "Open the issue" lands on a row here.
+            path: 'issues',
+            handle: handle('Issues'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/dispatch-issues-page')).DispatchIssuesPage }),
+          },
+          {
+            path: 'issues/:id',
+            handle: handle('Issues'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/dispatch-issues-page')).DispatchIssuesPage }),
+          },
+          {
             // 23 (ROO-43).
             path: 'deferrals',
             handle: handle('Deferrals'),
             loader: prefetchLoader((qc) => qc.prefetchQuery(getDeferralReasonsListQueryOptions())),
             lazy: async () => ({ Component: (await import('@/features/deferrals/dispatch-deferrals-page')).DispatchDeferralsPage }),
+          },
+          {
+            // No frame: the run panel A6 → Demo shows, on the dispatcher's own screen (ROO-55).
+            path: 'simulation',
+            handle: handle('Simulation'),
+            lazy: async () => ({ Component: (await import('@/features/simulation/simulation-page')).SimulationPage }),
           },
         ],
       },

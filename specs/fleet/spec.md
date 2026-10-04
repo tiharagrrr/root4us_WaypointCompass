@@ -48,8 +48,8 @@ Paths omit `/api/v1`. Vehicles use offset pages (default limit 10, max 100).
 
 | Method | Path | Permission | Notes |
 | --- | --- | --- | --- |
-| GET | `/vehicles`, `/vehicles/{id}` | `masterData:read` | A5 |
-| PATCH | `/vehicles/{id}` | `masterData:manage` | A5; JSON merge patch; `If-Match` |
+| GET | `/vehicles`, `/vehicles/{id}` | `masterData:read` | A5; offset pages, filter by depot, status, type and temp, search code, registration or id. Each row carries `driver` ({ id, name }) for a caller with `plan:read`, null otherwise |
+| PATCH | `/vehicles/{id}` | `masterData:manage` | A5; `If-Match`. Code, registration, capacities, fuel type, km per litre and the weekly quota; never the status or the home depot |
 | PUT | `/vehicles/{id}/status` | `masterData:manage` or `plan:revise` | ACTIVE, WORKSHOP or BREAKDOWN with a reason; `If-Match` |
 | GET | `/vehicles/{id}/fuel?week=` | `plan:read` | Quota, planned, actual, left (A5 shows this week's fuel against quota). `week` is `YYYY-Www` (e.g. `2026-W40`), the current business week by default; built |
 
@@ -178,8 +178,8 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-FLT-03 A revision reverses planned fuel
 - [ ] AC-FLT-04 Closing the day records actual fuel
 - [x] AC-FLT-05 A breakdown takes a vehicle out
-- [ ] AC-FLT-06 Who may change a status
-- [ ] AC-FLT-07 Only admins edit vehicle details
+- [x] AC-FLT-06 Who may change a status
+- [x] AC-FLT-07 Only admins edit vehicle details
 - [x] AC-FLT-08 Only planners read fuel
 - [ ] AC-FLT-09 A low quota raises an event
 
@@ -209,11 +209,25 @@ Checklist (tick in the PR that adds the passing test):
   `weekOf(vehicleId, week)`. `VehicleQueries` (exported): `get(id, actor)` with `VehicleScope`, and
   `forDepot(depotId)` for the engine. ISO weeks come from `isoWeekOf(date)` in `packages/shared`.
 - AC-FLT-02, 08: the format of the `week` query parameter. Decides: Tihara.
-- AC-FLT-05, 07: does every status change emit `vehicle.status_changed`, or only BREAKDOWN (the doc
-  says "a breakdown emits")? Which audit action and outbox event does a vehicle PATCH write, and which
-  fields may it change? Decides: Tihara.
+- AC-FLT-05: every status change emits `vehicle.status_changed`, not only BREAKDOWN, so planning and
+  alerts hear a vehicle coming back as well as going out (ROO-56 clears its alert on it).
+- AC-FLT-07 (ROO-81): a vehicle PATCH audits `fleet.vehicle.updated` and emits `vehicle.updated`
+  `{ v: 1, id }` routed to the depot, through `SimpleCrudCommands`. It may change `code`,
+  `registrationNo`, `weightCapKg`, `volumeCapM3`, `fuelType`, `kmPerL` and `weeklyFuelQuotaL`. It may
+  not change `status` (that needs a reason and tells planning to repair) or `depotId`, because
+  `vehicles_home_uq` is the target of the trips' composite key, so moving a vehicle would strand its
+  trips. An unknown field is 400 `VALIDATION_FAILED` naming it.
+- **Who may read a vehicle (ROO-81).** `masterData:read` is every role's, so `VehicleScope` scopes
+  only a dispatcher, to their own depot (or every depot when they have none): AC-FLT-06 expects
+  Harini, Aniqa and Nimesha to read a vehicle and see no action links, and the Kandy dispatcher to
+  get 404. Who drives it is the narrower question: `driver` is filled only for a caller with
+  `plan:read`, so a store manager reading a vehicle learns no names.
 
 ## Changelog
+- 2026-10-04 ROO-81: AC-FLT-06 and AC-FLT-07 pass. `GET /vehicles`, `GET /vehicles/{id}` and
+  `PATCH /vehicles/{id}` with If-Match, each vehicle carrying its `driver` and the `edit`, `status`
+  and `fuel` links the caller may use. A5 Vehicles is built at `/admin/vehicles` with the status and
+  edit dialogs and this week's fuel against quota; it still needs `/fidelity` against its frame
 - 2026-10-04 AC-FLT-05 passes: `PUT /vehicles/{id}/status` (`VehicleStatusService`) with a reason and
   If-Match, for `masterData:manage` or `plan:revise` (the 403 and 404 cases of AC-FLT-06 are tested;
   its link on `GET /vehicles/{id}` waits for that endpoint), audit `fleet.vehicle.status_changed` and

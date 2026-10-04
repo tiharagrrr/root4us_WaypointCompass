@@ -25,6 +25,7 @@ export type { EnqueueResult } from './outbox'
 export { BACKOFF_SECONDS, BATCH_LIMIT, PausedError, SyncEngine, backoffMs, postSync, toWireEvent } from './sync-engine'
 export type { ItemStatus, SyncItemResult, SyncTransport } from './sync-engine'
 export { uuidv7 } from './ids'
+export { useSyncEngine } from './use-sync-engine'
 export {
   useCachedLoadFlags,
   useCachedLoadLines,

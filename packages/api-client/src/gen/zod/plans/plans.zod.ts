@@ -77,6 +77,10 @@ export const PlansTrackingResponse = zod.object({
   "date": zod.string(),
   "planId": zod.string().nullable(),
   "planStatus": zod.string().nullable(),
+  "depot": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number()
+}).nullable().describe('The depot on the map'),
   "totals": zod.object({
   "trips": zod.number(),
   "onRoad": zod.number().describe('Trips in progress'),
@@ -108,12 +112,25 @@ export const PlansTrackingResponse = zod.object({
   "plannedDepartAt": zod.string().nullable(),
   "loadWeightKg": zod.number(),
   "loadVolumeM3": zod.number(),
+  "position": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "heading": zod.number().nullable(),
+  "speedKmh": zod.number().nullable(),
+  "recordedAt": zod.string()
+}).nullable().describe('Latest position while on this trip; null before the first ping'),
+  "lastSignalAt": zod.string().nullable().describe('Last ping, stop event or start, for a trip on the road'),
+  "noSignalSince": zod.string().nullable().describe('Set once a trip on the road has been silent for 10 minutes: "No signal since 04:30"'),
   "stops": zod.array(zod.object({
   "stopId": zod.string(),
   "seq": zod.number().nullable(),
   "orderNo": zod.string(),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "at": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number()
+}).nullable().describe('The outlet on the map; null when it has no coordinates'),
   "status": zod.string(),
   "windowOpenMin": zod.number().describe('Window opens, minutes after midnight'),
   "windowCloseMin": zod.number().describe('Window closes, minutes after midnight'),
@@ -132,6 +149,45 @@ export const PlansTrackingResponse = zod.object({
   "templated": zod.boolean().optional(),
   "requires": zod.array(zod.string()).optional()
 })).describe('self, plan, endOfDay.')
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.
+ * @summary An order's ETA
+ */
+export const PlansOrderEtaParams = zod.object({
+  "id": zod.string()
+})
+
+export const PlansOrderEtaResponse = zod.object({
+  "data": zod.object({
+  "orderId": zod.string(),
+  "orderNo": zod.string(),
+  "stopId": zod.string().nullable().describe('The stop the order is on; null until it is planned'),
+  "tripStatus": zod.string().nullable(),
+  "stopStatus": zod.string().nullable(),
+  "plannedArrivalAt": zod.string().nullable(),
+  "etaAt": zod.string().nullable().describe('When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip'),
+  "spareMin": zod.number().nullable().describe('Minutes between the ETA and the window closing; negative is late'),
+  "standing": zod.union([zod.literal('DELIVERED'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('NEXT'),zod.literal('AT_RISK'),zod.literal('LATE'),zod.literal('PLANNED'),zod.literal(null)]).nullable(),
+  "completedAt": zod.string().nullable(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
 }),
   "meta": zod.object({
   "requestId": zod.string(),
@@ -311,6 +367,7 @@ export const PlansUnplannedParams = zod.object({
 export const PlansUnplannedResponse = zod.object({
   "data": zod.array(zod.object({
   "orderId": zod.string(),
+  "orderStatus": zod.string().describe('SUBMITTED: still open until the cutoff, so the store may change it, which takes it off the draft'),
   "orderNo": zod.string(),
   "outletId": zod.string(),
   "outletName": zod.string(),

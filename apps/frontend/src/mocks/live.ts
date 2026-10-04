@@ -16,8 +16,6 @@ export interface LiveEndpoint {
 export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // BetterAuth: sign-in, sessions, OTP and PIN. Never mocked.
   { method: "all", path: "/api/auth/*" },
-  // Health is outside /api/v1 and has no mock.
-  { method: "all", path: "/api/health" },
   // Identity, settings, clock and deferral reasons (ROO-27).
   { method: "all", path: "/api/v1" },
   { method: "all", path: "/api/v1/me" },
@@ -32,14 +30,21 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/settings/*" },
   { method: "all", path: "/api/v1/clock" },
   { method: "all", path: "/api/v1/demo/*" },
+  // The live event stream every shell opens (ROO-25).
+  { method: "get", path: "/api/v1/streams/me" },
   { method: "all", path: "/api/v1/deferral-reasons" },
   { method: "all", path: "/api/v1/deferral-reasons/*" },
   // Master data reads and the A3/A4 edits (ROO-19).
   { method: "all", path: "/api/v1/depots" },
   { method: "all", path: "/api/v1/depots/:id" },
+  // A4's run waves (ROO-81).
+  { method: "all", path: "/api/v1/depots/:id/waves" },
+  { method: "all", path: "/api/v1/depots/:id/waves/*" },
   // Ordering's depot day and loading's boards (planning's day plan is below).
   { method: "all", path: "/api/v1/depots/:id/days/*" },
   { method: "all", path: "/api/v1/depots/:id/loading/*" },
+  // Planning's live day for 01, 19 and 19a (ROO-46).
+  { method: "get", path: "/api/v1/depots/:id/tracking" },
   { method: "all", path: "/api/v1/districts" },
   { method: "all", path: "/api/v1/outlets" },
   { method: "all", path: "/api/v1/outlets/*" },
@@ -55,9 +60,16 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/orders/*" },
   { method: "all", path: "/api/v1/order-templates" },
   { method: "all", path: "/api/v1/order-templates/*" },
+  // The simulator and its AI scenario director (ROO-55); 404 unless SIMULATION_ENABLED.
+  { method: "all", path: "/api/v1/simulations" },
+  { method: "all", path: "/api/v1/simulations/*" },
+  // Sync: the offline outbox's far end for drivers and loaders (ROO-44).
+  { method: "all", path: "/api/v1/sync" },
   // Execution: the driver's trips, the offline bundle, the field events and
   // proof of delivery (ROO-31). /api/v1/me/* above already covers /me/trips.
   { method: "all", path: "/api/v1/trips/*" },
+  // The driver phone's GPS fixes (ROO-37).
+  { method: "post", path: "/api/v1/telematics/pings" },
   { method: "all", path: "/api/v1/stops/*" },
   { method: "all", path: "/api/v1/attachments/*" },
   // Loading: the dock's boards, the load list, checks, flags, the release
@@ -72,15 +84,24 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // may show a fix whose POST is still mocked.
   { method: "all", path: "/api/v1/alerts" },
   { method: "all", path: "/api/v1/alerts/*" },
+  // Receipt and issues: the order's receipt (/orders/* above already covers it), the issue list,
+  // detail, thread, resolve, reopen and photos (ROO-48).
+  { method: "all", path: "/api/v1/issues" },
+  { method: "all", path: "/api/v1/issues/*" },
+  // Audit: the order timeline (ROO-23).
+  { method: "get", path: "/api/v1/timelines/*" },
   // Planning: plans, the wizard, edits, decisions, publish and engine runs
   // (ROO-29), and the deferral reads and responses for 23, M4 and M7.
   { method: "all", path: "/api/v1/depots/:id/plans/*" },
   { method: "all", path: "/api/v1/plans/*" },
   { method: "all", path: "/api/v1/deferrals" },
   { method: "all", path: "/api/v1/deferrals/*" },
-  // Fleet: a vehicle's fuel for a week (ROO-42). The rest of /vehicles is
-  // still mocked.
+  // Fleet: a vehicle's fuel for a week (ROO-42), its status (ROO-56) and A5's
+  // list, read and edit (ROO-81).
   { method: "get", path: "/api/v1/vehicles/:id/fuel" },
+  { method: "put", path: "/api/v1/vehicles/:id/status" },
+  { method: "all", path: "/api/v1/vehicles" },
+  { method: "all", path: "/api/v1/vehicles/:id" },
 ];
 
 /** Pass-through handlers; they go before the mocks so they win. */

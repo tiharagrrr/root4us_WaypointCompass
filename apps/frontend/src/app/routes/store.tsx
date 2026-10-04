@@ -5,7 +5,6 @@ import { STORE_OPEN_ORDERS } from '@/features/ordering/open-orders-query'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
 import type { RouteHandle } from '../route-handle'
-import { ScreenPlaceholder } from '../screen-placeholder'
 
 const handle = (title: string, eyebrow?: string): RouteHandle => (eyebrow ? { title, eyebrow } : { title })
 
@@ -35,14 +34,21 @@ export const storeRoutes: RouteObject[] = [
             lazy: async () => ({ Component: (await import('@/features/ordering/orders-page')).OrdersPage }),
           },
           {
+            // M5 opens over the Receipts list, and so does M6 (from M5, or straight from a link).
             path: 'orders/:id/receipt',
-            handle: handle('Confirm receipt'),
-            element: <ScreenPlaceholder code="M5" name="Confirm receipt" node="185:11384" />,
+            handle: handle('Receipts'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
           },
           {
             path: 'orders/:id/issue',
-            handle: handle('Report issue'),
-            element: <ScreenPlaceholder code="M6" name="Report issue" node="185:11543" />,
+            handle: handle('Receipts'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
+          },
+          {
+            // An issue and its thread open over the same list.
+            path: 'issues/:id',
+            handle: handle('Receipts'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
           },
           {
             path: 'deferrals',
@@ -55,10 +61,22 @@ export const storeRoutes: RouteObject[] = [
             handle: handle('Deferrals'),
             lazy: async () => ({ Component: (await import('@/features/deferrals/deferrals-page')).DeferralsPage }),
           },
-          // M1's sidebar has a Receipts entry; the frames only draw the per-order screen (M5).
-          { path: 'receipts', handle: handle('Receipts'), element: <ScreenPlaceholder code="M5" name="Receipts" node="185:11384" /> },
-          { path: 'history', handle: handle('Order history'), element: <ScreenPlaceholder code="M8" name="Order history" node="185:11842" /> },
-          { path: 'catalog', handle: handle('Item catalog'), element: <ScreenPlaceholder code="M9" name="Item catalog" node="238:825" /> },
+          // M1's sidebar has a Receipts entry; the frames only draw the per-order dialogs (M5, M6).
+          {
+            path: 'receipts',
+            handle: handle('Receipts'),
+            lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
+          },
+          {
+            path: 'history',
+            handle: handle('Order history'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/order-history-page')).OrderHistoryPage }),
+          },
+          {
+            path: 'catalog',
+            handle: handle('Item catalog'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/item-catalog-page')).ItemCatalogPage }),
+          },
         ],
       },
     ],

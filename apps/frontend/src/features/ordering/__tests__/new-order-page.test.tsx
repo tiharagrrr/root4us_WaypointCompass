@@ -160,4 +160,73 @@ describe('M1a Add item', () => {
 
     expect(await within(dialog).findByText('No items match “lentils”')).toBeInTheDocument()
   })
+  describe('ordering ahead', () => {
+    const CREATE = { create: { href: '/api/v1/orders', method: 'POST', title: 'New order', requires: ['Idempotency-Key'] } }
+    const ME = { id: 'u-1', name: 'Nimesha Periyapperuma', role: 'store_manager', depotId: null, outletId: 'OUT014', status: 'ACTIVE' }
+    const fresh = {
+      'GET /api/v1/me': () => envelope(ME),
+      'GET /api/v1/outlets/OUT014': () => envelope({ id: 'OUT014', name: 'Fresh Kadawatha', brand: 'FRESH', styleDeliveryDow: null }),
+      'GET /api/v1/order-templates': () => page([]),
+    }
+
+    it('a day with no order offers to start the dry and the chilled one', async () => {
+      stubApi({ ...fresh, 'GET /api/v1/orders': () => page([], CREATE) })
+      renderScreen(<NewOrderPage />, '/store/orders/new?date=2026-10-08')
+
+      expect(await screen.findByText('No order for Thu 8 Oct yet')).toBeInTheDocument()
+      expect(screen.getByLabelText('Delivery day')).toHaveValue('2026-10-08')
+      expect(await screen.findByRole('button', { name: 'Start dry order' })).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: 'Start chilled order' })).toBeInTheDocument()
+    })
+
+    it('AC-ORD-09 Start posts a draft for the picked day and class, then opens it', async () => {
+      const made: unknown[] = []
+      const draft = order({ id: 'ord-new', orderNo: 'WF-0300', requestedDate: '2026-10-08', deliveryDate: '2026-10-08' })
+      const { calls } = stubApi({
+        ...fresh,
+        'GET /api/v1/orders': () => page(made, CREATE),
+        'POST /api/v1/orders': () => {
+          made.push(draft)
+          return envelope(draft)
+        },
+        'GET /api/v1/orders/ord-new/lines': () => linesOf('ord-new', []),
+      })
+      renderScreen(<NewOrderPage />, '/store/orders/new?date=2026-10-08')
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Start dry order' }))
+
+      expect(await screen.findByRole('button', { name: /Dry order/, pressed: true })).toBeInTheDocument()
+      const post = calls.find((c) => c.method === 'POST')
+      expect(post?.body).toEqual({ tempClass: 'AMBIENT', requestedDate: '2026-10-08' })
+      expect(post?.headers['idempotency-key']).toMatch(/[0-9a-f-]{36}/)
+      // The dry order exists now, so only the chilled one is left to start.
+      expect(screen.queryByRole('button', { name: 'Start dry order' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Start chilled order' })).toBeInTheDocument()
+    })
+
+    it('picking another day shows that day’s orders', async () => {
+      const later = order({ id: 'ord-later', orderNo: 'WF-0310', requestedDate: '2026-10-09', deliveryDate: '2026-10-09' })
+      stubApi({
+        ...day({ orders: [order(), later] }),
+        'GET /api/v1/orders/ord-later/lines': () => linesOf('ord-later', []),
+      })
+      renderScreen(<NewOrderPage />, '/store/orders/new?date=2026-10-09')
+
+      expect(await screen.findByText('Orders · Fri 9 Oct')).toBeInTheDocument()
+      expect(screen.getAllByRole('button', { name: /Dry order/ })).toHaveLength(1)
+    })
+
+    it('a Style outlet starts only a dry order and is told its delivery weekday', async () => {
+      stubApi({
+        ...fresh,
+        'GET /api/v1/outlets/OUT014': () => envelope({ id: 'OUT014', name: 'Style Ja-Ela', brand: 'STYLE', styleDeliveryDow: 4 }),
+        'GET /api/v1/orders': () => page([], CREATE),
+      })
+      renderScreen(<NewOrderPage />, '/store/orders/new?date=2026-10-09')
+
+      expect(await screen.findByRole('button', { name: 'Start dry order' })).toBeInTheDocument()
+      expect(await screen.findByText('This outlet takes deliveries on Fridays.')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Start chilled order' })).not.toBeInTheDocument()
+    })
+  })
 })

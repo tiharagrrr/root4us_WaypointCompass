@@ -84,13 +84,19 @@ export function LoadListPage() {
     const flag = liveFlag(line.flags)
     return flag ? [{ flag, line }] : []
   })
-  const settled = lines.flatMap((line) => {
-    const flag = latestFlag(line.flags)
-    return flag && flag.status === 'RESOLVED' && flag.resolvedAt ? [{ flag, line }] : []
-  })
+  // Only a re-checked replacement says "Replacement checked": an undone or removed flag is not one,
+  // and the newest by time is the one just cleared, not the last line in the list.
+  const settled = lines
+    .flatMap((line) => {
+      const flag = latestFlag(line.flags)
+      return flag && flag.status === 'RESOLVED' && flag.decision === 'REPLACE' && flag.resolvedAt ? [{ flag, line }] : []
+    })
+    .sort((x, y) => Date.parse(x.flag.resolvedAt ?? '') - Date.parse(y.flag.resolvedAt ?? ''))
   const blocking = open[open.length - 1] ?? (cleared === settled[settled.length - 1]?.flag.id ? undefined : settled[settled.length - 1])
   const awaiting = open.filter(({ flag }) => flag.status === 'AWAITING_RECHECK' || flag.decision)
-  const blocked = (list?.releaseChecks ?? []).some((check) => !check.pass)
+  // The reefer's temperature is read on L4, where the loader types it, so "no reading yet" cannot
+  // keep Release trip greyed here: that would lock every reefer trip out of the screen that asks.
+  const blocked = (list?.releaseChecks ?? []).some((check) => !check.pass && check.id !== 'REEFER_TEMP')
 
   return (
     <div data-slot="load-list" className="flex min-h-0 flex-1 flex-col">

@@ -370,6 +370,32 @@ describe('L2 Loading list', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
+  it('AC-LOD-14 a reefer trip with every line settled can go on to L4, where the temperature is read', async () => {
+    const reefer = aLoadList({
+      releaseChecks: [
+        { id: 'LINES_RESOLVED', label: 'Every line checked, replaced or removed', pass: true, detail: '2 lines resolved' },
+        { id: 'NO_OPEN_FLAG', label: 'No flag waiting on anyone', pass: true, detail: 'No open flags' },
+        // Nobody has typed a reading yet: that happens on the next screen, so it must not lock this one.
+        { id: 'REEFER_TEMP', label: 'Reefer at or below 5.0 °C', pass: false, detail: 'Read the reefer temperature before you release.' },
+      ],
+    })
+    renderList(reefer)
+
+    expect(await screen.findByRole('button', { name: 'Release trip' })).toBeEnabled()
+  })
+
+  it('a check that is not the temperature still keeps Release trip greyed', async () => {
+    const stale = aLoadList({
+      releaseChecks: [
+        { id: 'LATEST_REVISION', label: 'The list matches the latest plan', pass: false, detail: 'The plan moved to revision 2' },
+        { id: 'REEFER_TEMP', label: 'Reefer at or below 5.0 °C', pass: false, detail: 'Read the reefer temperature before you release.' },
+      ],
+    })
+    renderList(stale)
+
+    expect(await screen.findByRole('button', { name: 'Release trip' })).toBeDisabled()
+  })
+
   it('gives the phone a way back to the runs board', async () => {
     renderList()
     expect(await screen.findByRole('link', { name: 'Back to runs' })).toHaveAttribute('href', '/dock')

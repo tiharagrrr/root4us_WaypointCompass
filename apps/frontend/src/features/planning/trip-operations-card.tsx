@@ -14,6 +14,7 @@ import { useState } from 'react'
 import { getLink } from '@/lib/links'
 import { Action } from '@/ui/action'
 import { Card, CardContent } from '@/ui/card'
+import { ErrorState } from '@/ui/states'
 import { ReassignDialog } from './reassign-dialog'
 import { ResequenceDialog } from './resequence-dialog'
 
@@ -55,6 +56,8 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
       <CardContent className="flex flex-col gap-2">
         <h3 className="type-card-title m-0 text-foreground">Change this trip</h3>
         <p className="type-body-small m-0 text-muted-foreground">Each change is a revision with a reason; the people it touches are told.</p>
+        {/* Without the plan's trips the dialogs have nothing to show: say why the buttons wait. */}
+        {trips.isError ? <ErrorState error={trips.error} onRetry={() => void trips.refetch()} /> : null}
         <div className="flex gap-2">
           <Action link={reassign} variant="default" disabled={!trip} onAction={() => setOpen('reassign')}>
             Reassign
@@ -74,6 +77,12 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
           version={summary.version}
           revision={plan.revision}
           because={summary.cantRunReason ? CANT_RUN[summary.cantRunReason] : null}
+          optionsError={vehicles.error ?? drivers.error ?? repairs.error ?? undefined}
+          onRetryOptions={() => {
+            void vehicles.refetch()
+            void drivers.refetch()
+            void repairs.refetch()
+          }}
           onClose={() => setOpen(null)}
           onDone={done}
         />

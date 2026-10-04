@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { _TrackingDayDtoLinks } from './_trackingDayDtoLinks.ts';
+import type { MapPointDto } from './mapPointDto.ts';
 import type { TrackingTotalsDto } from './trackingTotalsDto.ts';
 import type { TrackingTripDto } from './trackingTripDto.ts';
 
@@ -16,6 +17,11 @@ export interface TrackingDayDto {
   planId: string | null;
   /** @nullable */
   planStatus: string | null;
+  /**
+     * The depot on the map
+     * @nullable
+     */
+  depot: MapPointDto | null;
   totals: TrackingTotalsDto;
   trips: TrackingTripDto[];
   /** self, plan, endOfDay. */

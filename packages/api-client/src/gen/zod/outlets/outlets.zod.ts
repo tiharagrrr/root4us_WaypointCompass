@@ -36,7 +36,8 @@ export const OutletsListQueryParams = zod.object({
   "filter[districtId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[districtId][op] with op in eq, ne, contains, null.'),
   "filter[depotId]": zod.string().optional().describe('text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.'),
   "filter[dockType]": zod.string().optional().describe('one of REAR_DOCK, STREET, MALL_BAY; comma-separated for any of. Also filter[dockType][op] with op in eq, ne, null.'),
-  "filter[parkingConstraint]": zod.string().optional().describe('one of NORMAL, VAN_ONLY, MALL_DOCK; comma-separated for any of. Also filter[parkingConstraint][op] with op in eq, ne, null.')
+  "filter[parkingConstraint]": zod.string().optional().describe('one of NORMAL, VAN_ONLY, MALL_DOCK; comma-separated for any of. Also filter[parkingConstraint][op] with op in eq, ne, null.'),
+  "filter[hasManager]": zod.string().optional().describe('true or false; comma-separated for any of. Also filter[hasManager][op] with op in eq.')
 })
 
 export const OutletsListResponse = zod.object({
@@ -65,6 +66,10 @@ export const OutletsListResponse = zod.object({
   "accessNotes": zod.string().nullable().describe('D9: how to reach the dock'),
   "accessNotesUpdatedAt": zod.string().nullable(),
   "accessNotesUpdatedById": zod.string().nullable(),
+  "manager": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The store manager linked here; null means nobody is (A3)'),
   "_links": zod.record(zod.string(), zod.object({
   "href": zod.string(),
   "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
@@ -129,6 +134,10 @@ export const OutletsGetResponse = zod.object({
   "accessNotes": zod.string().nullable().describe('D9: how to reach the dock'),
   "accessNotesUpdatedAt": zod.string().nullable(),
   "accessNotesUpdatedById": zod.string().nullable(),
+  "manager": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The store manager linked here; null means nobody is (A3)'),
   "_links": zod.record(zod.string(), zod.object({
   "href": zod.string(),
   "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
@@ -213,6 +222,10 @@ export const OutletsUpdateResponse = zod.object({
   "accessNotes": zod.string().nullable().describe('D9: how to reach the dock'),
   "accessNotesUpdatedAt": zod.string().nullable(),
   "accessNotesUpdatedById": zod.string().nullable(),
+  "manager": zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}).nullable().describe('The store manager linked here; null means nobody is (A3)'),
   "_links": zod.record(zod.string(), zod.object({
   "href": zod.string(),
   "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),

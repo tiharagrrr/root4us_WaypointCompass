@@ -32,6 +32,24 @@ export class TrackingQueryDto {
   date?: string;
 }
 
+/** A point on the map. */
+export class MapPointDto {
+  @ApiProperty({ example: 7.001 }) lat!: number;
+  @ApiProperty({ example: 79.953 }) lng!: number;
+}
+
+/** A vehicle's latest position (19's map), from its driver's phone. */
+export class VehiclePositionDto {
+  @ApiProperty({ example: 7.001 }) lat!: number;
+  @ApiProperty({ example: 79.953 }) lng!: number;
+  @ApiProperty({ nullable: true, type: Number, example: 90 })
+  heading!: number | null;
+  @ApiProperty({ nullable: true, type: Number, example: 38 })
+  speedKmh!: number | null;
+  @ApiProperty({ example: '2026-10-02T04:12:05+05:30' })
+  recordedAt!: string;
+}
+
 /** One stop on 19a's timeline: planned, projected and actual. */
 export class TrackingStopDto {
   @ApiProperty({ example: '0192a3f4-0000-7000-8000-00000000d101' })
@@ -48,6 +66,14 @@ export class TrackingStopDto {
 
   @ApiProperty({ example: 'Fresh Ja-Ela' })
   outletName!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: MapPointDto,
+    description: 'The outlet on the map; null when it has no coordinates',
+  })
+  @Type(() => MapPointDto)
+  at!: MapPointDto | null;
 
   @ApiProperty({ example: 'PENDING' })
   status!: string;
@@ -174,6 +200,32 @@ export class TrackingTripDto {
   @ApiProperty({ example: 15.8 })
   loadVolumeM3!: number;
 
+  @ApiProperty({
+    nullable: true,
+    type: VehiclePositionDto,
+    description:
+      'Latest position while on this trip; null before the first ping',
+  })
+  @Type(() => VehiclePositionDto)
+  position!: VehiclePositionDto | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T04:30:00+05:30',
+    description: 'Last ping, stop event or start, for a trip on the road',
+  })
+  lastSignalAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T04:30:00+05:30',
+    description:
+      'Set once a trip on the road has been silent for 10 minutes: "No signal since 04:30"',
+  })
+  noSignalSince!: string | null;
+
   @ApiProperty({ type: [TrackingStopDto] })
   @Type(() => TrackingStopDto)
   stops!: TrackingStopDto[];
@@ -229,6 +281,14 @@ export class TrackingDayDto {
   @ApiProperty({ nullable: true, type: String, example: 'PUBLISHED' })
   planStatus!: string | null;
 
+  @ApiProperty({
+    nullable: true,
+    type: MapPointDto,
+    description: 'The depot on the map',
+  })
+  @Type(() => MapPointDto)
+  depot!: MapPointDto | null;
+
   @ApiProperty({ type: TrackingTotalsDto })
   @Type(() => TrackingTotalsDto)
   totals!: TrackingTotalsDto;
@@ -238,6 +298,67 @@ export class TrackingDayDto {
   trips!: TrackingTripDto[];
 
   /** self, plan, endOfDay. */
+  @ApiLinks()
+  _links!: Record<string, Link>;
+}
+
+/** M3: when a store's order is due, with no vehicle position (AC-EXE-22). */
+export class OrderEtaDto {
+  @ApiProperty({ example: '0192a3f4-0000-7000-8000-00000000o001' })
+  orderId!: string;
+
+  @ApiProperty({ example: 'WF-0171' })
+  orderNo!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'The stop the order is on; null until it is planned',
+    example: '0192a3f4-0000-7000-8000-00000000s001',
+  })
+  stopId!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: 'IN_PROGRESS' })
+  tripStatus!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: 'PENDING' })
+  stopStatus!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:40:00+05:30',
+  })
+  plannedArrivalAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:54:00+05:30',
+    description:
+      'When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip',
+  })
+  etaAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 6,
+    description:
+      'Minutes between the ETA and the window closing; negative is late',
+  })
+  spareMin!: number | null;
+
+  @ApiProperty({ nullable: true, enum: STOP_STANDINGS, example: 'NEXT' })
+  standing!: (typeof STOP_STANDINGS)[number] | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:52:00+05:30',
+  })
+  completedAt!: string | null;
+
   @ApiLinks()
   _links!: Record<string, Link>;
 }

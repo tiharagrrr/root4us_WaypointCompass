@@ -81,4 +81,47 @@ export class AppConfig {
   get demo() {
     return { enabled: this.get('DEMO_MODE'), clock: this.get('DEMO_CLOCK') };
   }
+
+  /** The simulator runs only with this and demo mode both on. */
+  get simulation() {
+    return { enabled: this.get('SIMULATION_ENABLED') };
+  }
+
+  /**
+   * Where SMS goes. `demo-inbox`, the default, needs no key and no account:
+   * one variable swaps in a Sri Lankan gateway once its sender id is approved.
+   */
+  get sms() {
+    return {
+      provider: this.get('SMS_PROVIDER'),
+      notifylk: {
+        userId: this.get('NOTIFYLK_USER_ID'),
+        apiKey: this.get('NOTIFYLK_API_KEY'),
+        senderId: this.get('NOTIFYLK_SENDER_ID'),
+      },
+      textlk: {
+        apiToken: this.get('TEXTLK_API_TOKEN'),
+        senderId: this.get('TEXTLK_SENDER_ID'),
+      },
+      twilio: {
+        accountSid: this.get('TWILIO_ACCOUNT_SID'),
+        authToken: this.get('TWILIO_AUTH_TOKEN'),
+        from: this.get('TWILIO_FROM'),
+      },
+    };
+  }
+
+  /** The scenario director's model; `disabled` means no model is ever called. */
+  get llm() {
+    return {
+      provider: this.get('LLM_PROVIDER'),
+      apiKey: this.get('ANTHROPIC_API_KEY'),
+      model: this.get('LLM_MODEL'),
+      openai: {
+        baseUrl: this.get('LLM_BASE_URL'),
+        apiKey: this.get('LLM_API_KEY'),
+        model: this.get('LLM_MODEL'),
+      },
+    };
+  }
 }

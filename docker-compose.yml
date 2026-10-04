@@ -31,6 +31,11 @@ x-api-env: &api-env
   S3_FORCE_PATH_STYLE: "true"
   DEMO_CLOCK: ${DEMO_CLOCK:-}
   DEMO_MODE: ${DEMO_MODE:-true}
+  SIMULATE_POSITIONS: ${SIMULATE_POSITIONS:-true}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  EMAIL_FROM: ${EMAIL_FROM:-Waypoint Compass <onboarding@resend.dev>}
+  RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
 
 services:
   postgres:
@@ -128,6 +133,11 @@ services:
       <<: *api-env
       DIRECT_URL: postgres://compass_owner:${COMPASS_OWNER_PASSWORD:-compass_owner}@postgres:5432/${POSTGRES_DB:-waypoint}
       SEED_PASSWORD: ${SEED_PASSWORD:-Waypoint@2026}
+    # The dataset CSVs are confidential and git-ignored, so a fresh clone's image holds none of
+    # them: the seed reads them from the host folder instead. Copy the files into data/seed
+    # (flat, or in the dataset's own folders) before `docker compose up`.
+    volumes:
+      - ${SEED_DATA_DIR:-./data/seed}:/repo/data/seed:ro
     depends_on:
       postgres:
         condition: service_healthy
