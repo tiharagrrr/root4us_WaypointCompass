@@ -49,6 +49,7 @@ import type {
   PlansEndOfDay200,
   PlansForDay200,
   PlansGet200,
+  PlansOrderEta200,
   PlansRevisions200,
   PlansTracking200,
   PlansTrackingParams,
@@ -295,6 +296,107 @@ export function usePlansTracking<TData = Awaited<ReturnType<typeof plansTracking
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getPlansTrackingQueryOptions(depotId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getPlansOrderEtaUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/orders/${id}/eta`
+}
+
+/**
+ * When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.
+ * @summary An order's ETA
+ */
+export const plansOrderEta = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<PlansOrderEta200> => {
+
+  return compassFetch<PlansOrderEta200>(getPlansOrderEtaUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPlansOrderEtaQueryKey = (id: string,) => {
+    return [
+    `/api/v1/orders/${id}/eta`
+    ] as const;
+    }
+
+
+export const getPlansOrderEtaQueryOptions = <TData = Awaited<ReturnType<typeof plansOrderEta>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPlansOrderEtaQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof plansOrderEta>>> = ({ signal }) => plansOrderEta(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PlansOrderEtaQueryResult = NonNullable<Awaited<ReturnType<typeof plansOrderEta>>>
+export type PlansOrderEtaQueryError = ErrorType<ProblemDto>
+
+
+export function usePlansOrderEta<TData = Awaited<ReturnType<typeof plansOrderEta>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansOrderEta>>,
+          TError,
+          Awaited<ReturnType<typeof plansOrderEta>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansOrderEta<TData = Awaited<ReturnType<typeof plansOrderEta>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof plansOrderEta>>,
+          TError,
+          Awaited<ReturnType<typeof plansOrderEta>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePlansOrderEta<TData = Awaited<ReturnType<typeof plansOrderEta>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary An order's ETA
+ */
+
+export function usePlansOrderEta<TData = Awaited<ReturnType<typeof plansOrderEta>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof plansOrderEta>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPlansOrderEtaQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

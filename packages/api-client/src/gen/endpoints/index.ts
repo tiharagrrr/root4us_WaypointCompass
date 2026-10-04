@@ -1,4 +1,5 @@
 export * from './alerts/alerts.ts';
+export * from './audit/audit.ts';
 export * from './calendar/calendar.ts';
 export * from './clock/clock.ts';
 export * from './deferral-reasons/deferral-reasons.ts';
@@ -29,6 +30,7 @@ export * from './settings/settings.ts';
 export * from './simulations/simulations.ts';
 export * from './streams/streams.ts';
 export * from './sync/sync.ts';
+export * from './telematics/telematics.ts';
 export * from './trips/trips.ts';
 export * from './users/users.ts';
 export * from './vehicles/vehicles.ts';

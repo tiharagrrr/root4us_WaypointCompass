@@ -3096,6 +3096,100 @@
         ]
       }
     },
+    "/api/v1/timelines/order/{id}": {
+      "get": {
+        "description": "The order merged with its stops, trip, deferrals, load lines, receipt and issues, by occurredAt. syncedLate marks an offline event recorded more than 5 minutes after it happened.",
+        "operationId": "timelinesOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimelineEntryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's timeline, oldest first",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/calendar": {
       "get": {
         "operationId": "calendarList",
@@ -7911,6 +8005,90 @@
         ]
       }
     },
+    "/api/v1/orders/{id}/eta": {
+      "get": {
+        "description": "When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.",
+        "operationId": "plansOrderEta",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderEtaDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's ETA",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/plans/{id}": {
       "get": {
         "operationId": "plansGet",
@@ -12704,6 +12882,89 @@
         ]
       }
     },
+    "/api/v1/trips/{id}/trail": {
+      "get": {
+        "operationId": "tripsTrail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripTrailDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The trip's GPS trail",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
     "/api/v1/trips/{id}": {
       "get": {
         "operationId": "tripsGet",
@@ -13944,6 +14205,100 @@
         "summary": "A link to an attachment",
         "tags": [
           "execution"
+        ]
+      }
+    },
+    "/api/v1/telematics/pings": {
+      "post": {
+        "operationId": "telematicsPings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PingBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PingResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Up to 200 GPS fixes for running trips",
+        "tags": [
+          "telematics"
         ]
       }
     },
@@ -18898,6 +19253,116 @@
           "mode"
         ]
       },
+      "TimelineEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Position in the audit chain",
+            "example": 4211
+          },
+          "action": {
+            "type": "string",
+            "description": "<module>.<entity>.<verb>",
+            "example": "ordering.order.submitted"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "The entity the step was recorded on",
+            "example": "order"
+          },
+          "entityId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "example": "usr_nimesha"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a step the system took",
+            "example": "Nimesha Periyapperuma"
+          },
+          "actorRole": {
+            "type": "string",
+            "nullable": true,
+            "example": "store_manager"
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true,
+            "example": "dev_7f3a"
+          },
+          "source": {
+            "type": "string",
+            "description": "WEB, PWA, OFFLINE_SYNC, ENGINE, SYSTEM, SIMULATION or WEBHOOK",
+            "example": "WEB"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "The status the entity moved to, when the step set one",
+            "example": "SUBMITTED"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "reasonNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "When it happened: device or business time",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "When the server recorded it",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "syncedLate": {
+            "type": "boolean",
+            "description": "True when recordedAt trails occurredAt by more than 5 minutes: an offline event that synced late",
+            "example": false
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "action",
+          "entityType",
+          "entityId",
+          "actorId",
+          "actorName",
+          "actorRole",
+          "deviceId",
+          "source",
+          "status",
+          "reasonCode",
+          "reasonNote",
+          "occurredAt",
+          "recordedAt",
+          "syncedLate",
+          "_links"
+        ]
+      },
       "CalendarDayDto": {
         "type": "object",
         "properties": {
@@ -20845,6 +21310,23 @@
           "_links"
         ]
       },
+      "MapPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
       "TrackingTotalsDto": {
         "type": "object",
         "properties": {
@@ -20896,6 +21378,40 @@
           "repeatSkips"
         ]
       },
+      "VehiclePositionDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "speedKmh": {
+            "type": "number",
+            "nullable": true,
+            "example": 38
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "heading",
+          "speedKmh",
+          "recordedAt"
+        ]
+      },
       "TrackingStopDto": {
         "type": "object",
         "properties": {
@@ -20919,6 +21435,16 @@
           "outletName": {
             "type": "string",
             "example": "Fresh Ja-Ela"
+          },
+          "at": {
+            "nullable": true,
+            "description": "The outlet on the map; null when it has no coordinates",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapPointDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -20981,6 +21507,7 @@
           "orderNo",
           "outletId",
           "outletName",
+          "at",
           "status",
           "windowOpenMin",
           "windowCloseMin",
@@ -21091,6 +21618,28 @@
             "type": "number",
             "example": 15.8
           },
+          "position": {
+            "nullable": true,
+            "description": "Latest position while on this trip; null before the first ping",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehiclePositionDto"
+              }
+            ]
+          },
+          "lastSignalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:30:00+05:30",
+            "description": "Last ping, stop event or start, for a trip on the road"
+          },
+          "noSignalSince": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:30:00+05:30",
+            "description": "Set once a trip on the road has been silent for 10 minutes: \"No signal since 04:30\""
+          },
           "stops": {
             "type": "array",
             "items": {
@@ -21119,6 +21668,9 @@
           "plannedDepartAt",
           "loadWeightKg",
           "loadVolumeM3",
+          "position",
+          "lastSignalAt",
+          "noSignalSince",
           "stops"
         ]
       },
@@ -21143,6 +21695,16 @@
             "nullable": true,
             "example": "PUBLISHED"
           },
+          "depot": {
+            "nullable": true,
+            "description": "The depot on the map",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapPointDto"
+              }
+            ]
+          },
           "totals": {
             "$ref": "#/components/schemas/TrackingTotalsDto"
           },
@@ -21165,8 +21727,93 @@
           "date",
           "planId",
           "planStatus",
+          "depot",
           "totals",
           "trips",
+          "_links"
+        ]
+      },
+      "OrderEtaDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "stopId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stop the order is on; null until it is planned",
+            "example": "0192a3f4-0000-7000-8000-00000000s001"
+          },
+          "tripStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "IN_PROGRESS"
+          },
+          "stopStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PENDING"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:54:00+05:30",
+            "description": "When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 6,
+            "description": "Minutes between the ETA and the window closing; negative is late"
+          },
+          "standing": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
+            ],
+            "type": "string",
+            "example": "NEXT"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:52:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "orderId",
+          "orderNo",
+          "stopId",
+          "tripStatus",
+          "stopStatus",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "standing",
+          "completedAt",
           "_links"
         ]
       },
@@ -24461,6 +25108,46 @@
           "_links"
         ]
       },
+      "TrailPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "recordedAt"
+        ]
+      },
+      "TripTrailDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrailPointDto"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "points"
+        ]
+      },
       "BundleTripDto": {
         "type": "object",
         "properties": {
@@ -25592,6 +26279,105 @@
           "url",
           "expiresAt",
           "_links"
+        ]
+      },
+      "PingResultDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "number",
+            "example": 18
+          },
+          "duplicates": {
+            "type": "number",
+            "example": 2
+          },
+          "rejected": {
+            "type": "number",
+            "example": 0
+          },
+          "reasons": {
+            "description": "Index in the batch and reason for each refused fix",
+            "example": [
+              {
+                "index": 3,
+                "reason": "inaccurate"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "accepted",
+          "duplicates",
+          "rejected",
+          "reasons"
+        ]
+      },
+      "PingDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The running trip this fix belongs to"
+          },
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "accuracyM": {
+            "type": "number",
+            "nullable": true,
+            "example": 12
+          },
+          "speedKmh": {
+            "type": "number",
+            "nullable": true,
+            "example": 38
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "reeferTempC": {
+            "type": "number",
+            "nullable": true,
+            "example": 3.5
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30",
+            "description": "When the phone took the fix, on the server clock it was given"
+          }
+        },
+        "required": [
+          "tripId",
+          "lat",
+          "lng",
+          "recordedAt"
+        ]
+      },
+      "PingBatchDto": {
+        "type": "object",
+        "properties": {
+          "pings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PingDto"
+            }
+          }
+        },
+        "required": [
+          "pings"
         ]
       },
       "SyncResultStatus": {

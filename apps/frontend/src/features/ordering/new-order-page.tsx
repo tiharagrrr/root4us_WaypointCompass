@@ -7,24 +7,31 @@ import {
   useOrderLinesList,
   useOrderLinesReplace,
   useOrderLinesUpdate,
+  useMeGet,
+  useOrdersCreate,
   useOrdersList,
+  useOutletsGet,
   useOrdersSubmit,
   useOrderTemplatesList,
   type ItemDto,
   type OrderDto,
   type OrderLineDto,
   type OrderTemplateDto,
+  type TempClass,
   isApiProblem,
 } from '@compass/api-client'
 import { useQueryClient } from '@tanstack/react-query'
+import { addDays, WEEKDAYS } from '@waypoint/shared'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { HeaderActions } from '@/app/layouts/header-actions'
+import { toColomboDate } from '@/lib/format-colombo'
 import { getLink } from '@/lib/links'
 import { useServerClock } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
 import { Button } from '@/ui/button'
 import { Icon } from '@/ui/icon'
+import { Input } from '@/ui/input'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { toast } from '@/ui/toast-store'
@@ -38,10 +45,18 @@ import { STORE_OPEN_ORDERS } from './open-orders-query'
 import { PresetField } from './preset-field'
 import { SavePresetDialog } from './save-preset-dialog'
 
+/** How far ahead a store may place an order, in days from today. */
+const ORDER_AHEAD_DAYS = 14
+
+const isDate = (value: string | null): value is string => value !== null && /^\d{4}-\d{2}-\d{2}$/.test(value)
+
 /**
- * M1 New order. The day holds one order per class, so the same screen is M1b once the dry order
+ * M1 New order. A day holds one order per class, so the same screen is M1b once the dry order
  * is sent, and M2 once the server has rolled an order to the following run. Everything that
  * changes between those frames comes from the order the API returns.
+ *
+ * The store picks the delivery day (tomorrow to two weeks ahead, `?date=`) and starts the day's
+ * dry or chilled order itself; a day with no order yet offers only that.
  */
 export function NewOrderPage() {
   const queryClient = useQueryClient()
@@ -53,8 +68,18 @@ export function NewOrderPage() {
 
   const orders = useOrdersList(STORE_OPEN_ORDERS)
 
-  const day = openDayOf(orders.data?.data ?? [], now)
+  const today = toColomboDate(now)
+  const picked = params.get('date')
+  const day = isDate(picked) ? picked : openDayOf(orders.data?.data ?? [], now)
   const dayOrders = (orders.data?.data ?? []).filter((o) => o.requestedDate === day)
+
+  // Chilled is a Fresh range (AC-ORD-11), and a Style outlet has one delivery weekday (AC-ORD-08).
+  const outletId = useMeGet().data?.data.outletId ?? ''
+  const outlet = useOutletsGet(outletId, { query: { enabled: outletId !== '' } }).data?.data
+  const classes: TempClass[] = outlet?.brand === 'FRESH' ? ['AMBIENT', 'CHILLED'] : ['AMBIENT']
+  const startable = getLink(orders.data?._links, 'create')
+    ? classes.filter((tempClass) => !dayOrders.some((order) => order.tempClass === tempClass))
+    : []
   // M1b is M1 with ?class=chilled; without it the day's first order (the dry one) is open.
   const wanted = params.get('class')
   const wantedClass = wanted === 'chilled' ? 'CHILLED' : wanted === 'dry' ? 'AMBIENT' : null
@@ -71,6 +96,7 @@ export function NewOrderPage() {
   const updateLine = useOrderLinesUpdate()
   const replaceLines = useOrderLinesReplace()
   const submit = useOrdersSubmit()
+  const create = useOrdersCreate()
   const busy = addLine.isPending || updateLine.isPending || replaceLines.isPending
 
   /** A failed write says so where the store manager is looking, with the problem's own words. */
@@ -91,8 +117,26 @@ export function NewOrderPage() {
         : Promise.resolve(),
     ])
 
-  const select = (order: OrderDto) => {
-    setParams(order.tempClass === 'CHILLED' ? { class: 'chilled' } : {}, { replace: true })
+  /** The address keeps the picked day and class, so a reload opens the same order. */
+  const show = (date: string | null, tempClass: TempClass | null) => {
+    setParams({ ...(date ? { date } : {}), ...(tempClass === 'CHILLED' ? { class: 'chilled' } : {}) }, { replace: true })
+  }
+
+  const select = (order: OrderDto) => show(isDate(picked) ? picked : null, order.tempClass)
+
+  /** Opens the day's order for a class: an empty draft the store then fills and sends. */
+  const start = async (tempClass: TempClass) => {
+    try {
+      await create.mutateAsync({
+        data: { tempClass, requestedDate: day },
+        headers: { 'Idempotency-Key': globalThis.crypto.randomUUID() },
+      })
+    } catch (error) {
+      report(error)
+      return
+    }
+    await refresh()
+    show(day, tempClass)
   }
 
   /**
@@ -185,15 +229,6 @@ export function NewOrderPage() {
     return <ErrorState error={orders.error} onRetry={() => void orders.refetch()} />
   }
 
-  if (!orders.isPending && dayOrders.length === 0) {
-    return (
-      <EmptyState
-        title={`No order open for ${dayLabel(day)}`}
-        description="Your dry and chilled orders for the next run appear here as soon as they are opened."
-      />
-    )
-  }
-
   return (
     <>
       <HeaderActions>
@@ -210,14 +245,34 @@ export function NewOrderPage() {
         </Action>
       </HeaderActions>
 
-      <div className="flex items-start gap-4">
-        <div className="flex w-[240px] shrink-0 flex-col gap-2">
+      {/* Side by side at the frame's 1440; below it the summary, then the lines, wrap under. */}
+      <div className="flex flex-wrap items-start gap-4">
+        <div className="flex w-full shrink-0 flex-col gap-2 md:w-[240px]">
+          <label className="flex flex-col gap-1.5">
+            <span className="type-label uppercase text-muted-foreground">Delivery day</span>
+            <Input
+              type="date"
+              value={day}
+              min={addDays(today, 1)}
+              max={addDays(today, ORDER_AHEAD_DAYS)}
+              aria-label="Delivery day"
+              onChange={(event) => event.target.value && show(event.target.value, null)}
+            />
+          </label>
+          {outlet?.styleDeliveryDow != null ? (
+            <p className="type-caption m-0 text-muted-foreground">
+              This outlet takes deliveries on {WEEKDAYS[outlet.styleDeliveryDow]}s.
+            </p>
+          ) : null}
           <OrderSwitcher
             day={day}
             orders={dayOrders}
             selectedId={selected?.id ?? null}
             onSelect={select}
             loading={orders.isPending}
+            startable={startable}
+            onStart={(tempClass) => void start(tempClass)}
+            starting={create.isPending}
           />
           {selected ? (
             <PresetField
@@ -232,11 +287,21 @@ export function NewOrderPage() {
           ) : null}
         </div>
 
-        {orders.isPending || !selected ? (
+        {orders.isPending ? (
           <>
-            <Skeleton className="h-[347px] w-[568px] rounded-lg" />
-            <Skeleton className="h-[528px] w-[320px] rounded-lg" />
+            <Skeleton className="h-[347px] min-w-0 flex-1 basis-[420px] rounded-lg" />
+            <Skeleton className="h-[528px] w-full rounded-lg sm:w-[320px]" />
           </>
+        ) : !selected ? (
+          <EmptyState
+            className="min-w-0 flex-1 basis-[420px]"
+            title={`No order for ${dayLabel(day)} yet`}
+            description={
+              startable.length > 0
+                ? 'Start the day’s order, add items, then send it before the cutoff.'
+                : 'Pick another delivery day to see its orders.'
+            }
+          />
         ) : (
           <>
             <OrderLinesTable

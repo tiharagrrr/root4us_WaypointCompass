@@ -7,6 +7,7 @@
  */
 import type { TrackingStopDto } from './trackingStopDto.ts';
 import type { TrackingTripDtoStanding } from './trackingTripDtoStanding.ts';
+import type { VehiclePositionDto } from './vehiclePositionDto.ts';
 
 export interface TrackingTripDto {
   tripId: string;
@@ -40,5 +41,20 @@ export interface TrackingTripDto {
   plannedDepartAt: string | null;
   loadWeightKg: number;
   loadVolumeM3: number;
+  /**
+     * Latest position while on this trip; null before the first ping
+     * @nullable
+     */
+  position: VehiclePositionDto | null;
+  /**
+     * Last ping, stop event or start, for a trip on the road
+     * @nullable
+     */
+  lastSignalAt: string | null;
+  /**
+     * Set once a trip on the road has been silent for 10 minutes: "No signal since 04:30"
+     * @nullable
+     */
+  noSignalSince: string | null;
   stops: TrackingStopDto[];
 }

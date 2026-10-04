@@ -71,6 +71,33 @@ export const MyTripsListResponse = zod.object({
 })
 
 /**
+ * @summary The trip's GPS trail
+ */
+export const TripsTrailParams = zod.object({
+  "id": zod.string()
+})
+
+export const TripsTrailResponse = zod.object({
+  "data": zod.object({
+  "tripId": zod.string(),
+  "points": zod.array(zod.object({
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "recordedAt": zod.string()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
  * @summary One trip
  */
 export const TripsGetParams = zod.object({

@@ -42,6 +42,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // Ordering's depot day and loading's boards (planning's day plan is below).
   { method: "all", path: "/api/v1/depots/:id/days/*" },
   { method: "all", path: "/api/v1/depots/:id/loading/*" },
+  // Planning's live day for 01, 19 and 19a (ROO-46).
+  { method: "get", path: "/api/v1/depots/:id/tracking" },
   { method: "all", path: "/api/v1/districts" },
   { method: "all", path: "/api/v1/outlets" },
   { method: "all", path: "/api/v1/outlets/*" },
@@ -65,6 +67,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // Execution: the driver's trips, the offline bundle, the field events and
   // proof of delivery (ROO-31). /api/v1/me/* above already covers /me/trips.
   { method: "all", path: "/api/v1/trips/*" },
+  // The driver phone's GPS fixes (ROO-37).
+  { method: "post", path: "/api/v1/telematics/pings" },
   { method: "all", path: "/api/v1/stops/*" },
   { method: "all", path: "/api/v1/attachments/*" },
   // Loading: the dock's boards, the load list, checks, flags, the release
@@ -83,15 +87,17 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // detail, thread, resolve, reopen and photos (ROO-48).
   { method: "all", path: "/api/v1/issues" },
   { method: "all", path: "/api/v1/issues/*" },
+  // Audit: the order timeline (ROO-23).
+  { method: "get", path: "/api/v1/timelines/*" },
   // Planning: plans, the wizard, edits, decisions, publish and engine runs
   // (ROO-29), and the deferral reads and responses for 23, M4 and M7.
   { method: "all", path: "/api/v1/depots/:id/plans/*" },
   { method: "all", path: "/api/v1/plans/*" },
   { method: "all", path: "/api/v1/deferrals" },
   { method: "all", path: "/api/v1/deferrals/*" },
-  // Fleet: a vehicle's fuel for a week (ROO-42). The rest of /vehicles is
-  // still mocked.
+  // Fleet: a vehicle's fuel for a week (ROO-42) and its status (ROO-56).
   { method: "get", path: "/api/v1/vehicles/:id/fuel" },
+  { method: "put", path: "/api/v1/vehicles/:id/status" },
 ];
 
 /** Pass-through handlers; they go before the mocks so they win. */

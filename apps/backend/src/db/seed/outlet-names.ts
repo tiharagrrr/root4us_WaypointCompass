@@ -13,7 +13,7 @@ export const PERSONA_OUTLET = {
  * Not in the datasets). Kadawatha is kept for the persona outlet. A district not listed keeps
  * the placeholder name.
  */
-const TOWNS: Record<string, readonly string[]> = {
+export const TOWNS: Record<string, readonly string[]> = {
   colombo: [
     'Bambalapitiya',
     'Kollupitiya',

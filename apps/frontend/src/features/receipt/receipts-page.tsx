@@ -5,12 +5,14 @@ import { useState } from 'react'
 import { useMatch, useNavigate, useParams } from 'react-router'
 import { HeaderActions } from '@/app/layouts/header-actions'
 import { usePageHeader } from '@/app/layouts/header-slot'
+import { getLink } from '@/lib/links'
 import { Button } from '@/ui/button'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow } from '@/ui/table'
+import { OrderTimelineDialog } from '@/features/audit/order-timeline-dialog'
 import { brandWord } from '@/features/ordering/order-copy'
 import { dayLabel } from '@/features/ordering/order-format'
 import { ConfirmReceiptDialog } from './confirm-receipt-dialog'
@@ -88,6 +90,7 @@ function OrdersTable({ status, confirmed, onOpen }: { status: string; confirmed:
   // The same request as the tab counts, so React Query serves it from the cache.
   const query = useOrdersList({ 'filter[status]': status, sort: '-deliveryDate', limit: 25 })
   const rows = query.data?.data ?? []
+  const [timeline, setTimeline] = useState<OrderDto | null>(null)
   if (query.isError) return <ErrorState error={query.error} onRetry={() => void query.refetch()} />
   if (query.isPending) return <Skeleton className="h-[240px] w-full" />
   if (rows.length === 0)
@@ -121,14 +124,22 @@ function OrdersTable({ status, confirmed, onOpen }: { status: string; confirmed:
               </TableCell>
               <TableCell className="font-mono text-[12px]">{dayLabel(order.deliveryDate)}</TableCell>
               <TableCell className="text-right">
-                <Button variant={confirmed ? 'ghost' : 'default'} size="sm" onClick={() => onOpen(order)}>
-                  {confirmed ? 'View' : 'Confirm'}
-                </Button>
+                <span className="flex items-center justify-end gap-2">
+                  {getLink(order._links, 'timeline') ? (
+                    <Button variant="ghost" size="sm" onClick={() => setTimeline(order)}>
+                      Timeline
+                    </Button>
+                  ) : null}
+                  <Button variant={confirmed ? 'ghost' : 'default'} size="sm" onClick={() => onOpen(order)}>
+                    {confirmed ? 'View' : 'Confirm'}
+                  </Button>
+                </span>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+      {timeline ? <OrderTimelineDialog orderId={timeline.id} orderNo={timeline.orderNo} onClose={() => setTimeline(null)} /> : null}
     </TableContainer>
   )
 }

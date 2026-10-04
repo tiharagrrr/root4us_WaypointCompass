@@ -24,6 +24,8 @@ import {
   TripSummaryDto,
 } from '../dto/trip.dto';
 import { TripLinks } from '../policies/trip.links';
+import { TripTrailDto } from '../dto/telematics.dto';
+import { TrailQueries } from '../services/trail.queries';
 import { MyTripsQueries } from '../services/my-trips.queries';
 import { OfflineBundleService } from '../services/offline-bundle.service';
 import { StopEventService } from '../services/stop-event.service';
@@ -40,11 +42,25 @@ import { StopEventService } from '../services/stop-event.service';
 @Controller('trips')
 export class TripsController {
   constructor(
+    private readonly trails: TrailQueries,
     private readonly queries: MyTripsQueries,
     private readonly bundles: OfflineBundleService,
     private readonly events: StopEventService,
     private readonly links: TripLinks,
   ) {}
+
+  /** 19a's breadcrumb: the sampled positions of the trip, oldest first. */
+  @Get(':id/trail')
+  @RequirePermission('plan:read')
+  @ApiResource(TripTrailDto)
+  @ApiProblems(403, 404)
+  @ApiOperation({ summary: "The trip's GPS trail" })
+  async trail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Actor() actor: SignedIn,
+  ) {
+    return { tripId: id, points: await this.trails.trail(id, actor) };
+  }
 
   @Get(':id')
   @RequirePermission('trip:read')

@@ -31,3 +31,15 @@ export type {
   TripCompletedEvent,
   TripStartedEvent,
 } from './events/execution.events';
+export {
+  TelematicsService,
+  type PingInput,
+  type PingResult,
+  type PingSender,
+} from './services/telematics.service';
+export { SignalWatchService } from './services/signal-watch.service';
+export { NO_SIGNAL_MINUTES } from './domain/pings';
+export {
+  PositionSimulator,
+  whereNow,
+} from './services/position-simulator.service';

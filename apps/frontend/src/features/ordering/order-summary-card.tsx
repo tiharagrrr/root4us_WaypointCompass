@@ -22,7 +22,7 @@ export interface OrderSummaryCardProps {
 export function OrderSummaryCard({ order, orders, now, action }: OrderSummaryCardProps) {
   const rolled = order.afterCutoff && order.deliveryDate !== order.requestedDate
   return (
-    <Card className="flex w-[320px] shrink-0 flex-col">
+    <Card className="flex w-full shrink-0 flex-col sm:w-[320px]">
       <div className="flex items-center gap-3 border-b border-border px-4 pb-[13px] pt-3">
         <div className="flex flex-1 flex-col gap-0.5">
           <h2 className="type-card-title m-0 text-foreground">{classLabel(order.tempClass)}</h2>

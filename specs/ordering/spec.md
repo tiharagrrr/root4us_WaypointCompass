@@ -753,3 +753,9 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   `ordering.order.backordered` audit action and `order.backordered` event, because only ordering
   may write `orders`: a dispatcher's REMOVE at the dock owes the store the goods that stayed
   behind. Harini owns them from here; covered by AC-LOD-12, with no ordering test of its own yet
+- 2026-10-04 M8 Order history built at `/store/history`: past orders with Reorder (AC-ORD-07's screen side) and the order timeline; departures logged
+- 2026-10-04 M1 lets the store pick the delivery day (`/store/orders/new?date=`) and start that day's dry or
+  chilled order with `POST /orders` (AC-ORD-09's screen side); before this the screen only showed drafts
+  that already existed. The picker offers tomorrow to 14 days ahead; that horizon is the screen's, the API
+  still accepts any date (see the open question on past dates). Chilled is offered to Fresh outlets only,
+  and a Style outlet is told its delivery weekday. `STORE_OPEN_ORDERS` reads up to 50 orders
