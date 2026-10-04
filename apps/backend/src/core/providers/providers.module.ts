@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppConfig } from '../../config/app-config';
 import { AnthropicLlmProvider } from './anthropic-llm.provider';
+import { OpenAiCompatibleLlmProvider } from './openai-llm.provider';
 import { LLM_PROVIDER, type LlmProvider } from './ports';
 import { ScriptedLlmProvider } from './scripted-llm.provider';
 
@@ -21,6 +22,8 @@ import { ScriptedLlmProvider } from './scripted-llm.provider';
           disabled: () => null,
           scripted: () => new ScriptedLlmProvider(),
           anthropic: () => new AnthropicLlmProvider(config.llm),
+          'openai-compatible': () =>
+            new OpenAiCompatibleLlmProvider(config.llm.openai),
         };
         return factories[config.llm.provider]();
       },

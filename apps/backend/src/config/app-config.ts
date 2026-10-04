@@ -93,6 +93,11 @@ export class AppConfig {
       provider: this.get('LLM_PROVIDER'),
       apiKey: this.get('ANTHROPIC_API_KEY'),
       model: this.get('LLM_MODEL'),
+      openai: {
+        baseUrl: this.get('LLM_BASE_URL'),
+        apiKey: this.get('LLM_API_KEY'),
+        model: this.get('LLM_MODEL'),
+      },
     };
   }
 }

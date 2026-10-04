@@ -67,20 +67,38 @@ export const envSchema = z.object({
   SIMULATION_ENABLED: flag('false'),
   /**
    * The model behind the simulator's scenario director: disabled (no model is
-   * ever called), scripted (a keyless fake for local runs and tests) or
-   * anthropic (needs ANTHROPIC_API_KEY).
+   * ever called), scripted (a keyless fake for local runs and tests),
+   * anthropic (needs ANTHROPIC_API_KEY) or openai-compatible (any server that
+   * speaks the OpenAI chat completions API; needs LLM_BASE_URL and LLM_MODEL).
    */
   LLM_PROVIDER: z.preprocess(
     (v) => (v === '' ? undefined : v),
-    z.enum(['disabled', 'scripted', 'anthropic']).default('disabled'),
+    z
+      .enum(['disabled', 'scripted', 'anthropic', 'openai-compatible'])
+      .default('disabled'),
   ),
   ANTHROPIC_API_KEY: z.preprocess(
     (v) => (v === '' ? undefined : v),
     z.string().optional(),
   ),
+  /**
+   * Where the openai-compatible adapter posts, including the version path:
+   * https://api.openai.com/v1, https://openrouter.ai/api/v1,
+   * http://localhost:11434/v1 for Ollama.
+   */
+  LLM_BASE_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().url().optional(),
+  ),
+  /** The openai-compatible adapter's key; a local server needs none. */
+  LLM_API_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  /** Unset means each adapter's own default; openai-compatible has none. */
   LLM_MODEL: z.preprocess(
     (v) => (v === '' ? undefined : v),
-    z.string().default('claude-opus-5-5'),
+    z.string().optional(),
   ),
   /** pino level; defaults to debug in development, error in tests, info otherwise. */
   LOG_LEVEL: z.preprocess(
