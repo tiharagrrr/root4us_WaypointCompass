@@ -12,6 +12,8 @@ import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '@
 import { Field } from '@/ui/field'
 import { ErrorState } from '@/ui/states'
 import { toast } from '@/ui/toast-store'
+import { DecideFlagDialog } from '@/features/loading/decide-flag-dialog'
+import { flagIdOfDecideLink } from '@/features/loading/loading-copy'
 
 /**
  * The relations a fix link can come back as, and the screen that performs each
@@ -30,7 +32,7 @@ const FIX_SCREENS: Record<string, { to: (alert: AlertDto) => string | null; wait
   defer: { to: (a) => (a.tripId ? `/dispatch/trips/${a.tripId}` : null), waitingOn: '19a Trip details' },
   tracking: { to: (a) => (a.tripId ? `/dispatch/trips/${a.tripId}` : null) },
   deferral: { to: () => '/dispatch/deferrals' },
-  decide: { to: () => null, waitingOn: 'L3b Flag decision, on the dock board' },
+  // `decide` is handled by DecideButton, which opens the decision dialog instead of navigating.
   issue: { to: () => null, waitingOn: "M6 the store's issue" },
   resolveConflict: { to: () => null, waitingOn: '19c Sync conflicts' },
 }
@@ -87,16 +89,27 @@ export function AlertActions({ alert, emphasis = 'fix', size = 'sm', onAct }: Al
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {fixes.map(({ rel, link }, index) => (
-        <FixButton
-          key={rel}
-          rel={rel}
-          link={link}
-          alert={alert}
-          size={size}
-          variant={leadFix && index === 0 ? 'default' : 'outline'}
-        />
-      ))}
+      {fixes.map(({ rel, link }, index) =>
+        rel === 'decide' ? (
+          <DecideButton
+            key={rel}
+            link={link}
+            alert={alert}
+            size={size}
+            variant={leadFix && index === 0 ? 'default' : 'outline'}
+            onDecided={onAct}
+          />
+        ) : (
+          <FixButton
+            key={rel}
+            rel={rel}
+            link={link}
+            alert={alert}
+            size={size}
+            variant={leadFix && index === 0 ? 'default' : 'outline'}
+          />
+        ),
+      )}
 
       {isLink(acknowledgeLink) ? (
         <Action
@@ -119,6 +132,42 @@ export function AlertActions({ alert, emphasis = 'fix', size = 'sm', onAct }: Al
         </>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * "Decide the flag" opens the decision dialog over the panel, because the answer needs the flag in
+ * front of the dispatcher (what, how many, who, why) and a choice, not a different page. Once the
+ * flag is decided the alert closes itself and the loader's tablet moves to L3b over SSE.
+ */
+function DecideButton({
+  link,
+  alert,
+  size,
+  variant,
+  onDecided,
+}: {
+  link: Link
+  alert: AlertDto
+  size: 'sm' | 'default'
+  variant: ButtonVariant
+  onDecided?: (alert: AlertDto) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const flagId = flagIdOfDecideLink(link.href)
+  if (!flagId)
+    return (
+      <Button size={size} variant="outline" disabled>
+        {link.title ?? 'Decide the flag'}
+      </Button>
+    )
+  return (
+    <>
+      <Button size={size} variant={variant} onClick={() => setOpen(true)}>
+        {link.title ?? 'Decide the flag'}
+      </Button>
+      <DecideFlagDialog flagId={flagId} open={open} onOpenChange={setOpen} onDecided={() => onDecided?.(alert)} />
+    </>
   )
 }
 

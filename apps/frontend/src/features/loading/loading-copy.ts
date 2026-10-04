@@ -50,3 +50,6 @@ export const liveFlag = (flags: readonly LoadFlagDto[]): LoadFlagDto | undefined
  * so the dock is told it cleared rather than left to notice the red going away.
  */
 export const latestFlag = (flags: readonly LoadFlagDto[]): LoadFlagDto | undefined => flags[flags.length - 1]
+
+/** The flag id out of the alert's decide link: /api/v1/load-flags/{id}/decision. */
+export const flagIdOfDecideLink = (href: string): string | null => /\/load-flags\/([^/]+)\/decision/.exec(href)?.[1] ?? null
