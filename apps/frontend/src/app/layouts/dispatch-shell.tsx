@@ -35,6 +35,7 @@ export function DispatchShell() {
       { to: '/dispatch/tracking', label: t('nav.tracking'), icon: 'tracking', alsoActive: ['/dispatch/trips', '/dispatch/end-of-day'] },
       { to: '/dispatch/forecast', label: t('nav.forecast'), icon: 'forecast' },
       { to: '/dispatch/deferrals', label: t('nav.deferrals'), icon: 'deferrals' },
+      { to: '/dispatch/issues', label: t('nav.issues'), icon: 'flag', deep: true },
     ],
     [t],
   )

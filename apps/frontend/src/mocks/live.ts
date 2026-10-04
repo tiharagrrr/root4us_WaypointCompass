@@ -76,6 +76,10 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // may show a fix whose POST is still mocked.
   { method: "all", path: "/api/v1/alerts" },
   { method: "all", path: "/api/v1/alerts/*" },
+  // Receipt and issues: the order's receipt (/orders/* above already covers it), the issue list,
+  // detail, thread, resolve, reopen and photos (ROO-48).
+  { method: "all", path: "/api/v1/issues" },
+  { method: "all", path: "/api/v1/issues/*" },
   // Planning: plans, the wizard, edits, decisions, publish and engine runs
   // (ROO-29), and the deferral reads and responses for 23, M4 and M7.
   { method: "all", path: "/api/v1/depots/:id/plans/*" },
