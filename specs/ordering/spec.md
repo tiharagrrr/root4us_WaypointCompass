@@ -753,3 +753,4 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   `ordering.order.backordered` audit action and `order.backordered` event, because only ordering
   may write `orders`: a dispatcher's REMOVE at the dock owes the store the goods that stayed
   behind. Harini owns them from here; covered by AC-LOD-12, with no ordering test of its own yet
+- 2026-10-04 M8 Order history built at `/store/history`: past orders with Reorder (AC-ORD-07's screen side) and the order timeline; departures logged
