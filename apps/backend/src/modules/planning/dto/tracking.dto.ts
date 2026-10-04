@@ -241,3 +241,64 @@ export class TrackingDayDto {
   @ApiLinks()
   _links!: Record<string, Link>;
 }
+
+/** M3: when a store's order is due, with no vehicle position (AC-EXE-22). */
+export class OrderEtaDto {
+  @ApiProperty({ example: '0192a3f4-0000-7000-8000-00000000o001' })
+  orderId!: string;
+
+  @ApiProperty({ example: 'WF-0171' })
+  orderNo!: string;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description: 'The stop the order is on; null until it is planned',
+    example: '0192a3f4-0000-7000-8000-00000000s001',
+  })
+  stopId!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: 'IN_PROGRESS' })
+  tripStatus!: string | null;
+
+  @ApiProperty({ nullable: true, type: String, example: 'PENDING' })
+  stopStatus!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:40:00+05:30',
+  })
+  plannedArrivalAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:54:00+05:30',
+    description:
+      'When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip',
+  })
+  etaAt!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: Number,
+    example: 6,
+    description:
+      'Minutes between the ETA and the window closing; negative is late',
+  })
+  spareMin!: number | null;
+
+  @ApiProperty({ nullable: true, enum: STOP_STANDINGS, example: 'NEXT' })
+  standing!: (typeof STOP_STANDINGS)[number] | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: '2026-10-02T05:52:00+05:30',
+  })
+  completedAt!: string | null;
+
+  @ApiLinks()
+  _links!: Record<string, Link>;
+}

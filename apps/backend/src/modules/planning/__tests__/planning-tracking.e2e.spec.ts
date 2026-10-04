@@ -1,8 +1,11 @@
 import { and, eq } from 'drizzle-orm';
+import request from 'supertest';
+import { browser, signedInAs } from '../../../../test/auth';
 import { describeWithDb } from '../../../../test/create-test-app';
-import { freezeClock } from '../../../../test/kernel';
+import { expectProblem, freezeClock } from '../../../../test/kernel';
 import { stops, trips } from '../../../db/schema';
 import type { PlanDto } from '../dto/plan.dto';
+import type { OrderEtaDto } from '../dto/tracking.dto';
 import {
   buildWorld,
   call,
@@ -55,7 +58,8 @@ describeWithDb('planning: the live day (ROO-46)', () => {
   afterAll(() => tearDown(w));
   afterEach(() => freezeClock(w.app, OPEN));
 
-  it('AC-PLN-39 the live day shows each trip’s progress, projected arrivals and late risk', async () => {
+  /** REF-07 trip 1 with three stops, published, and its rows. */
+  async function publishedRun() {
     const day = await depotDay(w, {
       a: { volumeM3: 1 },
       b: { volumeM3: 1, outlet: 1 },
@@ -103,6 +107,11 @@ describeWithDb('planning: the live day (ROO-46)', () => {
     const tripStops = (
       await w.db.select().from(stops).where(eq(stops.tripId, trip.id))
     ).sort((x, y) => (x.seq ?? 0) - (y.seq ?? 0));
+    return { day, trip, tripStops };
+  }
+
+  it('AC-PLN-39 the live day shows each trip’s progress, projected arrivals and late risk', async () => {
+    const { day, trip, tripStops } = await publishedRun();
 
     // Before it leaves: the planned times, nobody on the road.
     const board = async () =>
@@ -176,5 +185,98 @@ describeWithDb('planning: the live day (ROO-46)', () => {
       `/depots/${day.depotId}/tracking?date=${DAY}`,
     );
     expect(kandy.status).toBe(404);
+  });
+  it('AC-EXE-22 a store sees her ETA, never the map', async () => {
+    const { day, trip, tripStops } = await publishedRun();
+    const stop = tripStops[1];
+    const store = await signedInAs(w.app, w.db, {
+      role: 'store_manager',
+      outletId: stop.outletId,
+    });
+    const other = await signedInAs(w.app, w.db, {
+      role: 'store_manager',
+      outletId: tripStops[2].outletId,
+    });
+    const get = (cookie: string, path: string) =>
+      request(w.app.getHttpServer())
+        .get(`/api/v1${path}`)
+        .set(browser())
+        .set('Cookie', cookie);
+
+    // Before the trip leaves: the planned arrival.
+    let res = await get(store.cookie, `/orders/${stop.orderId}/eta`);
+    expect(res.status).toBe(200);
+    let eta = data<OrderEtaDto>(res);
+    expect(eta).toMatchObject({
+      orderId: stop.orderId,
+      stopId: stop.id,
+      tripStatus: 'PLANNED',
+      stopStatus: 'PENDING',
+    });
+    expect(eta.etaAt).toBe(eta.plannedArrivalAt);
+    expect(eta.etaAt).toBeTruthy();
+
+    // On the road: the projection from now, the same one the dispatcher's board shows.
+    const at = new Date(`${DAY}T05:35:00+05:30`);
+    await w.db
+      .update(trips)
+      .set({ status: 'IN_PROGRESS', startedAt: at })
+      .where(eq(trips.id, trip.id));
+    await w.db
+      .update(stops)
+      .set({
+        status: 'DELIVERED',
+        outcome: 'DELIVERED',
+        arrivedAt: at,
+        completedAt: at,
+      })
+      .where(eq(stops.id, tripStops[0].id));
+    freezeClock(w.app, `${DAY}T05:40:00+05:30`);
+    res = await get(store.cookie, `/orders/${stop.orderId}/eta`);
+    expect(res.status).toBe(200);
+    eta = data<OrderEtaDto>(res);
+    const board = data<Board>(
+      await call(
+        w,
+        'dispatcher',
+        'get',
+        `/depots/${day.depotId}/tracking?date=${DAY}`,
+      ),
+    );
+    const onBoard = board.trips
+      .flatMap((t) => t.stops)
+      .find((s) => s.stopId === stop.id)!;
+    expect(eta).toMatchObject({
+      tripStatus: 'IN_PROGRESS',
+      standing: 'NEXT',
+      etaAt: onBoard.etaAt,
+    });
+    expect(eta.spareMin).toBeGreaterThan(0);
+    // No vehicle, driver or position rides along.
+    expect(Object.keys(eta).sort()).toEqual(
+      [
+        '_links',
+        'completedAt',
+        'etaAt',
+        'orderId',
+        'orderNo',
+        'plannedArrivalAt',
+        'spareMin',
+        'standing',
+        'stopId',
+        'stopStatus',
+        'tripStatus',
+      ].sort(),
+    );
+
+    // Another outlet's order, and the depot's map, are not hers to see.
+    res = await get(other.cookie, `/orders/${stop.orderId}/eta`);
+    expectProblem(res, 'NOT_FOUND');
+    expect(res.status).toBe(404);
+    res = await get(
+      store.cookie,
+      `/depots/${day.depotId}/tracking?date=${DAY}`,
+    );
+    expect([403, 404]).toContain(res.status);
   });
 });
