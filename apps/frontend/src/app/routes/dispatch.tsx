@@ -32,7 +32,12 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('Order queue'),
             lazy: async () => ({ Component: (await import('@/features/ordering/order-queue-page')).OrderQueuePage }),
           },
-          { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
+          {
+            // 04 (ROO-35).
+            path: 'past-orders',
+            handle: handle('Past orders'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/past-orders-page')).PastOrdersPage }),
+          },
           {
             path: 'plan',
             handle: handle('Plan'),
