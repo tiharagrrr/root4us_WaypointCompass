@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -10,6 +11,7 @@ import { ApiTags } from '@nestjs/swagger';
 import type { Actor as SignedIn } from '@waypoint/shared';
 import {
   Actor,
+  ApiPaginated,
   ApiProblems,
   ApiResource,
   IfMatch,
@@ -20,6 +22,7 @@ import { TripDto } from '../dto/plan.dto';
 import {
   DeferStopDto,
   ReassignTripDto,
+  RepairOptionDto,
   ResequencePreviewDto,
   ResequencePreviewRequestDto,
   ResequenceTripDto,
@@ -39,6 +42,23 @@ export class TripOperationsController {
     private readonly operations: TripOperationsService,
     private readonly queries: PlanQueries,
   ) {}
+
+  /** 20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06). */
+  @Get(':id/repair-options')
+  @RequirePermission('trip:reassign')
+  @ApiPaginated(RepairOptionDto)
+  @ApiProblems(404, 409)
+  async repairOptions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Actor() actor: SignedIn,
+  ) {
+    const items = await this.operations.repairOptions(id, actor);
+    return {
+      items,
+      page: { limit: items.length, offset: 0, total: items.length },
+      links: { self: { href: `/api/v1/trips/${id}/repair-options` } },
+    };
+  }
 
   /** 20: another vehicle or driver (AC-PLN-23). */
   @Post(':id/reassign')

@@ -2,9 +2,10 @@
 // Confirmed orders into trips the dispatcher checks, edits and publishes; owns trip and stop status.
 // Spec: specs/planning/spec.md. Tables: src/db/schema/planning.ts.
 import { BullModule } from '@nestjs/bullmq';
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
+import { EventBus } from '../../core/outbox/event-bus';
 import { QUEUES } from '../../queues';
-import { FleetModule } from '../fleet';
+import { FLEET_EVENTS, FleetModule } from '../fleet';
 import { MasterDataModule } from '../master-data';
 import { AuditModule } from '../audit';
 import { OrderingModule } from '../ordering';
@@ -78,4 +79,18 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
   // AC-PLN-34, AC-LOD-12).
   exports: [DeferralService, TripLifecycleService, EngineRunner],
 })
-export class PlanningModule {}
+export class PlanningModule implements OnModuleInit {
+  constructor(
+    private readonly bus: EventBus,
+    private readonly tripOps: TripOperationsService,
+  ) {}
+
+  /** A vehicle taken out under a published trip flags the trip for repair (ROO-56). */
+  onModuleInit(): void {
+    this.bus.register({
+      name: 'planning',
+      consumes: (type) => type === FLEET_EVENTS.vehicleStatusChanged,
+      handle: (event) => this.tripOps.onVehicleStatusChanged(event.payload),
+    });
+  }
+}

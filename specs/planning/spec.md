@@ -548,7 +548,7 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-03 Publishing before it opens is locked
 - [x] AC-PLN-04 An undecided unplanned order blocks publishing
 - [x] AC-PLN-05 A repeat skip needs an override note
-- [ ] AC-PLN-06 A breakdown after publishing becomes revision 2
+- [x] AC-PLN-06 A breakdown after publishing becomes revision 2
 - [x] AC-PLN-07 A stale If-Match loses
 - [x] AC-PLN-08 One plan per depot and date
 - [x] AC-PLN-09 An engine run records how it ran
@@ -594,6 +594,18 @@ Checklist (tick in the PR that adds the passing test):
   (05 to 09, 15, 17, 18) are snapshotted in CI with the demo clock frozen.
 - Row-level security on `deferrals` re-checks the store scope in Postgres.
 - Logs carry ids only; no names, phone numbers or notes.
+
+## Decided 2026-10-04 (breakdown repair, ROO-56)
+- Planning consumes `vehicle.status_changed`. A vehicle set to BREAKDOWN (or WORKSHOP) marks each trip
+  it still has to run on a published plan dated today or later as can't run (`cantRunReason`
+  BREAKDOWN, or OTHER for the workshop), and emits `trip.cant_run`, the payload execution sends when
+  a driver reports it. Alerts raises its DRIVER_CANT_RUN alert from that, with the reassign fix, and
+  clears it on `trip.reassigned`; no new alert type is needed. A trip already marked is skipped, so a
+  second delivery changes nothing.
+- The repair is a reassign: `GET /trips/{id}/repair-options` checks every other vehicle with the
+  engine as if the trip moved to it (fits, and the hard rules each one breaks), and 20 applies the
+  chosen one through `POST /trips/{id}/reassign`, which is revision 2 and notifies only the trip's
+  people. A reassign clears `cantRunReason`.
 
 ## Decided 2026-10-04 (closing the day)
 - Close is refused (409) while a trip is LOADING, RELEASED or IN_PROGRESS, or a sync conflict on the
@@ -654,15 +666,13 @@ Checklist (tick in the PR that adds the passing test):
   `trip.cancelled`, `stop.deferred` and consumes `order.cancelled`, `order.priority_changed`,
   `order.cutoff_closed`, `trip.cant_run`. Align the table and this spec's depends-on line, which `scripts/check-module-deps.ts` reads.
   Decides: Nimesha.
-- AC-PLN-06: `alertTypeEnum` has no breakdown type, yet `vehicle.status_changed` raises an alert with
-  a repair suggestion. Which type? Decides: Harini (alerts) with Tihara.
-- AC-PLN-06: how a REPAIR run returns its diff and how it is applied (persisted proposal, or an
-  EditOp list posted to `/plans/{id}/edits`). Decides: Tihara.
 - AC-PLN-22, 26: can a RELEASED trip be cancelled (Step 5 allows only re-sequence, stop defer and
   reassign; the trip machine and D8 allow cancel before start), and what happens to a cancelled
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Breakdown repair (AC-PLN-06, ROO-56): the `vehicle.status_changed` consumer, `GET
+  /trips/{id}/repair-options`, and 20's vehicle chips from the engine's check
 - 2026-10-04 Stop deferral, the driver picker and the re-sequence preview (AC-PLN-25, AC-PLN-37,
   AC-PLN-38; AC-PLN-22 now passes in full): `POST /trips/{id}/stops/{stopId}/defer`, `GET
   /plans/{id}/driver-options`, `POST /trips/{id}/resequence/preview`; execution's trip carries a

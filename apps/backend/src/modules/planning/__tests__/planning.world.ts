@@ -266,7 +266,7 @@ export async function depotDay(
 export function call(
   w: World,
   role: Role,
-  method: 'get' | 'post',
+  method: 'get' | 'post' | 'put',
   path: string,
   opts: { body?: unknown; version?: number; key?: string } = {},
 ) {
@@ -277,7 +277,7 @@ export function call(
   if (opts.version !== undefined)
     req = req.set('If-Match', `W/"${opts.version}"`);
   if (opts.key) req = req.set('Idempotency-Key', opts.key);
-  return method === 'post' ? req.send(opts.body ?? {}) : req;
+  return method === 'get' ? req : req.send(opts.body ?? {});
 }
 
 export const data = <T>(res: Response): T => (res.body as { data: T }).data;

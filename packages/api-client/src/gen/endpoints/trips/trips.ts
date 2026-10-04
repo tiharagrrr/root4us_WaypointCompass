@@ -6,13 +6,22 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
-  useMutation
+  useMutation,
+  useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
-  UseMutationResult
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
@@ -26,6 +35,7 @@ import type {
   TripOperationsPreview200,
   TripOperationsReassign200,
   TripOperationsReassignHeaders,
+  TripOperationsRepairOptions200,
   TripOperationsResequence200,
   TripOperationsResequenceHeaders
 } from '../../model';
@@ -35,6 +45,121 @@ import type { ErrorType , BodyType } from '../../../mutator.ts';
 
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+
+
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
+
+export const getTripOperationsRepairOptionsUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/trips/${id}/repair-options`
+}
+
+/**
+ * @summary 20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06).
+ */
+export const tripOperationsRepairOptions = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<TripOperationsRepairOptions200> => {
+
+  return compassFetch<TripOperationsRepairOptions200>(getTripOperationsRepairOptionsUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getTripOperationsRepairOptionsQueryKey = (id: string,) => {
+    return [
+    `/api/v1/trips/${id}/repair-options`
+    ] as const;
+    }
+
+
+export const getTripOperationsRepairOptionsQueryOptions = <TData = Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTripOperationsRepairOptionsQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof tripOperationsRepairOptions>>> = ({ signal }) => tripOperationsRepairOptions(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type TripOperationsRepairOptionsQueryResult = NonNullable<Awaited<ReturnType<typeof tripOperationsRepairOptions>>>
+export type TripOperationsRepairOptionsQueryError = ErrorType<ProblemDto>
+
+
+export function useTripOperationsRepairOptions<TData = Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof tripOperationsRepairOptions>>,
+          TError,
+          Awaited<ReturnType<typeof tripOperationsRepairOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTripOperationsRepairOptions<TData = Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof tripOperationsRepairOptions>>,
+          TError,
+          Awaited<ReturnType<typeof tripOperationsRepairOptions>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTripOperationsRepairOptions<TData = Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary 20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06).
+ */
+
+export function useTripOperationsRepairOptions<TData = Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripOperationsRepairOptions>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getTripOperationsRepairOptionsQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
 
 
 

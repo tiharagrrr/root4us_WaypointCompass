@@ -9,11 +9,12 @@ import {
 } from '@waypoint/engine';
 import {
   type Actor,
+  businessDateOf,
   instantAt,
   tripMachine,
   type TripStatus,
 } from '@waypoint/shared';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { PinoLogger } from 'nestjs-pino';
 import { ClockService } from '../../../core/clock/clock.service';
 import {
@@ -67,6 +68,16 @@ export interface ResequencePreview {
     spareMin: number | null;
   }[];
   violations: Violation[];
+}
+
+/** 20's repair: one other vehicle, checked by the engine for this trip. */
+export interface RepairOption {
+  vehicleId: string;
+  code: string;
+  tripNo: number;
+  fits: boolean;
+  rules: string[];
+  messages: string[];
 }
 
 /** 20's driver picker. */
@@ -149,11 +160,11 @@ export class TripOperationsService {
     const vehicleChanged =
       input.vehicleId !== undefined && input.vehicleId !== trip.vehicleId;
 
-    let changes: Partial<typeof trips.$inferInsert> = {};
+    // Whoever runs it now can: the can't-run (a breakdown, an unwell driver) is answered.
+    let changes: Partial<typeof trips.$inferInsert> = { cantRunReason: null };
     if (vehicleChanged) {
-      const vehicle = ctx.vehicles.get(input.vehicleId!);
-      const current = ctx.vehicles.get(trip.vehicleId);
-      if (!vehicle || !current)
+      const swap = this.swapped(ctx, trip, input.vehicleId!);
+      if (!swap)
         throw new ValidationError([
           {
             field: 'vehicleId',
@@ -161,29 +172,13 @@ export class TripOperationsService {
             message: 'Not a vehicle of this depot',
           },
         ]);
-      const used = new Set(
-        [...ctx.tripsByKey.values()]
-          .filter((t) => t.vehicleId === vehicle.id)
-          .map((t) => t.tripNo),
-      );
-      const tripNo = [1, 2].find((n) => !used.has(n)) ?? 3;
-      const oldKey = tripKeyOf(current.code, trip.tripNo ?? 1);
-      const newKey = tripKeyOf(vehicle.code, tripNo);
-      const next: Plan = {
-        ...ctx.draft,
-        trips: ctx.draft.trips.map((d) =>
-          (d.key ??
-            tripKeyOf(ctx.vehicles.get(d.vehicleId)?.code ?? '', d.tripNo)) ===
-          oldKey
-            ? { ...d, key: newKey, vehicleId: vehicle.id, tripNo }
-            : d,
-        ),
-      };
+      const { vehicle, tripNo, newKey, next } = swap;
       this.refuse(ctx, next, [newKey], input);
       const measured = planSchedule(ctx.input, next).find(
         (t) => t.key === newKey,
       );
       changes = {
+        ...changes,
         vehicleId: vehicle.id,
         tripNo,
         ...(measured && {
@@ -625,6 +620,122 @@ export class TripOperationsService {
       ),
     };
     return { pending, byId, wanted, key, next };
+  }
+
+  /**
+   * The repair (AC-PLN-06): every other vehicle of the depot, each checked by
+   * the engine as if the trip moved to it, so 20 shows which would carry it
+   * and which rule rules each other one out. Nothing is written.
+   */
+  @Transactional()
+  async repairOptions(tripId: string, actor: Actor): Promise<RepairOption[]> {
+    const { trip, ctx } = await this.load(tripId, undefined, actor);
+    return [...ctx.vehicles.values()]
+      .filter((v) => v.id !== trip.vehicleId)
+      .sort((a, b) => a.code.localeCompare(b.code))
+      .map((v) => {
+        const swap = this.swapped(ctx, trip, v.id)!;
+        const hard = this.introduced(ctx, swap.next, [swap.newKey]).filter(
+          (x) => x.severity === 'HARD',
+        );
+        return {
+          vehicleId: v.id,
+          code: v.code,
+          tripNo: swap.tripNo,
+          fits: hard.length === 0,
+          rules: [...new Set(hard.map((x) => x.rule))],
+          messages: hard.map((x) => x.message),
+        };
+      })
+      .sort((a, b) => Number(b.fits) - Number(a.fits));
+  }
+
+  /**
+   * Breakdown watch (ROO-56): a vehicle taken out marks every trip it still
+   * has to run on a published plan as can't run, and says so with
+   * `trip.cant_run`, which alerts raises with the reassign fix (and clears on
+   * `trip.reassigned`). The relay delivers it, as the system; a trip already
+   * marked is left alone, so a second delivery changes nothing.
+   */
+  @Transactional()
+  async onVehicleStatusChanged(payload: unknown): Promise<number> {
+    const p = payload as {
+      vehicleId?: string;
+      status?: string;
+      at?: string;
+    };
+    if (!p.vehicleId || (p.status !== 'BREAKDOWN' && p.status !== 'WORKSHOP'))
+      return 0;
+    const today = businessDateOf(p.at ? new Date(p.at) : this.clock.now());
+    const affected = await this.txHost.tx
+      .select({ trip: trips })
+      .from(trips)
+      .innerJoin(plans, eq(plans.id, trips.planId))
+      .where(
+        and(
+          eq(trips.vehicleId, p.vehicleId),
+          eq(plans.status, 'PUBLISHED'),
+          gte(plans.date, today),
+          inArray(trips.status, [
+            'PLANNED',
+            'LOADING',
+            'RELEASED',
+            'IN_PROGRESS',
+          ]),
+          isNull(trips.cantRunReason),
+        ),
+      );
+    const reason = p.status === 'BREAKDOWN' ? 'BREAKDOWN' : 'OTHER';
+    for (const { trip } of affected) {
+      await this.lifecycle.markCantRun(trip.id, { reason });
+      await this.outbox.add(
+        PLANNING_EVENTS.tripCantRun,
+        {
+          v: 1,
+          tripId: trip.id,
+          driverId: trip.driverId,
+          reason,
+          startedAlready: trip.status === 'IN_PROGRESS',
+        },
+        { aggregate: ['trip', trip.id], depotId: trip.depotId },
+      );
+      this.log.info(
+        {
+          event: 'planning.trip.cant_run',
+          tripId: trip.id,
+          vehicleId: p.vehicleId,
+          reason,
+        },
+        'a trip lost its vehicle',
+      );
+    }
+    return affected.length;
+  }
+
+  /** The plan with this trip moved to another vehicle, on that vehicle's first free trip number. */
+  private swapped(ctx: PlanContext, trip: TripRow, vehicleId: string) {
+    const vehicle = ctx.vehicles.get(vehicleId);
+    const current = ctx.vehicles.get(trip.vehicleId);
+    if (!vehicle || !current) return null;
+    const used = new Set(
+      [...ctx.tripsByKey.values()]
+        .filter((t) => t.vehicleId === vehicle.id)
+        .map((t) => t.tripNo),
+    );
+    const tripNo = [1, 2].find((n) => !used.has(n)) ?? 3;
+    const oldKey = tripKeyOf(current.code, trip.tripNo ?? 1);
+    const newKey = tripKeyOf(vehicle.code, tripNo);
+    const next: Plan = {
+      ...ctx.draft,
+      trips: ctx.draft.trips.map((d) =>
+        (d.key ??
+          tripKeyOf(ctx.vehicles.get(d.vehicleId)?.code ?? '', d.tripNo)) ===
+        oldKey
+          ? { ...d, key: newKey, vehicleId: vehicle.id, tripNo }
+          : d,
+      ),
+    };
+    return { vehicle, tripNo, newKey, next };
   }
 
   private reason(code: string | undefined): string {

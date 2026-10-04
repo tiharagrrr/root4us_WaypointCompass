@@ -9,6 +9,45 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary 20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06).
+ */
+export const TripOperationsRepairOptionsParams = zod.object({
+  "id": zod.string()
+})
+
+export const TripOperationsRepairOptionsResponse = zod.object({
+  "data": zod.array(zod.object({
+  "vehicleId": zod.string(),
+  "code": zod.string(),
+  "tripNo": zod.number().describe('The trip number it would run as'),
+  "fits": zod.boolean().describe('No hard rule broken'),
+  "rules": zod.array(zod.string()).describe('Hard rules it breaks'),
+  "messages": zod.array(zod.string())
+})),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional(),
+  "page": zod.object({
+  "limit": zod.number(),
+  "offset": zod.number(),
+  "total": zod.number()
+})
+}),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})
+
+/**
  * @summary 20: another vehicle or driver (AC-PLN-23).
  */
 export const TripOperationsReassignParams = zod.object({

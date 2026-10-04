@@ -6,6 +6,7 @@ import {
   usePlansDriverOptions,
   usePlansForDay,
   usePlansTrips,
+  useTripOperationsRepairOptions,
   useTripsGet,
 } from '@compass/api-client'
 import { useQueryClient } from '@tanstack/react-query'
@@ -37,6 +38,7 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
   const trips = usePlansTrips(planId, { query: { enabled: planId !== '' } })
   const vehicles = usePlanBuildingVehicleOptions(planId, { query: { enabled: open === 'reassign' && planId !== '' } })
   const drivers = usePlansDriverOptions(planId, { query: { enabled: open === 'reassign' && planId !== '' } })
+  const repairs = useTripOperationsRepairOptions(tripId, { query: { enabled: open === 'reassign' } })
   const trip = trips.data?.data.find((t) => t.id === tripId)
   const reassign = getLink(summary?._links, 'reassign')
   const resequence = getLink(summary?._links, 'resequence')
@@ -67,6 +69,7 @@ export function TripOperationsCard({ tripId }: { tripId: string }) {
           trip={trip}
           vehicles={vehicles.data?.data ?? []}
           drivers={drivers.data?.data ?? []}
+          repairs={repairs.data?.data}
           link={reassign}
           version={summary.version}
           revision={plan.revision}
