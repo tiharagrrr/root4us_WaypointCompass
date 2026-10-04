@@ -13,6 +13,7 @@ import { AllocationProcessor } from './allocation.processor';
 import { NotificationsProcessor } from './notifications.processor';
 import { OutboxProcessor } from './outbox.processor';
 import { PositionSimulatorRunner } from './position-simulator.runner';
+import { SimulationLoop } from './simulation.loop';
 import { TickerProcessor } from './ticker.processor';
 
 /**
