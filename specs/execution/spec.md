@@ -554,6 +554,13 @@ say so in the spec if you change one.
   (the planned arrival until the trip leaves, the engine's projection from now after that, no vehicle or
   position), and M3 shows it. Its test sits in planning's live-day suite. The stored ETA, pings, eta.updated
   and late risk (AC-EXE-17 to 21) are still open
+- 2026-10-04 D10 and D11 built (ROO-62). D10 reads `GET /me/trips` with no date, which answers with
+  the 7-day window, and groups the trips by day; each card opens D11. D11 reads the trip, its stops
+  from the offline bundle and each stop's time, receiver and exception note from `GET /stops/{id}`;
+  with no signal a trip this phone ran still lists its stops from Dexie. Both are read only, so
+  nothing goes through the outbox. AC-EXE-02 has a screen test on each. What the frames show and
+  the API does not carry (in-full and on-time figures, sync times, photo counts) is in
+  docs/departures.md. D6 and D14 are still to build
 - 2026-10-04 D7 built (ROO-62): the round now has an ending. Recording the last stop — a delivery
   on D4 or an exception on D5 — lands on D7 instead of D1, and D1 offers the way back to it for a
   driver who closed the app, so a finished round can always be closed. `TRIP_COMPLETED` was already
