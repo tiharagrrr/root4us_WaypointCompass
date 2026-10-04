@@ -5,8 +5,7 @@ The same images run in these environments:
 | Environment | Purpose | How |
 | --- | --- | --- |
 | Docker Compose | Judges, local work, fallback host | `docker compose up --build` at the repo root |
-| Kubernetes (Oracle OKE free tier) | Public HTTPS URL for review, semifinal and finale | Manifests in `deploy/k8s`, images from GHCR |
-| Railway | Live demo URL | One service per app, built from the same Dockerfiles ([below](#railway-live-demo)) |
+| Railway | Public HTTPS URL (https://waypoint-root4us.up.railway.app) | One service per app, built from the same Dockerfiles ([below](#railway-live-demo)) |
 
 ## Docker Compose
 
@@ -35,9 +34,9 @@ Reset everything, including the database: `docker compose down -v`.
 3. Publish ports 80 and 443 for `web` (add `"443:443"` to its `ports`) and remove the host ports for `postgres`, `redis` and `s3` — the Garage admin API manages buckets and keys and must never be public.
 4. `docker compose up -d --build`. Caddy obtains the TLS certificate automatically.
 
-## Kubernetes (public URL)
+## Kubernetes (designed, not built)
 
-See the team spec for the full design. In summary:
+The original plan for the public URL. No manifests were written; the live demo runs on Railway instead ([decisions.md](decisions.md#13-railway-for-the-live-demo)). The design, for the record:
 
 - **Workloads:** `web` (2 replicas), `api` (HPA on 70% CPU, 2 to 6 replicas), `worker` (KEDA on BullMQ queue length, 1 to 4), `redis`.
 - **State lives outside the cluster:** Supabase Postgres (pooled URL for the app, direct URL for migrations) and Supabase Storage via its S3 API.

@@ -6,10 +6,10 @@ Waypoint Compass connects **ordering, planning, loading, delivery and receipt** 
 
 | | |
 | --- | --- |
-| **Live URL** | _https://…_ |
+| **Live URL** | https://waypoint-root4us.up.railway.app |
 | **Demo video** | _YouTube (unlisted) link_ |
 | **Designathon prototype** | _Figma link_ |
-| **Docs** | [Architecture](docs/architecture.md) · [Data model](docs/data-model.md) · [AI tool disclosure](docs/ai-tool-disclosure.md) · [Deployment](docs/deployment.md) |
+| **Docs** | [Architecture](docs/architecture.md) · [Data model](docs/data-model.md) · [Decisions](docs/decisions.md) · [Departures](docs/departures.md) · [AI tool disclosure](docs/ai-tool-disclosure.md) · [Deployment](docs/deployment.md) |
 
 ---
 
@@ -82,7 +82,7 @@ trusted automatically.
 6. **Store manager**: **Orders** shows the ETA of an order that is on a trip, and a deferred order opens its notice with the reason. **Receipts** lists deliveries to confirm; confirm one line by line against the driver's proof, or report an issue and follow its thread.
 7. **Order timeline**: **Timeline** on any order (the store's Orders and Receipts, the dispatcher's Order queue) lists every step with who, when, device and reason; a delivery recorded offline keeps its device time and is marked Synced late.
 
-Not built yet, shown as placeholders: Past orders (04), Plan ahead (12, 13), Forecast (22) and the admin's Outlets, Depots and Vehicles (A3 to A5). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
+Not built yet, shown as placeholders: the dispatcher's Past orders (04), Plan ahead (12, 13) and Forecast (22), and the driver's Trips and Past trip (D10, D11). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
 
 ## Departures from the Designathon submission
 
@@ -134,11 +134,13 @@ apps/
   backend/        NestJS REST API + BullMQ worker (Drizzle ORM, PostgreSQL)
   frontend/       React PWA: dispatcher, loader, driver and store manager views
 packages/
-  shared/         Domain types, constraint validator, trip-time rules, Zod schemas
-data/seed/        Shared challenge datasets (outlets, vehicles, calendar, ...)
-datathon/         Datathon notebooks, models and submissions (data git-ignored)
-deploy/           Caddyfile, database roles, observability configs, Kubernetes manifests
-docs/             Architecture, data model, AI disclosure, ADRs, spec, brief
+  engine/         Planning rules, validator and allocator (pure TypeScript)
+  shared/         Enums, state machines, permission matrix, Zod schemas
+  api-client/     Hooks and MSW mocks generated from openapi.json
+  ui-tokens/      Compass design tokens
+data/seed/        Shared challenge datasets (git-ignored; copy them in before seeding)
+deploy/           Caddyfile, database roles, object storage setup, observability configs
+docs/             Architecture, data model, decisions, departures, AI disclosure, deployment
 specs/            One spec per module with acceptance criteria, plus API, data, engine and screen references
 .claude/          Shared Claude Code settings, hooks, commands and skills (CLAUDE.md at the root)
 docker-compose.yml
