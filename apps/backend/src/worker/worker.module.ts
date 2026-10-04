@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { DiscoveryModule } from '@nestjs/core';
 import { AppModule } from '../app.module';
+import { NotificationsModule } from '../modules/notifications';
 import { PlanningModule } from '../modules/planning';
 import { DemoInbox } from '../core/demo/demo-inbox';
 import { TickerService } from '../core/scheduling/ticker.service';
@@ -22,6 +23,8 @@ import { TickerProcessor } from './ticker.processor';
     AppModule,
     // For EngineRunner, which the allocation processor drives.
     PlanningModule,
+    // For NotificationSender, which notify.send drives.
+    NotificationsModule,
     DiscoveryModule,
     BullModule.registerQueue({ name: QUEUES.ticker }),
     BullModule.registerQueue({ name: QUEUES.outbox }),

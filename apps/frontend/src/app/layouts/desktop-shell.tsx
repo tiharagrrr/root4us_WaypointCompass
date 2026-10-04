@@ -2,16 +2,15 @@
 // (03 185:12856): a 232 px sidebar with the wordmark, the nav and the account card, and a header
 // carrying the page title, the page's own actions, a status slot and the notification bell.
 import { useState, type ReactNode } from 'react'
-import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { cn } from '@/lib/cn'
-import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
 import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
 import { HeaderSlotContext, PageHeaderContext, type PageHeader } from './header-slot'
+import { NotificationBell } from '@/features/notifications/notification-bell'
 
 export interface ShellNavItem {
   to: string
@@ -37,12 +36,9 @@ export interface DesktopShellProps {
   headerStatus?: ReactNode
   /** Left of the page actions: the dispatcher's depot switch. */
   headerLead?: ReactNode
-  /** Unread notifications for the bell's badge (frame 02). */
-  notificationCount?: number
 }
 
-export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, headerLead, notificationCount }: DesktopShellProps) {
-  const { t } = useTranslation()
+export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, headerLead }: DesktopShellProps) {
   useEventStream()
   const handle = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
@@ -106,14 +102,7 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
                 <div className="h-6 w-px bg-slate-200" />
               </div>
               {headerStatus}
-              <button
-                type="button"
-                aria-label={notificationCount ? t('shell.notificationsUnread', { count: notificationCount }) : t('shell.notifications')}
-                className="relative flex size-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-background text-slate-700 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring/40"
-              >
-                <Icon name="bell" size={18} />
-                {notificationCount ? <CountBadge className="absolute left-[22px] top-[-6px]">{notificationCount}</CountBadge> : null}
-              </button>
+              <NotificationBell />
             </div>
           </header>
           <main className="flex min-w-0 flex-1 flex-col gap-3 px-6 py-4">

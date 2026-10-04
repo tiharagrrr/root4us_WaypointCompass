@@ -2,13 +2,13 @@
 import { useState, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
-import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
 import { AccountMenu } from '@/features/identity/account-menu'
 import { Wordmark } from '@/ui/wordmark'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { useRouteHandle } from '../route-handle'
 import { HeaderSlotContext } from './header-slot'
+import { NotificationBell } from '@/features/notifications/notification-bell'
 
 export type AdminSection = 'users' | 'outlets' | 'depots' | 'vehicles' | 'settings'
 
@@ -25,11 +25,9 @@ export interface AdminLayoutProps {
   headerStatus?: ReactNode
   /** Counts beside the nav items (42 users, 120 outlets, ...), when known. */
   navCounts?: Partial<Record<AdminSection, number>>
-  /** Unread notifications for the bell's badge. */
-  notificationCount?: number
 }
 
-export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }: AdminLayoutProps) {
+export function AdminLayout({ headerStatus, navCounts = {} }: AdminLayoutProps) {
   useEventStream()
   const { title } = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
@@ -84,14 +82,7 @@ export function AdminLayout({ headerStatus, navCounts = {}, notificationCount }:
                 <div className="h-6 w-px bg-slate-200" />
               </div>
               {headerStatus}
-              <button
-                type="button"
-                aria-label={notificationCount ? `Notifications, ${notificationCount} unread` : 'Notifications'}
-                className="relative flex size-9 cursor-pointer items-center justify-center rounded-md border border-slate-300 bg-background text-slate-700 outline-none transition-colors hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-ring/40"
-              >
-                <Icon name="bell" size={18} />
-                {notificationCount ? <CountBadge className="absolute left-[22px] top-[-6px]">{notificationCount}</CountBadge> : null}
-              </button>
+              <NotificationBell />
             </div>
           </header>
           <main className="flex min-w-0 flex-1 flex-col gap-3 px-6 py-4">

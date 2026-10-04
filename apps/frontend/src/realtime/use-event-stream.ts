@@ -66,6 +66,9 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'deferral.store_responded': () => ['/api/v1/deferrals'],
   'deferral.replied': () => ['/api/v1/deferrals'],
   'deferral.reversed': () => ['/api/v1/deferrals', '/api/v1/orders'],
+  // 02: the bell's badge and list follow new and read notifications, on every tab.
+  'notification.created': () => ['/api/v1/me/notifications'],
+  'notification.read': () => ['/api/v1/me/notifications'],
   'clock.changed': () => ['/api/v1/clock'],
   'settings.changed': () => ['/api/v1/settings'],
   'identity.user.role_changed': () => ['/api/v1/me'],

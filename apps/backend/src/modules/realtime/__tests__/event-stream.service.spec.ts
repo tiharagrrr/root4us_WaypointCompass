@@ -5,6 +5,7 @@ import { Observable, Subject } from 'rxjs';
 import type { DeliveredEvent } from '../../../core/outbox/event-bus';
 import type { MyTripsQueries } from '../../execution';
 import { EventStreamService, HEARTBEAT_MS } from '../event-stream.service';
+import type { PresenceService } from '../presence.service';
 import type { RealtimeHub, Replay } from '../realtime.hub';
 
 const ID = (n: number) => `0190a000-0000-7000-8000-00000000000${n}`;
@@ -52,6 +53,11 @@ function setup(replay: Replay = { resync: false, events: [] }) {
   const service = new EventStreamService(
     hub as unknown as RealtimeHub,
     { list: () => Promise.resolve([]) } as unknown as MyTripsQueries,
+    {
+      opened: () => Promise.resolve(),
+      touch: () => Promise.resolve(),
+      closed: () => Promise.resolve(),
+    } as unknown as PresenceService,
     log as unknown as PinoLogger,
   );
   const frames: MessageEvent[] = [];

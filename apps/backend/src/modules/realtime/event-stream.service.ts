@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import type { DeliveredEvent } from '../../core/outbox/event-bus';
 import { MyTripsQueries } from '../execution';
 import { channelsFor, reaches, toDomainEvent } from './domain/channels';
+import { PresenceService } from './presence.service';
 import { RealtimeHub } from './realtime.hub';
 
 /** The browser waits this long before it reconnects. */
@@ -47,6 +48,7 @@ export class EventStreamService {
   constructor(
     private readonly hub: RealtimeHub,
     private readonly myTrips: MyTripsQueries,
+    private readonly presence: PresenceService,
     private readonly log: PinoLogger,
   ) {
     this.log.setContext(EventStreamService.name);
@@ -124,7 +126,13 @@ export class EventStreamService {
           cursor = event.id;
         }
       });
-      const beat = setInterval(() => control('heartbeat'), HEARTBEAT_MS);
+      // Presence is a nicety (no push while watching); Redis trouble must never end a stream.
+      const quietly = (work: Promise<void>) => void work.catch(() => undefined);
+      quietly(this.presence.opened(actor.id));
+      const beat = setInterval(() => {
+        control('heartbeat');
+        quietly(this.presence.touch(actor.id));
+      }, HEARTBEAT_MS);
 
       connections.inc({ role: actor.role });
       this.log.info(
@@ -135,6 +143,7 @@ export class EventStreamService {
         clearInterval(beat);
         live.unsubscribe();
         connections.dec({ role: actor.role });
+        quietly(this.presence.closed(actor.id));
         this.log.info(
           { event: 'realtime.stream.closed', role: actor.role },
           'stream closed',
