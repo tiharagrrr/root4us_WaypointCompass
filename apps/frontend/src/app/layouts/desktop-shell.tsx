@@ -3,7 +3,7 @@
 // carrying the page title, the page's own actions, a status slot and the notification bell.
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { cn } from '@/lib/cn'
 import { CountBadge } from '@/ui/badge'
 import { Icon, type IconName } from '@/ui/icon'
@@ -21,6 +21,8 @@ export interface ShellNavItem {
   count?: number
   /** Stay active on child routes too; the default is an exact match. */
   deep?: boolean
+  /** Other paths (and their children) that belong to this item, e.g. 21 under Tracking. */
+  alsoActive?: readonly string[]
 }
 
 export interface DesktopShellProps {
@@ -45,6 +47,8 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
   const handle = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
   const [pageHeader, setPageHeader] = useState<PageHeader | null>(null)
+  const { pathname } = useLocation()
+  const belongs = (item: ShellNavItem) => (item.alsoActive ?? []).some((p) => pathname === p || pathname.startsWith(`${p}/`))
 
   return (
     <PageHeaderContext.Provider value={setPageHeader}>
@@ -64,11 +68,13 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
                 className={({ isActive }) =>
                   cn(
                     'group flex items-center gap-2.5 rounded-md p-2 no-underline transition-colors duration-100',
-                    isActive ? 'bg-accent text-primary' : 'text-foreground hover:bg-slate-100',
+                    isActive || belongs(item) ? 'bg-accent text-primary' : 'text-foreground hover:bg-slate-100',
                   )
                 }
               >
-                {({ isActive }) => (
+                {({ isActive: exact }) => {
+                  const isActive = exact || belongs(item)
+                  return (
                   <>
                     <Icon name={item.icon} size={17} className={isActive ? 'text-primary' : 'text-slate-500'} />
                     <span className={cn('flex-1 font-sans text-[13px] leading-auto', isActive ? 'font-bold' : 'font-medium')}>{item.label}</span>
@@ -78,7 +84,8 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
                       </span>
                     ) : null}
                   </>
-                )}
+                  )
+                }}
               </NavLink>
             ))}
           </nav>

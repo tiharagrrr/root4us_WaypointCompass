@@ -52,3 +52,51 @@ export const VehicleFuelFuelResponse = zod.object({
 })
 })
 
+/**
+ * @summary Set a vehicle's status, with a reason
+ */
+export const VehicleStatusSetStatusParams = zod.object({
+  "id": zod.string()
+})
+
+export const VehicleStatusSetStatusHeader = zod.object({
+  "If-Match": zod.string().describe('W/"<version>" from the ETag of the resource you loaded')
+})
+
+export const vehicleStatusSetStatusBodyReasonMax = 200;
+
+
+
+export const VehicleStatusSetStatusBody = zod.object({
+  "status": zod.enum(['ACTIVE', 'WORKSHOP', 'BREAKDOWN']),
+  "reason": zod.string().max(vehicleStatusSetStatusBodyReasonMax).optional().describe('Required')
+})
+
+export const VehicleStatusSetStatusResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "code": zod.string(),
+  "depotId": zod.string(),
+  "status": zod.enum(['ACTIVE', 'WORKSHOP', 'BREAKDOWN']),
+  "statusReason": zod.string().nullable(),
+  "statusChangedAt": zod.string().nullable(),
+  "version": zod.number(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+})).describe('self, status (PUT, If-Match).')
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+

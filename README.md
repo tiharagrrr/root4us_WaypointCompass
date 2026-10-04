@@ -20,6 +20,9 @@ Requirements: Docker with Compose v2.
 ```bash
 git clone <repo-url> && cd <repo>
 cp .env.example .env      # optional: defaults work as-is
+# Copy the dataset CSVs (outlets, vehicles, calendar, district_travel, service_allowance,
+# traffic_speed, road_conditions, deliveries_train, task2b_peak_day_*) into data/seed.
+# They are confidential, so the repository does not carry them; the seed reads them from there.
 docker compose up --build
 ```
 

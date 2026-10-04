@@ -32,6 +32,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/settings/*" },
   { method: "all", path: "/api/v1/clock" },
   { method: "all", path: "/api/v1/demo/*" },
+  // The live event stream every shell opens (ROO-25).
+  { method: "get", path: "/api/v1/streams/me" },
   { method: "all", path: "/api/v1/deferral-reasons" },
   { method: "all", path: "/api/v1/deferral-reasons/*" },
   // Master data reads and the A3/A4 edits (ROO-19).

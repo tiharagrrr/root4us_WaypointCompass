@@ -7252,6 +7252,128 @@
         ]
       }
     },
+    "/api/v1/vehicles/{id}/status": {
+      "put": {
+        "operationId": "vehicleStatusSetStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetVehicleStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VehicleStatusDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Set a vehicle's status, with a reason",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
     "/api/v1/deferral-reasons": {
       "get": {
         "operationId": "deferralReasonsList",
@@ -7695,6 +7817,100 @@
         ]
       }
     },
+    "/api/v1/depots/{depotId}/tracking": {
+      "get": {
+        "operationId": "plansTracking",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Business date; today by default",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TrackingDayDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/plans/{id}": {
       "get": {
         "operationId": "plansGet",
@@ -8040,6 +8256,182 @@
           }
         },
         "summary": "Orders on no trip, with reason, priority and repeat-skip flag (15).",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/plans/{id}/end-of-day": {
+      "get": {
+        "operationId": "plansEndOfDay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EndOfDayDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "21: each trip's results, what to follow up, and whether the day can close.",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/plans/{id}/driver-options": {
+      "get": {
+        "operationId": "plansDriverOptions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DriverOptionDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "20: the depot's drivers and their trips on this plan (AC-PLN-37).",
         "tags": [
           "plans"
         ]
@@ -9319,6 +9711,147 @@
         ]
       }
     },
+    "/api/v1/plans/{id}/close": {
+      "post": {
+        "operationId": "planBuildingClose",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlanDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "21: close the day (AC-PLN-29). Unserved stops become deferrals, finished\ntrips record their fuel, and the plan is CLOSED. 409 while a trip is on\nthe road or a sync conflict is open.",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/deferrals": {
       "get": {
         "operationId": "deferralsList",
@@ -10002,6 +10535,673 @@
         "summary": "23: the dispatcher's one reply to the store, shown on M4 (AC-PLN-35).",
         "tags": [
           "deferrals"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/repair-options": {
+      "get": {
+        "operationId": "tripOperationsRepairOptions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RepairOptionDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "20's repair: each other vehicle, checked by the engine for this trip (AC-PLN-06).",
+        "tags": [
+          "trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/reassign": {
+      "post": {
+        "operationId": "tripOperationsReassign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReassignTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED\n\nPLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "20: another vehicle or driver (AC-PLN-23).",
+        "tags": [
+          "trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/resequence/preview": {
+      "post": {
+        "operationId": "tripOperationsPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResequencePreviewRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ResequencePreviewDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "19b: projected arrivals and violations for an order of the stops; saves nothing (AC-PLN-38).",
+        "tags": [
+          "trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/stops/{stopId}/defer": {
+      "post": {
+        "operationId": "tripOperationsDeferStop",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stopId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeferStopDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "19a, 19b: one stop still to come is deferred to the next run (AC-PLN-25).",
+        "tags": [
+          "trips"
+        ]
+      }
+    },
+    "/api/v1/trips/{id}/resequence": {
+      "post": {
+        "operationId": "tripOperationsResequence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResequenceTripDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED\n\nPLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "19b: the stops still to come, in a new order (AC-PLN-24).",
+        "tags": [
+          "trips"
         ]
       }
     },
@@ -13460,6 +14660,47 @@
           "alerts"
         ]
       }
+    },
+    "/api/v1/streams/me": {
+      "get": {
+        "operationId": "streamsMe",
+        "parameters": [
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "text/event-stream; channels come from the actor, never from the client.",
+        "tags": [
+          "streams"
+        ]
+      }
     }
   },
   "info": {
@@ -16559,6 +17800,86 @@
           "_links"
         ]
       },
+      "VehicleStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "VEH007"
+          },
+          "code": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "WORKSHOP",
+              "BREAKDOWN"
+            ],
+            "example": "BREAKDOWN"
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "example": "Compressor fault"
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:40:00+05:30"
+          },
+          "version": {
+            "type": "number",
+            "example": 4
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            },
+            "description": "self, status (PUT, If-Match)."
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "depotId",
+          "status",
+          "statusReason",
+          "statusChangedAt",
+          "version",
+          "_links"
+        ]
+      },
+      "SetVehicleStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "WORKSHOP",
+              "BREAKDOWN"
+            ],
+            "type": "string",
+            "example": "BREAKDOWN"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "Compressor fault",
+            "description": "Required"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "DeferralReasonDto": {
         "type": "object",
         "properties": {
@@ -16766,20 +18087,72 @@
           "_links"
         ]
       },
-      "StopDto": {
+      "TrackingTotalsDto": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          "trips": {
+            "type": "number",
+            "example": 14
           },
-          "tripId": {
-            "type": "string",
-            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          "onRoad": {
+            "type": "number",
+            "example": 11,
+            "description": "Trips in progress"
           },
-          "orderId": {
+          "released": {
+            "type": "number",
+            "example": 14,
+            "description": "Trips released, on the road or done"
+          },
+          "stopsPlanned": {
+            "type": "number",
+            "example": 148
+          },
+          "stopsDelivered": {
+            "type": "number",
+            "example": 64
+          },
+          "lateRisk": {
+            "type": "number",
+            "example": 2,
+            "description": "Stops still to come projected past their window"
+          },
+          "deferred": {
+            "type": "number",
+            "example": 7,
+            "description": "Confirmed deferrals on the plan"
+          },
+          "repeatSkips": {
+            "type": "number",
+            "example": 2
+          }
+        },
+        "required": [
+          "trips",
+          "onRoad",
+          "released",
+          "stopsPlanned",
+          "stopsDelivered",
+          "lateRisk",
+          "deferred",
+          "repeatSkips"
+        ]
+      },
+      "TrackingStopDto": {
+        "type": "object",
+        "properties": {
+          "stopId": {
             "type": "string",
-            "example": "0192a3f4-0000-7000-8000-00000000e001"
+            "example": "0192a3f4-0000-7000-8000-00000000d101"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 4
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
           },
           "outletId": {
             "type": "string",
@@ -16787,32 +18160,38 @@
           },
           "outletName": {
             "type": "string",
-            "example": "Fresh Kadawatha"
-          },
-          "seq": {
-            "type": "number",
-            "nullable": true,
-            "example": 1
+            "example": "Fresh Ja-Ela"
           },
           "status": {
-            "enum": [
-              "PENDING",
-              "ARRIVED",
-              "DELIVERED",
-              "PARTIAL",
-              "FAILED",
-              "CANCELLED"
-            ],
             "type": "string",
-            "example": "ARRIVED"
+            "example": "PENDING"
           },
-          "window": {
-            "$ref": "#/components/schemas/StopWindowDto"
+          "windowOpenMin": {
+            "type": "number",
+            "example": 330,
+            "description": "Window opens, minutes after midnight"
+          },
+          "windowCloseMin": {
+            "type": "number",
+            "example": 480,
+            "description": "Window closes, minutes after midnight"
           },
           "plannedArrivalAt": {
             "type": "string",
             "nullable": true,
-            "example": "2026-10-02T04:00:00+05:30"
+            "example": "2026-10-02T07:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:42:00+05:30",
+            "description": "Projected arrival for a stop still to come; from the engine, from now when the trip is on the road"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 18,
+            "description": "Minutes between the projected (or planned) arrival and the window closing; negative is late"
           },
           "arrivedAt": {
             "type": "string",
@@ -16824,62 +18203,301 @@
             "nullable": true,
             "example": null
           },
-          "outcome": {
-            "nullable": true,
+          "standing": {
             "enum": [
               "DELIVERED",
               "PARTIAL",
-              "REFUSED",
-              "DAMAGED",
-              "OUTLET_CLOSED"
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
             ],
             "type": "string",
-            "example": null
-          },
-          "receiverName": {
+            "example": "NEXT"
+          }
+        },
+        "required": [
+          "stopId",
+          "seq",
+          "orderNo",
+          "outletId",
+          "outletName",
+          "status",
+          "windowOpenMin",
+          "windowCloseMin",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "arrivedAt",
+          "completedAt",
+          "standing"
+        ]
+      },
+      "TrackingTripDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
             "type": "string",
-            "nullable": true,
-            "example": null
+            "example": "0192a3f4-0000-7000-8000-00000000c101"
           },
-          "exceptionNote": {
+          "vehicleCode": {
             "type": "string",
-            "nullable": true,
-            "example": null
+            "example": "REF-07"
           },
-          "unitsDelivered": {
+          "vehicleType": {
+            "type": "string",
+            "example": "TRUCK"
+          },
+          "vehicleTemp": {
+            "type": "string",
+            "example": "REEFER"
+          },
+          "tripNo": {
             "type": "number",
             "nullable": true,
-            "example": null
-          },
-          "version": {
-            "type": "number",
             "example": 1
+          },
+          "driverName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Aniqa Razick"
+          },
+          "brand": {
+            "type": "string",
+            "example": "FRESH"
+          },
+          "tempClass": {
+            "type": "string",
+            "example": "CHILLED"
+          },
+          "status": {
+            "type": "string",
+            "example": "IN_PROGRESS"
+          },
+          "standing": {
+            "enum": [
+              "ON_TIME",
+              "LATE_RISK",
+              "LOADING",
+              "PLANNED",
+              "COMPLETE"
+            ],
+            "type": "string",
+            "example": "ON_TIME"
+          },
+          "cantRunReason": {
+            "type": "string",
+            "nullable": true,
+            "example": null,
+            "description": "Why the trip cannot run, when the driver or a breakdown said"
+          },
+          "delivered": {
+            "type": "number",
+            "example": 3
+          },
+          "stopsTotal": {
+            "type": "number",
+            "example": 10
+          },
+          "nextEtaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:42:00+05:30"
+          },
+          "nextOutletName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Fresh Ja-Ela"
+          },
+          "nextWindowOpenMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 420
+          },
+          "nextWindowCloseMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 480
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:40:00+05:30"
+          },
+          "loadWeightKg": {
+            "type": "number",
+            "example": 3420
+          },
+          "loadVolumeM3": {
+            "type": "number",
+            "example": 15.8
+          },
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingStopDto"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "vehicleCode",
+          "vehicleType",
+          "vehicleTemp",
+          "tripNo",
+          "driverName",
+          "brand",
+          "tempClass",
+          "status",
+          "standing",
+          "cantRunReason",
+          "delivered",
+          "stopsTotal",
+          "nextEtaAt",
+          "nextOutletName",
+          "nextWindowOpenMin",
+          "nextWindowCloseMin",
+          "plannedDepartAt",
+          "loadWeightKg",
+          "loadVolumeM3",
+          "stops"
+        ]
+      },
+      "TrackingDayDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "planId": {
+            "type": "string",
+            "nullable": true,
+            "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
+          },
+          "planStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PUBLISHED"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/TrackingTotalsDto"
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingTripDto"
+            }
           },
           "_links": {
             "type": "object",
             "additionalProperties": {
               "$ref": "#/components/schemas/LinkDto"
-            }
+            },
+            "description": "self, plan, endOfDay."
+          }
+        },
+        "required": [
+          "depotId",
+          "date",
+          "planId",
+          "planStatus",
+          "totals",
+          "trips",
+          "_links"
+        ]
+      },
+      "PlanStopDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ARRIVED",
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "example": "PENDING"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "outletName": {
+            "type": "string",
+            "example": "Fresh Kadawatha"
+          },
+          "units": {
+            "type": "number",
+            "example": 24
+          },
+          "weightKg": {
+            "type": "number",
+            "example": 312.5
+          },
+          "volumeM3": {
+            "type": "number",
+            "example": 1.84
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:07:00+05:30"
+          },
+          "plannedServiceMin": {
+            "type": "number",
+            "example": 16
+          },
+          "windowOpenMin": {
+            "type": "number",
+            "example": 210,
+            "description": "Effective window, minutes after midnight"
+          },
+          "windowCloseMin": {
+            "type": "number",
+            "example": 480
           }
         },
         "required": [
           "id",
-          "tripId",
-          "orderId",
-          "outletId",
-          "outletName",
           "seq",
           "status",
-          "window",
+          "orderId",
+          "orderNo",
+          "outletId",
+          "outletName",
+          "units",
+          "weightKg",
+          "volumeM3",
           "plannedArrivalAt",
-          "arrivedAt",
-          "completedAt",
-          "outcome",
-          "receiverName",
-          "exceptionNote",
-          "unitsDelivered",
-          "version",
-          "_links"
+          "plannedServiceMin",
+          "windowOpenMin",
+          "windowCloseMin"
         ]
       },
       "RuleCode": {
@@ -17116,7 +18734,7 @@
           "stops": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StopDto"
+              "$ref": "#/components/schemas/PlanStopDto"
             }
           },
           "violations": {
@@ -17334,6 +18952,265 @@
           "deferralId",
           "note",
           "toDate"
+        ]
+      },
+      "EndOfDayTotalsDto": {
+        "type": "object",
+        "properties": {
+          "stops": {
+            "type": "number",
+            "example": 148,
+            "description": "Live stops on the day’s trips"
+          },
+          "delivered": {
+            "type": "number",
+            "example": 144
+          },
+          "partial": {
+            "type": "number",
+            "example": 3
+          },
+          "failed": {
+            "type": "number",
+            "example": 2
+          },
+          "unserved": {
+            "type": "number",
+            "example": 0,
+            "description": "Stops nobody reached; closing the day defers them"
+          },
+          "onTimePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 93,
+            "description": "Whole percent of stops with an arrival that arrived inside the window; null before any arrival"
+          },
+          "deferred": {
+            "type": "number",
+            "example": 7,
+            "description": "Confirmed deferrals on this plan"
+          }
+        },
+        "required": [
+          "stops",
+          "delivered",
+          "partial",
+          "failed",
+          "unserved",
+          "onTimePct",
+          "deferred"
+        ]
+      },
+      "EndOfDayTripDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c101"
+          },
+          "vehicleCode": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "tripNo": {
+            "type": "number",
+            "example": 1
+          },
+          "driverName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Aniqa Razick"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ],
+            "example": "COMPLETED"
+          },
+          "stops": {
+            "type": "number",
+            "example": 10
+          },
+          "delivered": {
+            "type": "number",
+            "example": 8
+          },
+          "partial": {
+            "type": "number",
+            "example": 1
+          },
+          "failed": {
+            "type": "number",
+            "example": 1
+          },
+          "onTimePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "openConflicts": {
+            "type": "number",
+            "example": 0,
+            "description": "Open sync conflicts (19c) on this trip"
+          }
+        },
+        "required": [
+          "tripId",
+          "vehicleCode",
+          "tripNo",
+          "driverName",
+          "status",
+          "stops",
+          "delivered",
+          "partial",
+          "failed",
+          "onTimePct",
+          "openConflicts"
+        ]
+      },
+      "EndOfDayFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "FAILED_STOP",
+              "SHORT",
+              "ISSUE",
+              "NOT_REACHED",
+              "SYNC_CONFLICT"
+            ],
+            "type": "string",
+            "example": "FAILED_STOP"
+          },
+          "title": {
+            "type": "string",
+            "example": "Failed stop · Tech Negombo"
+          },
+          "detail": {
+            "type": "string",
+            "example": "Outlet closed on arrival."
+          },
+          "tripId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "detail",
+          "tripId",
+          "orderId"
+        ]
+      },
+      "EndOfDayDto": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "string",
+            "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "CLOSED"
+            ],
+            "example": "PUBLISHED"
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "totals": {
+            "$ref": "#/components/schemas/EndOfDayTotalsDto"
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndOfDayTripDto"
+            }
+          },
+          "followUps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndOfDayFollowUpDto"
+            }
+          },
+          "closeBlockers": {
+            "example": [
+              "REF-03 is still on the road"
+            ],
+            "description": "Why the day cannot be closed yet; empty when it can",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            },
+            "description": "self, plan, close (POST, If-Match) when the day can be closed."
+          }
+        },
+        "required": [
+          "planId",
+          "depotId",
+          "date",
+          "status",
+          "closedAt",
+          "totals",
+          "trips",
+          "followUps",
+          "closeBlockers",
+          "_links"
+        ]
+      },
+      "DriverOptionDto": {
+        "type": "object",
+        "properties": {
+          "driverId": {
+            "type": "string",
+            "example": "drv-nuwan"
+          },
+          "name": {
+            "type": "string",
+            "example": "Nuwan Gunasekara"
+          },
+          "tripsOnPlan": {
+            "type": "number",
+            "example": 0,
+            "description": "Trips the driver has on this plan"
+          }
+        },
+        "required": [
+          "driverId",
+          "name",
+          "tripsOnPlan"
         ]
       },
       "PlanRevisionDto": {
@@ -18618,6 +20495,192 @@
         },
         "required": [
           "text"
+        ]
+      },
+      "RepairOptionDto": {
+        "type": "object",
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "example": "VEH018"
+          },
+          "code": {
+            "type": "string",
+            "example": "DRY-18"
+          },
+          "tripNo": {
+            "type": "number",
+            "example": 1,
+            "description": "The trip number it would run as"
+          },
+          "fits": {
+            "type": "boolean",
+            "example": true,
+            "description": "No hard rule broken"
+          },
+          "rules": {
+            "example": [],
+            "description": "Hard rules it breaks",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "messages": {
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "vehicleId",
+          "code",
+          "tripNo",
+          "fits",
+          "rules",
+          "messages"
+        ]
+      },
+      "ReassignTripDto": {
+        "type": "object",
+        "properties": {
+          "vehicleId": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "VEH018",
+            "description": "The new vehicle"
+          },
+          "driverId": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "drv-nuwan",
+            "description": "The new driver"
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "VEHICLE_BREAKDOWN",
+            "description": "Required"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "REF-07 compressor fault"
+          }
+        }
+      },
+      "PreviewStopDto": {
+        "type": "object",
+        "properties": {
+          "stopId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d103"
+          },
+          "arrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:46:00.000Z"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 14,
+            "description": "Minutes before the window closes; negative is late"
+          }
+        },
+        "required": [
+          "stopId",
+          "arrivalAt",
+          "spareMin"
+        ]
+      },
+      "ResequencePreviewDto": {
+        "type": "object",
+        "properties": {
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PreviewStopDto"
+            }
+          },
+          "violations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ViolationDto"
+            }
+          }
+        },
+        "required": [
+          "stops",
+          "violations"
+        ]
+      },
+      "ResequencePreviewRequestDto": {
+        "type": "object",
+        "properties": {
+          "stopIds": {
+            "minItems": 1,
+            "example": [
+              "0192a3f4-0000-7000-8000-00000000d103"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "required": [
+          "stopIds"
+        ]
+      },
+      "DeferStopDto": {
+        "type": "object",
+        "properties": {
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "ACCESS_ISSUE",
+            "description": "Required"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Road closed at Ja-Ela",
+            "description": "The store reads it"
+          }
+        }
+      },
+      "ResequenceTripDto": {
+        "type": "object",
+        "properties": {
+          "stopIds": {
+            "minItems": 1,
+            "example": [
+              "0192a3f4-0000-7000-8000-00000000d103"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "reasonCode": {
+            "type": "string",
+            "maxLength": 64,
+            "example": "OTHER",
+            "description": "Required"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "example": "Seeduwa first, the Ja-Ela road is closed"
+          }
+        },
+        "required": [
+          "stopIds"
         ]
       },
       "LoadProgressDto": {
@@ -20180,6 +22243,122 @@
           "occurredAt",
           "reasonCode",
           "note"
+        ]
+      },
+      "StopDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "tripId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000e001"
+          },
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "outletName": {
+            "type": "string",
+            "example": "Fresh Kadawatha"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ARRIVED",
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "CANCELLED"
+            ],
+            "type": "string",
+            "example": "ARRIVED"
+          },
+          "window": {
+            "$ref": "#/components/schemas/StopWindowDto"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:00:00+05:30"
+          },
+          "arrivedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "outcome": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "REFUSED",
+              "DAMAGED",
+              "OUTLET_CLOSED"
+            ],
+            "type": "string",
+            "example": null
+          },
+          "receiverName": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "exceptionNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "unitsDelivered": {
+            "type": "number",
+            "nullable": true,
+            "example": null
+          },
+          "version": {
+            "type": "number",
+            "example": 1
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "tripId",
+          "orderId",
+          "outletId",
+          "outletName",
+          "seq",
+          "status",
+          "window",
+          "plannedArrivalAt",
+          "arrivedAt",
+          "completedAt",
+          "outcome",
+          "receiverName",
+          "exceptionNote",
+          "unitsDelivered",
+          "version",
+          "_links"
         ]
       },
       "ArriveDto": {

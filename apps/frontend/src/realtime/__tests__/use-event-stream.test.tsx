@@ -92,6 +92,19 @@ describe('useEventStream', () => {
     expect(predicate?.({ queryKey: ['/api/v1/users'] } as never)).toBe(false)
   })
 
+  it('a breakdown refreshes the live day, the plan and the fleet', () => {
+    mount(client)
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+
+    FakeEventSource.last?.send('vehicle.status_changed', event('vehicle.status_changed', { aggregate: { type: 'vehicle', id: 'REF-07' } }))
+
+    const predicate = invalidate.mock.calls[0]?.[0]?.predicate
+    expect(predicate?.({ queryKey: ['/api/v1/depots/PLG/tracking'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/plans/p1'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/vehicles'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/orders'] } as never)).toBe(false)
+  })
+
   it('a resync frame makes the whole cache stale', () => {
     mount(client)
     const invalidate = vi.spyOn(client, 'invalidateQueries')

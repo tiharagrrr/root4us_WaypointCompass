@@ -96,6 +96,17 @@ export class PlanQueries {
     );
   }
 
+  /** One trip as its plan shows it, after 19b or 20 changed it. */
+  async trip(planId: string, tripId: string, actor: Actor): Promise<TripDto> {
+    const ctx = await this.contextOf(planId, actor);
+    const violations = this.engine.validate(ctx.input, ctx.draft);
+    const found = (await this.views.trips(ctx, violations)).find(
+      (t) => t.id === tripId,
+    );
+    if (!found) throw new NotFoundError('trip');
+    return found;
+  }
+
   async context(id: string, actor: Actor): Promise<PlanContextDto> {
     const ctx = await this.contextOf(id, actor);
     return {

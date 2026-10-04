@@ -81,9 +81,10 @@ export const dispatchRoutes: RouteObject[] = [
             lazy: async () => ({ Component: (await import('@/features/alerts/trip-details-page')).TripDetailsPage }),
           },
           {
+            // 21 (ROO-61).
             path: 'end-of-day',
             handle: handle('End of day'),
-            element: <ScreenPlaceholder code="21" name="End-of-day summary" node="185:18295" />,
+            lazy: async () => ({ Component: (await import('@/features/planning/end-of-day-page')).EndOfDayPage }),
           },
           { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
           {
