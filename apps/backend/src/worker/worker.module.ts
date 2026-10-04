@@ -7,6 +7,7 @@ import { NotificationsModule } from '../modules/notifications';
 import { PlanningModule } from '../modules/planning';
 import { SimulationModule } from '../modules/simulation';
 import { DemoInbox } from '../core/demo/demo-inbox';
+import { ProvidersModule } from '../core/providers/providers.module';
 import { TickerService } from '../core/scheduling/ticker.service';
 import { QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
@@ -31,6 +32,9 @@ import { TickerProcessor } from './ticker.processor';
     ExecutionModule,
     // For NotificationSender, which notify.send drives.
     NotificationsModule,
+    // SMS_PROVIDER, for the sign-in codes and invitation links the
+    // notifications processor sends outside the catalog.
+    ProvidersModule,
     // For SimulationRunner, which the simulation loop drives.
     SimulationModule,
     DiscoveryModule,

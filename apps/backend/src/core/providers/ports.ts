@@ -55,3 +55,42 @@ export interface LlmProvider {
 }
 
 export const LLM_PROVIDER = Symbol('LLM_PROVIDER');
+
+/** One SMS on its way out. */
+export interface SmsMessage {
+  /** E.164 (+94...); every adapter normalises what it is given. */
+  to: string;
+  /** Already rendered and GSM-7 safe; an adapter never edits it. */
+  text: string;
+  /**
+   * The notification row id, or the job id for a sign-in code. Adapters pass
+   * it to gateways that support one, so a retried job never sends twice.
+   */
+  idempotencyKey?: string;
+  /**
+   * Overrides the configured sender id (a registered mask such as
+   * WayPoint). Only a gateway that allows more than one has a use for it.
+   */
+  senderId?: string;
+}
+
+/** What a gateway accepted, and under which id a receipt will name it. */
+export interface SendResult {
+  provider: string;
+  providerMessageId: string;
+}
+
+/**
+ * An SMS gateway. SMS_PROVIDER picks the adapter: `demo-inbox` (keyless, the
+ * default, puts messages in /api/v1/demo/inbox), `notifylk` or `textlk` (both
+ * Sri Lankan, cheap local routes), or `twilio` for international numbers.
+ * Only worker jobs send; nothing here is called during a request.
+ */
+export interface SmsProvider {
+  readonly name: string;
+  send(message: SmsMessage): Promise<SendResult>;
+  /** Cheap, and sends nothing. */
+  health(): Promise<boolean>;
+}
+
+export const SMS_PROVIDER = Symbol('SMS_PROVIDER');

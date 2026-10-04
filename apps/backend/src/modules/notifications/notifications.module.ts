@@ -5,6 +5,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { Module, type OnModuleInit } from '@nestjs/common';
 import { DemoInbox } from '../../core/demo/demo-inbox';
 import { EventBus } from '../../core/outbox/event-bus';
+import { ProvidersModule } from '../../core/providers/providers.module';
 import { QUEUES } from '../../queues';
 import { AuditModule } from '../audit';
 import { RealtimeModule } from '../realtime';
@@ -33,6 +34,8 @@ import { RecipientsService } from './services/recipients.service';
     AuditModule,
     // PresenceService: no push to someone with the app open (AC-NTF-12).
     RealtimeModule,
+    // SMS_PROVIDER: the gateway SMS_PROVIDER names (core/providers).
+    ProvidersModule,
     BullModule.registerQueue({ name: QUEUES.notifications }),
   ],
   controllers: [
