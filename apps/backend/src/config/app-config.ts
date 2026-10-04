@@ -81,4 +81,18 @@ export class AppConfig {
   get demo() {
     return { enabled: this.get('DEMO_MODE'), clock: this.get('DEMO_CLOCK') };
   }
+
+  /** The simulator runs only with this and demo mode both on. */
+  get simulation() {
+    return { enabled: this.get('SIMULATION_ENABLED') };
+  }
+
+  /** The scenario director's model; `disabled` means no model is ever called. */
+  get llm() {
+    return {
+      provider: this.get('LLM_PROVIDER'),
+      apiKey: this.get('ANTHROPIC_API_KEY'),
+      model: this.get('LLM_MODEL'),
+    };
+  }
 }

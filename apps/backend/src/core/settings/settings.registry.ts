@@ -124,6 +124,12 @@ export const SETTINGS = {
     default: true,
     description: 'Stores must acknowledge a deferral notice',
   }),
+  'simulation.aiDirector': define({
+    schema: z.boolean(),
+    default: false,
+    description:
+      'The AI scenario director may add trouble to a simulation run and write its report',
+  }),
   'demo.clock': define({
     schema: clockModeSchema,
     default: { mode: 'real' as const },

@@ -27,6 +27,7 @@ export { getReceivingRosterMock } from './receiving-roster/receiving-roster.msw.
 export { getReferenceDataMock } from './reference-data/reference-data.msw.ts'
 export { getRootMock } from './root/root.msw.ts'
 export { getSettingsMock } from './settings/settings.msw.ts'
+export { getSimulationsMock } from './simulations/simulations.msw.ts'
 export { getStreamsMock } from './streams/streams.msw.ts'
 export { getSyncMock } from './sync/sync.msw.ts'
 export { getTelematicsMock } from './telematics/telematics.msw.ts'

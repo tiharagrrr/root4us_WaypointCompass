@@ -59,6 +59,9 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/orders/*" },
   { method: "all", path: "/api/v1/order-templates" },
   { method: "all", path: "/api/v1/order-templates/*" },
+  // The simulator and its AI scenario director (ROO-55); 404 unless SIMULATION_ENABLED.
+  { method: "all", path: "/api/v1/simulations" },
+  { method: "all", path: "/api/v1/simulations/*" },
   // Sync: the offline outbox's far end for drivers and loaders (ROO-44).
   { method: "all", path: "/api/v1/sync" },
   // Execution: the driver's trips, the offline bundle, the field events and

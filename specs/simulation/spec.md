@@ -1,9 +1,9 @@
 ---
 module: simulation
 owner: Aniqa
-status: draft          # draft | ready | in-progress | done
-screens: []
-depends-on: [planning, execution, fleet]
+status: in-progress    # draft | ready | in-progress | done
+screens: [A6]
+depends-on: [audit, planning, execution, fleet]
 ---
 
 # Simulation
@@ -69,16 +69,36 @@ Scenarios:
 | POST | /simulations/{id}/resume | simulation:run | Continues simulated time |
 | POST | /simulations/{id}/stop | simulation:run | Ends the run and computes the KPIs |
 | POST | /simulations/{id}/injections | simulation:run | Adds trouble live |
-| GET | /simulations/{id} | simulation:run | Status, simulated time and KPIs |
+| GET | /simulations/{id} | simulation:run | Status, simulated time, KPIs and the run's injections |
+| GET | /simulations | simulation:run | The newest 20 runs in scope. Its `_links` carry `create`, `director` (only while the AI director is on) and `enableDirector` or `disableDirector` for whoever may change the setting |
 
-The module runs in the worker (`modules/simulation`) and only when `SIMULATION_ENABLED=true` and
-`DEMO_MODE=true`.
+Built so far (ROO-55): `POST /simulations` also takes `agentic` (409 unless the collection carries the
+`director` link) and `replayOf` (a run id: the same scenario, plan, seed and speed, its stored injections
+copied, never agentic). Injections carried out: ROAD_DELAY (`target.districtId`, `params.speedIndex` 10 to
+100 and `params.minutes`) and FAILED_DELIVERY (`target.stopId`, `params.reason` REFUSED, DAMAGED or
+OUTLET_CLOSED); the other kinds answer 400 until ROO-63. One run at a time holds the demo clock: starting
+a second is 409. A run starts 10 simulated minutes before its plan's first departure, and stopping it
+freezes the demo clock at the run's last simulated instant.
+
+The module runs in the worker (`modules/simulation`, played by `worker/simulation.loop.ts` once a real
+second) and only when `SIMULATION_ENABLED=true` and `DEMO_MODE=true`; with either off every endpoint
+answers 404, like the demo tools.
+
+The AI switch has two parts. The server gate is `LLM_PROVIDER`: `disabled` (default, no model exists),
+`scripted` (a keyless fake for local runs and tests) or `anthropic` (`ANTHROPIC_API_KEY`, `LLM_MODEL`).
+The runtime toggle is the setting `simulation.aiDirector` (boolean, default false), which an admin flips
+on A6 → Demo. The director is on only with both, and only then does `GET /simulations` carry the
+`director` link that lets a screen offer an agentic run, the AI badges and the director's report.
 
 ## Services and helpers
 - Run commands: create, start, pause, resume, stop. Start sets the `demo.clock` mode to
   `{ mode: 'simulated', runId }`.
 - Seeded generator: mulberry32, one per run, feeding travel noise (±10%), service-time noise and GPS
   jitter. No `Math.random` or `Date.now` in simulation logic.
+- Built so far: the virtual driver records TRIP_STARTED, ARRIVED, DELIVERED or FAILED and TRIP_COMPLETED
+  through execution's `StopEventService.apply` (the handler behind the driver endpoints and `POST /sync`)
+  as the trip's own driver, at the planned times, later while a ROAD_DELAY holds the district. No pings
+  until `POST /telematics/pings` exists (ROO-37); no seeded noise, loaders or scenarios yet (ROO-47, ROO-63).
 - Virtual driver: one per released trip. It starts at the planned departure, sends pings along the route
   (district centroid to outlet, timed from the district's travel minutes and the hour's traffic index),
   then arrives and delivers, with receiver names from a fixed list. It uses `POST /sync` and
@@ -109,16 +129,25 @@ Stretch, the agentic scenario director:
 | `noop(reason)` | Let the day run |
 
 Guardrails: injections must be in the simulated future and on the simulation's own plan; the director
-has no route to real endpoints; the prompt is fixed; the call budget is hard. Provider: the `LlmProvider`
+has no route to real endpoints; the prompt is fixed; the call budget is hard.
+
+Built so far: three tools (`inject_road_delay`, `inject_failed_delivery`, `noop`), each with an optional
+`atSim`. The summary carries ids, vehicle codes, district ids, statuses and times only: no outlet,
+address, item or volume, and no open alerts yet. The turn counter lives in `simulation_runs.kpis.director`
+(the table has no column for it). The report is written by the worker after `/stop`, never in the request. Provider: the `LlmProvider`
 port with an Anthropic adapter, behind `LLM_PROVIDER=disabled` by default.
 
 ## Events
-Emits: `simulation.*` (Step 2 boundaries). The doc names no individual event or payload.
+Emits (each `{ v: 1, runId, ... }`, audited under the same name with source SIMULATION):
+`simulation.run.created`, `simulation.run.started`, `simulation.run.paused`, `simulation.run.resumed`,
+`simulation.run.stopped`, `simulation.injection.added`, `simulation.injection.fired`. Start and stop also
+emit core's `clock.changed`; the loop's own clock steps do not.
 
 Consumes: none. A run's clock change reaches clients as core's `clock.changed`.
 
 ## Log events
-The doc names none (see Open questions).
+The events above, plus `simulation.director.turn`, `simulation.director.rejected`,
+`simulation.director.failed`, `simulation.driver.refused` and `simulation.run.tick_failed`.
 
 ## Permissions
 | Permission | Roles holding it | Used for |
@@ -128,16 +157,16 @@ The doc names none (see Open questions).
 Store managers, loaders and drivers do not hold `simulation:run` and get 403.
 
 ## Acceptance criteria
-- [ ] AC-SIM-01 Runs only in demo mode, for simulation:run
-- [ ] AC-SIM-02 Create and start a run
+- [x] AC-SIM-01 Runs only in demo mode, for simulation:run
+- [x] AC-SIM-02 Create and start a run
 - [ ] AC-SIM-03 Same seed, same day
-- [ ] AC-SIM-04 Virtual drivers use the real endpoints
+- [ ] AC-SIM-04 Virtual drivers use the real endpoints (field events built; pings wait for ROO-37)
 - [ ] AC-SIM-05 The driver-offline scenario reaches 19c
 - [ ] AC-SIM-06 The reefer-breakdown scenario raises the alert
-- [ ] AC-SIM-07 Trouble added live fires on time
+- [x] AC-SIM-07 Trouble added live fires on time
 - [ ] AC-SIM-08 A stopped run reports its KPIs
-- [ ] AC-SIM-09 (stretch) Director decisions are ordinary injections
-- [ ] AC-SIM-10 (stretch) The director stays inside its guardrails
+- [x] AC-SIM-09 (stretch) Director decisions are ordinary injections
+- [x] AC-SIM-10 (stretch) The director stays inside its guardrails
 
 ```gherkin
 AC-SIM-01  Runs only in demo mode, for simulation:run
@@ -225,12 +254,20 @@ AC-SIM-10  (stretch) The director stays inside its guardrails
   organisers agree, and keep it out of anything that feeds the Task 2B submission.
 
 ## Open questions
-- What does `POST /simulations` answer when a flag is off (403, 404 or 409)? Which status does `/stop`
-  leave (COMPLETED is assumed)? (Aniqa)
-- The doc names no `simulation.*` events, payloads or log events. Which are needed? (Aniqa)
+- Assumed in ROO-55, for Aniqa to confirm: a flag off answers 404; `/stop` leaves COMPLETED and freezes
+  the demo clock where the run ended; a run starts 10 simulated minutes before the plan's first
+  departure; the events and log events listed above; `GET /simulations` exists for the run panel.
+- AC-SIM-09's replay is tested on the same plan put back as seeded. After `POST /demo/reset` the stops
+  have new ids, so a stored FAILED_DELIVERY (targeted by stopId) no longer matches; ROAD_DELAY does. (Aniqa)
 - The scenarioKey comment lists normal-day, reefer-breakdown, driver-offline and agent; the scenario
-  table adds monsoon-kandy and store-dispute. No Figma frame holds the run controls. (Aniqa)
-- Stretch: have the organisers agreed to sending dataset-derived state to an outside model? (Nimesha)
+  table adds monsoon-kandy and store-dispute. No Figma frame holds the run controls: the panel on A6 →
+  Demo was built from A6's own rows. (Aniqa)
+- Stretch: have the organisers agreed to sending dataset-derived state to an outside model? Until they
+  do, the summary is limited to ids, vehicle codes, district ids, statuses and times, and local runs use
+  `LLM_PROVIDER=scripted` (decided 2026-10-04). (Nimesha)
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 AC-SIM-01, 02, 07, 09 and 10 implemented, AC-SIM-04 in part (ROO-55): run commands and the
+  worker loop, virtual drivers through execution's field-event handler, ROAD_DELAY and FAILED_DELIVERY,
+  the agentic director behind `LLM_PROVIDER` and the `simulation.aiDirector` setting, the A6 → Demo panel
