@@ -7,7 +7,10 @@ import { DemoInbox } from '../../core/demo/demo-inbox';
 import { EventBus } from '../../core/outbox/event-bus';
 import { QUEUES } from '../../queues';
 import { AuditModule } from '../audit';
+import { RealtimeModule } from '../realtime';
 import { MyNotificationsController } from './controllers/my-notifications.controller';
+import { NotificationPreferencesController } from './controllers/notification-preferences.controller';
+import { NotificationPreviewController } from './controllers/notification-preview.controller';
 import { consumes } from './domain/catalog';
 import { NotificationLinks } from './policies/notification.links';
 import { NotificationScope } from './policies/notification.scope';
@@ -15,6 +18,9 @@ import { NotificationDispatcher } from './services/notification-dispatcher.servi
 import { NotificationSender } from './services/notification-sender.service';
 import { NotificationQueries } from './services/notification.queries';
 import { NotificationsService } from './services/notifications.service';
+import { PreferencesService } from './services/preferences.service';
+import { OutboundProviders } from './services/providers';
+import { ReceiptsService, consumesReceipt } from './services/receipts.service';
 import { RecipientsService } from './services/recipients.service';
 
 /**
@@ -25,9 +31,15 @@ import { RecipientsService } from './services/recipients.service';
 @Module({
   imports: [
     AuditModule,
+    // PresenceService: no push to someone with the app open (AC-NTF-12).
+    RealtimeModule,
     BullModule.registerQueue({ name: QUEUES.notifications }),
   ],
-  controllers: [MyNotificationsController],
+  controllers: [
+    MyNotificationsController,
+    NotificationPreferencesController,
+    NotificationPreviewController,
+  ],
   providers: [
     DemoInbox,
     NotificationDispatcher,
@@ -36,6 +48,9 @@ import { RecipientsService } from './services/recipients.service';
     NotificationScope,
     NotificationSender,
     NotificationsService,
+    OutboundProviders,
+    PreferencesService,
+    ReceiptsService,
     RecipientsService,
   ],
   exports: [NotificationDispatcher, NotificationSender],
@@ -44,6 +59,7 @@ export class NotificationsModule implements OnModuleInit {
   constructor(
     private readonly bus: EventBus,
     private readonly dispatcher: NotificationDispatcher,
+    private readonly receipts: ReceiptsService,
   ) {}
 
   onModuleInit(): void {
@@ -51,6 +67,12 @@ export class NotificationsModule implements OnModuleInit {
       name: 'notifications',
       consumes,
       handle: (event) => this.dispatcher.handle(event),
+    });
+    // Provider receipts (AC-NTF-08), from the webhooks gateway.
+    this.bus.register({
+      name: 'notifications-receipts',
+      consumes: consumesReceipt,
+      handle: (event) => this.receipts.handle(event),
     });
   }
 }

@@ -1,5 +1,7 @@
 // DEMO_MODE=true, so SMS and email land in the demo inbox (AC-NTF-15).
 import '../../../../test/demo-mode';
+// A Resend signing secret, so the suite signs receipts the way Resend does (AC-NTF-08).
+import { TEST_WEBHOOK_SECRET } from './webhook-secret';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { and, eq, inArray } from 'drizzle-orm';
 import request from 'supertest';
@@ -17,12 +19,16 @@ import {
   tripFixture,
 } from '../../../../test/fixtures';
 import { JobContextRunner } from '../../../core/context/job-context';
+import { OutboxRelay } from '../../../core/outbox/outbox-relay.service';
+import { PresenceService } from '../../realtime';
+import { signSvix } from '../../webhooks';
 import { DemoInbox } from '../../../core/demo/demo-inbox';
 import type { DeliveredEvent } from '../../../core/outbox/event-bus';
 import type { Database } from '../../../db/client';
 import {
   auditEvents,
   devices,
+  inboundWebhookEvents,
   notificationPreferences,
   notifications,
   orders,
@@ -470,5 +476,251 @@ describeWithDb('notifications', () => {
       channel: 'sms',
       body: expect.stringMatching(/^Waypoint: DRY-\w+ released\./) as string,
     });
+  });
+
+  it('AC-NTF-10 Small ETA slips stay quiet and bursts collapse', async () => {
+    const stopId = uuidv7();
+    const eta = (slipMin: number) =>
+      event(
+        'eta.updated',
+        {
+          tripId,
+          stopId,
+          orderId,
+          outletId: mine,
+          etaAt: '2026-10-02T01:40:00.000Z',
+          slipMin,
+        },
+        { outletIds: [mine], aggregateType: 'stop', aggregateId: stopId },
+      );
+
+    const small = eta(10);
+    await dispatch(small);
+    expect(await rowsOf(small.id, people.nimesha.id)).toEqual([]);
+
+    const big = eta(15);
+    await dispatch(big);
+    const told = await rowsOf(big.id, people.nimesha.id);
+    expect(told.map((r) => r.channel).sort()).toEqual(['IN_APP', 'PUSH']);
+    expect(told[0].body).toBe('Now arriving around 07:10.');
+
+    // Nine more updates in the same burst: still one notice.
+    for (let i = 1; i <= 9; i += 1) {
+      const again = eta(15 + i);
+      await dispatch(again);
+      expect(await rowsOf(again.id, people.nimesha.id)).toEqual([]);
+    }
+  });
+
+  it('AC-NTF-12 No push while the person is watching', async () => {
+    const presence = app.get(PresenceService);
+    await presence.opened(people.nimesha.id);
+    try {
+      const watched = deferralConfirmed();
+      await dispatch(watched);
+      expect(await channels(watched.id, people.nimesha.id)).toEqual([
+        'EMAIL',
+        'IN_APP',
+      ]);
+    } finally {
+      await presence.closed(people.nimesha.id);
+    }
+    const away = deferralConfirmed();
+    await dispatch(away);
+    expect(await channels(away.id, people.nimesha.id)).toEqual([
+      'EMAIL',
+      'IN_APP',
+      'PUSH',
+    ]);
+  });
+
+  it('AC-NTF-14 Templates fit their channel', async () => {
+    const res = await request(app.getHttpServer())
+      .get(
+        '/api/v1/dev/notifications/preview/trip.released?channel=sms&locale=si',
+      )
+      .set(browser())
+      .set('Cookie', people.tihara.cookie)
+      .expect(200);
+    const body = res.body as {
+      data: { locale: string; audiences: { rendered: { text: string } }[] };
+    };
+    expect(body.data.locale).toBe('en');
+    expect(body.data.audiences[0].rendered.text).toBe(
+      'Waypoint: REF-07 trip 1 released. 6 stops, first Fresh Kadawatha at 04:10. Open the app to start.',
+    );
+    await request(app.getHttpServer())
+      .get('/api/v1/dev/notifications/preview/nope.never')
+      .set(browser())
+      .set('Cookie', people.tihara.cookie)
+      .expect(404);
+  });
+
+  it('lets a person choose their channels, never dropping in-app', async () => {
+    const prefs = (cookie: string) =>
+      request(app.getHttpServer())
+        .get('/api/v1/me/notification-preferences')
+        .set(browser())
+        .set('Cookie', cookie)
+        .expect(200);
+    const put = (cookie: string, eventType: string, chosen: string[]) =>
+      request(app.getHttpServer())
+        .put(`/api/v1/me/notification-preferences/${eventType}`)
+        .set(browser())
+        .set('Cookie', cookie)
+        .send({ channels: chosen });
+    type Item = {
+      eventType: string;
+      defaults: string[];
+      available: string[];
+      channels: string[];
+      custom: boolean;
+      _links: Record<string, unknown>;
+    };
+    const itemOf = async (cookie: string, eventType: string) =>
+      (
+        (await prefs(cookie)).body as { data: { items: Item[] } }
+      ).data.items.find((i) => i.eventType === eventType);
+
+    expect(
+      await itemOf(people.nimesha.cookie, 'deferral.confirmed'),
+    ).toMatchObject({
+      defaults: ['IN_APP', 'EMAIL', 'PUSH'],
+      available: ['IN_APP', 'EMAIL', 'PUSH'],
+      channels: ['IN_APP', 'EMAIL', 'PUSH'],
+      custom: false,
+      _links: { update: { method: 'PUT' } },
+    });
+    // A driver with no push and no real email is offered what reaches her.
+    expect(await itemOf(people.aniqa.cookie, 'trip.released')).toMatchObject({
+      defaults: ['IN_APP', 'SMS', 'PUSH'],
+      available: ['IN_APP', 'SMS'],
+    });
+
+    const saved = await put(people.nimesha.cookie, 'deferral.confirmed', [
+      'PUSH',
+    ]).expect(200);
+    expect((saved.body as { data: Item }).data).toMatchObject({
+      channels: ['IN_APP', 'PUSH'],
+      custom: true,
+    });
+    await put(people.nimesha.cookie, 'deferral.confirmed', ['SMS']).expect(400);
+    await put(people.nimesha.cookie, 'load.flag_raised', ['PUSH']).expect(404);
+    await put(people.nimesha.cookie, 'deferral.confirmed', [
+      'EMAIL',
+      'PUSH',
+    ]).expect(200);
+  });
+
+  // Last: a bounce switches Nimesha's email off for the rest of the suite.
+  it('AC-NTF-08 Provider receipts move the status', async () => {
+    const sender = app.get(NotificationSender);
+    const real = sender.deliver;
+    const sentVia = async (messageId: string) => {
+      const e = deferralConfirmed();
+      await dispatch(e);
+      const email = (await rowsOf(e.id, people.nimesha.id)).find(
+        (r) => r.channel === 'EMAIL',
+      )!;
+      sender.deliver = () => Promise.resolve({ provider: 'resend', messageId });
+      try {
+        expect(await send(email.id)).toBe('sent');
+      } finally {
+        sender.deliver = real;
+      }
+      return email.id;
+    };
+    const webhook = (
+      type: string,
+      emailId: string,
+      opts: { id?: string; bad?: boolean } = {},
+    ) => {
+      const id = opts.id ?? `msg_${uuidv7()}`;
+      const ts = String(Math.floor(Date.now() / 1000));
+      const body = JSON.stringify({
+        type,
+        created_at: new Date().toISOString(),
+        data: { email_id: emailId },
+      });
+      return request(app.getHttpServer())
+        .post('/api/v1/webhooks/resend')
+        .set('content-type', 'application/json')
+        .set('svix-id', id)
+        .set('svix-timestamp', ts)
+        .set(
+          'svix-signature',
+          opts.bad ? 'v1,AAAA' : signSvix(TEST_WEBHOOK_SECRET, id, ts, body),
+        )
+        .send(body);
+    };
+    const relay = (type: string) =>
+      app.get(OutboxRelay).drain({ types: [type] });
+    const rowOf = async (id: string) =>
+      (
+        await db.select().from(notifications).where(eq(notifications.id, id))
+      )[0];
+
+    const delivered = `re_${sfx}_delivered`;
+    const deliveredRow = await sentVia(delivered);
+    const svixId = `msg_${uuidv7()}`;
+    await webhook('email.delivered', delivered, { id: svixId }).expect(200);
+    // Resend retries: the same svix-id is accepted once.
+    await webhook('email.delivered', delivered, { id: svixId }).expect(200);
+    await relay('email.delivered');
+    expect(await rowOf(deliveredRow)).toMatchObject({ status: 'DELIVERED' });
+    expect((await rowOf(deliveredRow)).deliveredAt).toBeInstanceOf(Date);
+    const kept = await db
+      .select()
+      .from(inboundWebhookEvents)
+      .where(
+        and(
+          eq(inboundWebhookEvents.provider, 'resend'),
+          eq(inboundWebhookEvents.externalId, svixId),
+        ),
+      );
+    expect(kept).toHaveLength(1);
+
+    // A forged call is refused and kept, with signatureOk false.
+    await webhook('email.delivered', delivered, { bad: true }).expect(401);
+
+    const bounced = `re_${sfx}_bounced`;
+    const bouncedRow = await sentVia(bounced);
+    await webhook('email.bounced', bounced).expect(200);
+    await relay('email.bounced');
+    expect(await rowOf(bouncedRow)).toMatchObject({
+      status: 'FAILED',
+      error: 'Email bounced',
+    });
+    // Her email is off for everything until she turns it back on.
+    const after = deferralConfirmed();
+    await dispatch(after);
+    expect(await channels(after.id, people.nimesha.id)).toEqual([
+      'IN_APP',
+      'PUSH',
+    ]);
+    const sheet = await request(app.getHttpServer())
+      .get('/api/v1/me/notification-preferences')
+      .set(browser())
+      .set('Cookie', people.nimesha.cookie)
+      .expect(200);
+    expect(
+      (
+        sheet.body as {
+          data: { emailSuppressed: boolean; _links: Record<string, unknown> };
+        }
+      ).data,
+    ).toMatchObject({
+      emailSuppressed: true,
+      _links: { resumeEmail: { method: 'POST' } },
+    });
+    const resumed = await request(app.getHttpServer())
+      .post('/api/v1/me/notification-preferences/resume-email')
+      .set(browser())
+      .set('Cookie', people.nimesha.cookie)
+      .expect(200);
+    expect(
+      (resumed.body as { data: { emailSuppressed: boolean } }).data
+        .emailSuppressed,
+    ).toBe(false);
   });
 });

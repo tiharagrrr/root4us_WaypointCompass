@@ -19,10 +19,12 @@ import { useServerClock } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
 import { CountBadge } from '@/ui/badge'
 import { Button } from '@/ui/button'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTrigger } from '@/ui/dialog'
 import { Icon } from '@/ui/icon'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
+import { NotificationPreferences } from './notification-preferences'
 
 type Tab = 'all' | 'unread' | 'stores'
 
@@ -141,6 +143,22 @@ export function NotificationPanel({ unread, summaryLinks, onClose }: Notificatio
         ) : (
           <NotificationGroups items={shown} onOpened={onClose} onRead={refresh} />
         )}
+      </div>
+      <div className="flex items-center justify-between gap-3 border-t border-border px-[18px] py-3">
+        <span className="type-caption text-muted-foreground">Alerts also reach you when you're away</span>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="link" size="sm" className="px-0">
+              Settings
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="w-[560px]">
+            <DialogHeader title="Notification settings" description="Choose how each kind of notification reaches you." />
+            <DialogBody className="overflow-y-auto">
+              <NotificationPreferences />
+            </DialogBody>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   )

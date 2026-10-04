@@ -135,3 +135,127 @@ export const MyNotificationsReadResponse = zod.object({
 })
 })
 
+/**
+ * @summary My notification preferences, per event
+ */
+export const NotificationPreferencesListResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "eventType": zod.string(),
+  "label": zod.string(),
+  "example": zod.string().nullish(),
+  "defaults": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "available": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])).describe('What this person can receive now'),
+  "channels": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "custom": zod.boolean(),
+  "_links": zod.record(zod.string(), zod.unknown())
+})),
+  "emailSuppressed": zod.boolean().describe('Email is off for everything after a bounce or complaint'),
+  "_links": zod.record(zod.string(), zod.unknown())
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Turn email back on after a bounce
+ */
+export const NotificationPreferencesResumeEmailResponse = zod.object({
+  "data": zod.object({
+  "items": zod.array(zod.object({
+  "eventType": zod.string(),
+  "label": zod.string(),
+  "example": zod.string().nullish(),
+  "defaults": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "available": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])).describe('What this person can receive now'),
+  "channels": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "custom": zod.boolean(),
+  "_links": zod.record(zod.string(), zod.unknown())
+})),
+  "emailSuppressed": zod.boolean().describe('Email is off for everything after a bounce or complaint'),
+  "_links": zod.record(zod.string(), zod.unknown())
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Choose the channels for one event
+ */
+export const NotificationPreferencesUpdateParams = zod.object({
+  "eventType": zod.string()
+})
+
+export const NotificationPreferencesUpdateBody = zod.object({
+  "channels": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH']))
+})
+
+export const NotificationPreferencesUpdateResponse = zod.object({
+  "data": zod.object({
+  "eventType": zod.string(),
+  "label": zod.string(),
+  "example": zod.string().nullish(),
+  "defaults": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "available": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])).describe('What this person can receive now'),
+  "channels": zod.array(zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH'])),
+  "custom": zod.boolean(),
+  "_links": zod.record(zod.string(), zod.unknown())
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Render a notification template (development only)
+ */
+export const NotificationPreviewRenderParams = zod.object({
+  "event": zod.string()
+})
+
+export const NotificationPreviewRenderQueryParams = zod.object({
+  "locale": zod.unknown().optional(),
+  "channel": zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH']).optional()
+})
+
+export const NotificationPreviewRenderResponse = zod.object({
+  "data": zod.object({
+  "eventType": zod.string(),
+  "channel": zod.enum(['IN_APP', 'EMAIL', 'SMS', 'PUSH']),
+  "requestedLocale": zod.string(),
+  "locale": zod.string().describe('The locale the copy is in (English until ROO-66)'),
+  "audiences": zod.array(zod.looseObject({
+
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+

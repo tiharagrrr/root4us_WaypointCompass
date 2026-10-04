@@ -39,6 +39,26 @@ export const envSchema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
+  /**
+   * Where email goes: resend (real sends), or demo-inbox (/demo/inbox, needs
+   * DEMO_MODE=true). Empty picks resend when RESEND_API_KEY is set, else the
+   * demo inbox.
+   */
+  EMAIL_PROVIDER: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.enum(['resend', 'demo-inbox']).optional(),
+  ),
+  RESEND_API_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().startsWith('re_').optional(),
+  ),
+  /** The From line, on a domain verified in Resend. */
+  EMAIL_FROM: z.string().default('Waypoint Compass <onboarding@resend.dev>'),
+  /** The whsec_ signing secret of the Resend webhook (delivery receipts). */
+  RESEND_WEBHOOK_SECRET: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().startsWith('whsec_').optional(),
+  ),
   /** Starts the demo clock at this instant; honoured only when DEMO_MODE=true. */
   DEMO_CLOCK: z.string().optional(),
   /** pino level; defaults to debug in development, error in tests, info otherwise. */

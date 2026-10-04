@@ -3,7 +3,7 @@ module: webhooks
 owner: Nimesha
 status: draft          # draft | ready | in-progress | done
 screens: [A6]
-depends-on: []
+depends-on: [audit]
 ---
 
 # Webhooks
@@ -235,3 +235,9 @@ AC-WHK-15  A test event checks the wiring
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 ROO-26: `POST /webhooks/resend` only. Svix check (5-minute tolerance), stored once per
+  svix-id, a bad signature stored with signatureOk false and answered 401, 404 while
+  RESEND_WEBHOOK_SECRET is unset. Processing is inline rather than a webhooks.inbound job: the
+  receipt becomes an `email.delivered`, `email.bounced` or `email.complained` outbox event, which
+  notifications consumes, so webhooks never imports notifications. depends-on gains audit (receipts
+  are audited with source WEBHOOK). Twilio, Traccar, Notify.lk and outbound stay with ROO-36.

@@ -1,33 +1,22 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Transactional, TransactionHost } from '@nestjs-cls/transactional';
 import { eq, sql } from 'drizzle-orm';
 import { PinoLogger } from 'nestjs-pino';
-import { uuidv7 } from 'uuidv7';
 import { ClockService } from '../../../core/clock/clock.service';
-import { DemoInbox } from '../../../core/demo/demo-inbox';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
 import { notifications, users } from '../../../db/schema';
 import { realEmail } from '../domain/channels';
+import { render } from '../domain/render';
 import { NOTIFICATION_LOGS } from '../notifications.constants';
+import {
+  type Delivery,
+  OutboundProviders,
+  ProviderError,
+  type Sent,
+} from './providers';
 
-/** A provider's refusal; `retryable` says whether trying again could help (AC-NTF-06, 07). */
-export class ProviderError extends Error {
-  constructor(
-    message: string,
-    readonly retryable: boolean,
-  ) {
-    super(message);
-    this.name = 'ProviderError';
-  }
-}
-
-/** Where a message goes out. Real providers (Resend, Twilio, Notify.lk, Web Push) plug in here. */
-export interface Delivery {
-  channel: 'EMAIL' | 'SMS';
-  to: string;
-  subject: string;
-  text: string;
-}
+export { ProviderError, type Delivery } from './providers';
 
 /** `retry`: the row is still QUEUED and the job should throw so BullMQ backs off. */
 export type SendOutcome =
@@ -35,20 +24,22 @@ export type SendOutcome =
 
 /**
  * Sends one EMAIL, SMS or PUSH row from the worker's notify.send job and
- * records what happened on it. With DEMO_MODE=true email and SMS land in the
- * demo inbox (AC-NTF-15); with no provider configured a send fails at once
- * with the reason rather than retrying something that can never work. Push
- * has no provider yet, so its rows are SUPPRESSED, not failed.
+ * records what happened on it: the provider and its message id, which is
+ * what a delivery receipt later finds the row by (AC-NTF-08). Where each
+ * channel goes is OutboundProviders' choice. Push has no provider yet, so its
+ * rows are SUPPRESSED, not failed.
  */
 @Injectable()
 export class NotificationSender {
   /** Swapped in tests to make the provider fail. */
-  deliver: (delivery: Delivery) => Promise<string> = (d) => this.toInbox(d);
+  deliver: (delivery: Delivery) => Promise<Sent> = (d) =>
+    this.providers.deliver(d);
 
   constructor(
     private readonly txHost: TransactionHost<StampedDrizzleAdapter>,
-    private readonly inbox: DemoInbox,
+    private readonly providers: OutboundProviders,
     private readonly clock: ClockService,
+    private readonly config: ConfigService,
     private readonly log: PinoLogger,
   ) {
     this.log.setContext(NotificationSender.name);
@@ -72,6 +63,7 @@ export class NotificationSender {
         channel: notifications.channel,
         status: notifications.status,
         title: notifications.title,
+        eventType: notifications.eventType,
         body: notifications.body,
         data: notifications.data,
         email: users.email,
@@ -98,28 +90,38 @@ export class NotificationSender {
     }
 
     const to = row.channel === 'EMAIL' ? realEmail(row.email) : row.phone;
-    const link = (row.data as { link?: string } | null)?.link;
+    const data = (row.data ?? {}) as {
+      link?: string;
+      entity?: { id?: string | null };
+    };
+    const rendered = render(
+      row.channel,
+      { title: row.title, body: row.body, link: data.link ?? '/' },
+      { eventType: row.eventType, entityId: data.entity?.id },
+      this.config.get<string>('APP_URL') ?? '',
+    );
     try {
       if (!to)
         throw new ProviderError(
           `No ${row.channel.toLowerCase()} address`,
           false,
         );
-      const messageId = await this.deliver({
+      const sent = await this.deliver({
+        notificationId: row.id,
         channel: row.channel,
         to,
         subject: row.title,
         text:
-          row.channel === 'SMS'
-            ? `Waypoint: ${row.body}`
-            : `${row.body}${link ? `\n\nOpen in Waypoint Compass: ${link}` : ''}`,
+          rendered.channel === 'SMS' || rendered.channel === 'EMAIL'
+            ? rendered.text
+            : row.body,
       });
       await tx
         .update(notifications)
         .set({
           status: 'SENT',
-          provider: this.inbox.enabled ? 'demo-inbox' : 'unknown',
-          providerMessageId: messageId,
+          provider: sent.provider,
+          providerMessageId: sent.messageId,
           attempts: sql`${notifications.attempts} + 1`,
           sentAt: this.clock.now(),
           error: null,
@@ -169,23 +171,5 @@ export class NotificationSender {
         );
       return final ? 'failed' : 'retry';
     }
-  }
-
-  private async toInbox(delivery: Delivery): Promise<string> {
-    if (!this.inbox.enabled)
-      throw new ProviderError(
-        `No ${delivery.channel === 'SMS' ? 'SMS' : 'email'} provider is configured: set DEMO_MODE=true to use the demo inbox`,
-        false,
-      );
-    await this.inbox.push({
-      channel: delivery.channel === 'SMS' ? 'sms' : 'email',
-      to: delivery.to,
-      body:
-        delivery.channel === 'EMAIL'
-          ? `${delivery.subject}\n\n${delivery.text}`
-          : delivery.text,
-      sentAt: this.clock.toIso(this.clock.now()),
-    });
-    return `demo-${uuidv7()}`;
   }
 }

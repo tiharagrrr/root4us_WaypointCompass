@@ -27,6 +27,7 @@ import {
 } from '../../../db/schema';
 import type { Audience, Facts, Payload } from '../domain/catalog';
 import type { Reachability } from '../domain/channels';
+import { ALL_EVENTS } from '../notifications.constants';
 
 /** One person an event reaches, with where to reach them and what it is about for them. */
 export interface Recipient extends Reachability {
@@ -90,13 +91,21 @@ export class RecipientsService {
       .where(
         and(
           inArray(notificationPreferences.userId, ids),
-          eq(notificationPreferences.eventType, event.type),
+          inArray(notificationPreferences.eventType, [event.type, ALL_EVENTS]),
         ),
       );
 
     const byId = new Map(rows.map((r) => [r.id, r]));
     const push = new Set(pushers.map((p) => p.userId));
-    const pref = new Map(prefs.map((p) => [p.userId, p.channels]));
+    // The event's own row and the all-events row (an email switched off after a bounce) both apply.
+    const pref = new Map<string, NotificationChannel[]>();
+    for (const p of prefs) {
+      const had = pref.get(p.userId);
+      pref.set(
+        p.userId,
+        had ? had.filter((c) => p.channels.includes(c)) : p.channels,
+      );
+    }
     return people.flatMap((p) => {
       const user = byId.get(p.userId);
       if (!user) return [];

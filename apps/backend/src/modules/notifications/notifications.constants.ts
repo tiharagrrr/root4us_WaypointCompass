@@ -12,9 +12,14 @@ export const NOTIFICATION_EVENTS = {
   read: 'notification.read',
 } as const;
 
+/** A preference row for every event at once (the email suppression after a bounce). */
+export const ALL_EVENTS = '*';
+
 export const NOTIFICATION_AUDIT = {
   read: 'notifications.notification.read',
   allRead: 'notifications.notification.all_read',
+  emailSuppressed: 'notifications.email.suppressed',
+  preferenceChanged: 'notifications.preference.changed',
 } as const;
 
 export const NOTIFICATION_LOGS = {
@@ -24,4 +29,6 @@ export const NOTIFICATION_LOGS = {
   failed: 'notifications.notification.failed',
   suppressed: 'notifications.notification.suppressed',
   read: 'notifications.notification.read',
+  emailSuppressed: 'notifications.email.suppressed',
+  quiet: 'notifications.notification.quieted',
 } as const;

@@ -42,11 +42,24 @@ export interface Message {
   link: string;
 }
 
+/** Settings a rule reads, looked up for the event's depot. */
+export interface RuleContext {
+  /** tracking.etaSlipNotifyMinutes: the smallest ETA slip worth telling a store about. */
+  etaSlipMinutes: number;
+}
+
 export interface CatalogEntry {
   to: Audience;
   channels: readonly NotificationChannel[];
   /** null: this event says nothing to this audience (a flag with no raiser, say). */
   message(payload: Payload, facts: Facts): Message | null;
+  /** Quiet rule: false drops the event for this audience (a small ETA slip, AC-NTF-10). */
+  when?(payload: Payload, context: RuleContext): boolean;
+  /**
+   * Bursts collapse: within `minutes` of a notification with the same key,
+   * the same person gets nothing new (ten ETA updates, one notice).
+   */
+  collapse?: { key(payload: Payload): string | null; minutes: number };
 }
 
 export type Payload = Record<string, unknown>;
@@ -244,6 +257,29 @@ export const CATALOG: Readonly<Record<string, readonly CatalogEntry[]>> = {
       },
     },
   ],
+  // A store hears about a slip only past the threshold, and once per burst (AC-NTF-10).
+  'eta.updated': [
+    {
+      to: 'storeManagers',
+      channels: ['PUSH', 'IN_APP'],
+      when: (p, ctx) =>
+        typeof p.slipMin === 'number' && p.slipMin >= ctx.etaSlipMinutes,
+      collapse: {
+        key: (p) => (str(p.stopId) ? `eta:${str(p.stopId)}` : null),
+        minutes: 10,
+      },
+      message: (p, f) => {
+        const at = timeLabel(p.etaAt);
+        return {
+          title: at ? `Now arriving around ${at}` : 'Delivery running late',
+          body: at
+            ? `Now arriving around ${at}.`
+            : `${order(f)} is running late.`,
+          link: STORE_ORDER(p),
+        };
+      },
+    },
+  ],
   'trip.cant_run': [
     {
       to: 'dispatchers',
@@ -278,6 +314,33 @@ export const CATALOG: Readonly<Record<string, readonly CatalogEntry[]>> = {
           : null,
     },
   ],
+};
+
+/** How the preference screens (D12, 02's Settings) name each event. */
+export const EVENT_LABELS: Record<string, string> = {
+  'order.submitted': 'Order sent',
+  'order.rolled_to_next_run': 'Order moved to the next run',
+  'plan.published': 'Plan published',
+  'plan.revised': 'Plan updated',
+  'deferral.confirmed': 'Order deferred',
+  'deferral.store_responded': 'Store answered a deferral',
+  'load.flag_raised': 'Loading flag raised',
+  'load.flag_decided': 'Loading flag decided',
+  'trip.released': 'Trip released',
+  'stop.completed': 'Delivered',
+  'eta.updated': 'Running late',
+  'trip.cant_run': "Trip can't run",
+  'trip.reassigned': 'Trip reassigned',
+};
+
+/** The audiences an event reaches, by role: what the preference screens list. */
+export const ROLE_OF: Record<Audience, string> = {
+  storeManagers: 'store_manager',
+  dispatchers: 'dispatcher',
+  loaders: 'loader',
+  tripDrivers: 'driver',
+  driver: 'driver',
+  flagRaiser: 'loader',
 };
 
 export const consumes = (type: string): boolean => type in CATALOG;

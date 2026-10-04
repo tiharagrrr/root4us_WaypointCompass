@@ -3,8 +3,13 @@ import { ClockService } from '../../../core/clock/clock.service';
 import { LinkBuilder, type LinkMap } from '../../../core/http/links';
 import type { NotificationDto } from '../dto/notification.dto';
 import type { NotificationRow } from '../services/notification.queries';
+import type {
+  PreferenceRow,
+  PreferenceSheet,
+} from '../services/preferences.service';
 
 export const MY_NOTIFICATIONS = '/api/v1/me/notifications';
+export const MY_PREFERENCES = '/api/v1/me/notification-preferences';
 
 /** A bell line offers "mark read" until it is read; the rows are always the caller's own. */
 @Injectable()
@@ -57,6 +62,35 @@ export class NotificationLinks extends LinkBuilder<
             title: 'Mark all as read',
           },
         }),
+      },
+    };
+  }
+
+  /** Every row offers `update`; email suppressed offers `resumeEmail`. */
+  preferences(sheet: PreferenceSheet) {
+    return {
+      items: sheet.items.map((item) => this.preference(item)),
+      emailSuppressed: sheet.emailSuppressed,
+      _links: {
+        self: { href: MY_PREFERENCES },
+        ...(sheet.emailSuppressed && {
+          resumeEmail: {
+            href: `${MY_PREFERENCES}/resume-email`,
+            method: 'POST' as const,
+            title: 'Turn email back on',
+          },
+        }),
+      },
+    };
+  }
+
+  preference(item: PreferenceRow) {
+    const href = `${MY_PREFERENCES}/${encodeURIComponent(item.eventType)}`;
+    return {
+      ...item,
+      _links: {
+        self: { href },
+        update: { href, method: 'PUT' as const, title: 'Save' },
       },
     };
   }

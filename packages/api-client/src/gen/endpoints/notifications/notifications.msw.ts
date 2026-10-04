@@ -22,7 +22,11 @@ import type {
   MyNotificationsList200,
   MyNotificationsRead200,
   MyNotificationsReadAll200,
-  MyNotificationsSummary200
+  MyNotificationsSummary200,
+  NotificationPreferencesList200,
+  NotificationPreferencesResumeEmail200,
+  NotificationPreferencesUpdate200,
+  NotificationPreviewRender200
 } from '../../model';
 
 
@@ -35,6 +39,14 @@ export const getMyNotificationsSummaryResponseMock = (overrideResponse: Partial<
 export const getMyNotificationsReadAllResponseMock = (overrideResponse: Partial<Extract<MyNotificationsReadAll200, object>> = {}): MyNotificationsReadAll200 => ({data: {marked: 3}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getMyNotificationsReadResponseMock = (overrideResponse: Partial<Extract<MyNotificationsRead200, object>> = {}): MyNotificationsRead200 => ({data: {id: faker.string.alpha({length: {min: 10, max: 20}}), eventType: "deferral.confirmed", title: "Order WF-0171 moves to Fri 2 Oct", body: "Order WF-0171 moves to Fri 2 Oct: no reefer capacity.", link: "/store/deferrals/0192…", createdAt: faker.string.alpha({length: {min: 10, max: 20}}), readAt: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), _links: {}}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getNotificationPreferencesListResponseMock = (overrideResponse: Partial<Extract<NotificationPreferencesList200, object>> = {}): NotificationPreferencesList200 => ({data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({eventType: "deferral.confirmed", label: "Order deferred", example: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), defaults: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), available: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), channels: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), custom: faker.datatype.boolean(), _links: {}})), emailSuppressed: faker.datatype.boolean(), _links: {}}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getNotificationPreferencesResumeEmailResponseMock = (overrideResponse: Partial<Extract<NotificationPreferencesResumeEmail200, object>> = {}): NotificationPreferencesResumeEmail200 => ({data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({eventType: "deferral.confirmed", label: "Order deferred", example: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), defaults: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), available: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), channels: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), custom: faker.datatype.boolean(), _links: {}})), emailSuppressed: faker.datatype.boolean(), _links: {}}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getNotificationPreferencesUpdateResponseMock = (overrideResponse: Partial<Extract<NotificationPreferencesUpdate200, object>> = {}): NotificationPreferencesUpdate200 => ({data: {eventType: "deferral.confirmed", label: "Order deferred", example: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), defaults: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), available: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), channels: faker.helpers.arrayElements(['IN_APP','EMAIL','SMS','PUSH'] as const), custom: faker.datatype.boolean(), _links: {}}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getNotificationPreviewRenderResponseMock = (overrideResponse: Partial<Extract<NotificationPreviewRender200, object>> = {}): NotificationPreviewRender200 => ({data: {eventType: faker.string.alpha({length: {min: 10, max: 20}}), channel: faker.helpers.arrayElement(['IN_APP','EMAIL','SMS','PUSH'] as const), requestedLocale: faker.string.alpha({length: {min: 10, max: 20}}), locale: faker.string.alpha({length: {min: 10, max: 20}}), audiences: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({}))}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 
 export const getMyNotificationsListMockHandler = (overrideResponse?: MyNotificationsList200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<MyNotificationsList200> | MyNotificationsList200), options?: RequestHandlerOptions) => {
@@ -84,9 +96,61 @@ export const getMyNotificationsReadMockHandler = (overrideResponse?: MyNotificat
       })
   }, options)
 }
+
+export const getNotificationPreferencesListMockHandler = (overrideResponse?: NotificationPreferencesList200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<NotificationPreferencesList200> | NotificationPreferencesList200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/me/notification-preferences', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getNotificationPreferencesListResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getNotificationPreferencesResumeEmailMockHandler = (overrideResponse?: NotificationPreferencesResumeEmail200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<NotificationPreferencesResumeEmail200> | NotificationPreferencesResumeEmail200), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/me/notification-preferences/resume-email', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getNotificationPreferencesResumeEmailResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getNotificationPreferencesUpdateMockHandler = (overrideResponse?: NotificationPreferencesUpdate200 | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<NotificationPreferencesUpdate200> | NotificationPreferencesUpdate200), options?: RequestHandlerOptions) => {
+  return http.put('*/api/v1/me/notification-preferences/:eventType', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getNotificationPreferencesUpdateResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getNotificationPreviewRenderMockHandler = (overrideResponse?: NotificationPreviewRender200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<NotificationPreviewRender200> | NotificationPreviewRender200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/dev/notifications/preview/:event', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getNotificationPreviewRenderResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getNotificationsMock = () => [
   getMyNotificationsListMockHandler(),
   getMyNotificationsSummaryMockHandler(),
   getMyNotificationsReadAllMockHandler(),
-  getMyNotificationsReadMockHandler()
+  getMyNotificationsReadMockHandler(),
+  getNotificationPreferencesListMockHandler(),
+  getNotificationPreferencesResumeEmailMockHandler(),
+  getNotificationPreferencesUpdateMockHandler(),
+  getNotificationPreviewRenderMockHandler()
 ]
