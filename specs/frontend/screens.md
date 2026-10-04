@@ -359,5 +359,6 @@ Screen-specific states and actions, from Step 8:
   (Sheet, CapacityMeter, DeliveryWindow, StopSequenceRow, DriverStopCard, PinKeypad); touch density
   on the control tokens; `useEventStream`; i18n in `src/i18n/en.json`; the service worker. Icons now
   come from @material-symbols. The dock and driver areas are `/dock` and `/driver`, as Step 8 says.
+- 2026-10-04 D10 Trips and D11 Past trip built (ROO-62); D11 hides the tab bar, as its frame does
 - 2026-09-30 created from the Build Spec
 - 2026-10-01 M1, M1a, M1b and M2 built on mocks with the store shell (ROO-20)

@@ -2,7 +2,6 @@ import { getMeGetQueryOptions } from '@compass/api-client'
 import type { RouteObject } from 'react-router'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
-import { ScreenPlaceholder } from '../screen-placeholder'
 
 /**
  * Driver shell (frames D1 to D14), phone 390 × 844. Every screen after D1 reads from Dexie and
@@ -44,8 +43,17 @@ export const driverRoutes: RouteObject[] = [
               Component: (await import('@/features/execution/exception-page')).ExceptionPage,
             }),
           },
-          { path: 'trips', element: <ScreenPlaceholder code="D10" name="Trips" node="245:828" /> },
-          { path: 'trips/:id', element: <ScreenPlaceholder code="D11" name="Past trip" node="245:1009" /> },
+          {
+            // D10: the last 7 days (ROO-62).
+            path: 'trips',
+            lazy: async () => ({ Component: (await import('@/features/execution/trips-page')).TripsPage }),
+          },
+          {
+            // D11: one round's record (ROO-62).
+            path: 'trips/:id',
+            handle: { tabBar: false },
+            lazy: async () => ({ Component: (await import('@/features/execution/past-trip-page')).PastTripPage }),
+          },
           {
             // D7, the end of the round (ROO-62).
             path: 'trips/:id/done',
