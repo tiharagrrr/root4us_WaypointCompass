@@ -31,6 +31,10 @@ x-api-env: &api-env
   S3_FORCE_PATH_STYLE: "true"
   DEMO_CLOCK: ${DEMO_CLOCK:-}
   DEMO_MODE: ${DEMO_MODE:-true}
+  EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+  RESEND_API_KEY: ${RESEND_API_KEY:-}
+  EMAIL_FROM: ${EMAIL_FROM:-Waypoint Compass <onboarding@resend.dev>}
+  RESEND_WEBHOOK_SECRET: ${RESEND_WEBHOOK_SECRET:-}
 
 services:
   postgres:

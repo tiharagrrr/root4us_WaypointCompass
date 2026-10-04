@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import type { Job } from 'bullmq';
+import { type Job, UnrecoverableError } from 'bullmq';
+import { JobContextRunner } from '../core/context/job-context';
 import { DemoInbox, type DemoMessage } from '../core/demo/demo-inbox';
 import {
   AUTH_INVITE_JOB,
@@ -8,23 +9,42 @@ import {
   type AuthInviteJob,
   type AuthOtpJob,
 } from '../modules/identity';
+import {
+  NOTIFY_SEND_JOB,
+  NotificationSender,
+  SEND_ATTEMPTS,
+  SEND_BACKOFF_MS,
+  type SendJob,
+} from '../modules/notifications';
 import { QUEUES } from '../queues';
+
+/** 30 s, 2 min, 10 min between notify.send attempts (AC-NTF-06). */
+export const notifyBackoff = (attemptsMade: number): number =>
+  SEND_BACKOFF_MS[Math.min(attemptsMade, SEND_BACKOFF_MS.length) - 1] ??
+  SEND_BACKOFF_MS[0];
 
 /**
  * Sends what the API queues on the notifications queue: driver sign-in codes
- * and invitation links. In demo mode they land in the demo inbox. The SMS
- * and email providers, and every other notification, arrive with the
- * notifications module (Step 7).
+ * and invitation links (security messages, outside the catalog), and the
+ * notifications module's EMAIL, SMS and PUSH rows (notify.send). In demo
+ * mode SMS and email land in the demo inbox.
  */
-@Processor(QUEUES.notifications)
+@Processor(QUEUES.notifications, {
+  settings: { backoffStrategy: notifyBackoff },
+})
 export class NotificationsProcessor extends WorkerHost {
   private readonly logger = new Logger(NotificationsProcessor.name);
 
-  constructor(private readonly inbox: DemoInbox) {
+  constructor(
+    private readonly inbox: DemoInbox,
+    private readonly sender: NotificationSender,
+    private readonly jobs: JobContextRunner,
+  ) {
     super();
   }
 
   async process(job: Job<unknown>): Promise<void> {
+    if (job.name === NOTIFY_SEND_JOB) return this.send(job as Job<SendJob>);
     const sentAt = new Date(job.timestamp).toISOString();
     switch (job.name) {
       case AUTH_OTP_JOB: {
@@ -48,6 +68,26 @@ export class NotificationsProcessor extends WorkerHost {
       default:
         this.logger.warn({ event: 'notifications.job.skipped', job: job.name });
     }
+  }
+
+  /** One notification row; a failure the provider may recover from is thrown so BullMQ backs off. */
+  private async send(job: Job<SendJob>): Promise<void> {
+    const attempt = job.attemptsMade + 1;
+    const outcome = await this.jobs.runInJobContext(
+      job,
+      () =>
+        this.sender.send(
+          job.data.notificationId,
+          attempt,
+          job.opts.attempts ?? SEND_ATTEMPTS,
+        ),
+      // The sender opens its own transaction, so its failure record commits.
+      { transaction: false },
+    );
+    if (outcome === 'retry')
+      throw new Error(`notify.send attempt ${attempt} failed; retrying`);
+    if (outcome === 'failed')
+      throw new UnrecoverableError('notify.send failed for good');
   }
 
   private async deliver(message: Omit<DemoMessage, 'id'>): Promise<void> {

@@ -5,12 +5,13 @@ import { Module } from '@nestjs/common';
 import { ExecutionModule } from '../execution';
 import { StreamsController } from './controllers/streams.controller';
 import { EventStreamService } from './event-stream.service';
+import { PresenceService } from './presence.service';
 import { RealtimeHub } from './realtime.hub';
 
 @Module({
   imports: [ExecutionModule],
   controllers: [StreamsController],
-  providers: [RealtimeHub, EventStreamService],
-  exports: [RealtimeHub],
+  providers: [RealtimeHub, EventStreamService, PresenceService],
+  exports: [RealtimeHub, PresenceService],
 })
 export class RealtimeModule {}
