@@ -1,4 +1,5 @@
 export * from './alerts/alerts.zod.ts';
+export * from './audit/audit.zod.ts';
 export * from './calendar/calendar.zod.ts';
 export * from './clock/clock.zod.ts';
 export * from './deferral-reasons/deferral-reasons.zod.ts';
@@ -26,8 +27,10 @@ export * from './receiving-roster/receiving-roster.zod.ts';
 export * from './reference-data/reference-data.zod.ts';
 export * from './root/root.zod.ts';
 export * from './settings/settings.zod.ts';
+export * from './simulations/simulations.zod.ts';
 export * from './streams/streams.zod.ts';
 export * from './sync/sync.zod.ts';
+export * from './telematics/telematics.zod.ts';
 export * from './trips/trips.zod.ts';
 export * from './users/users.zod.ts';
 export * from './vehicles/vehicles.zod.ts';

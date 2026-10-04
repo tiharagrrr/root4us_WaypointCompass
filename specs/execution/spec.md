@@ -106,7 +106,7 @@ time and the stop or trip version the device saw (baseVersion).
 | POST | /telematics/pings | stop:record or a device token | Up to 200 pings → `{ accepted, duplicates, rejected }` |
 | GET | /depots/{id}/tracking | tracking:read | 19: trips in progress with position, next stop, ETA, late risk, last signal |
 | GET | /trips/{id}/tracking | tracking:read | 19a: planned, ETA and actual per stop, breadcrumb, events |
-| GET | /orders/{id}/eta | tracking:read | M3: the store's ETA for today's delivery |
+| GET | /orders/{id}/eta | tracking:read | M3: the store's ETA for today's delivery. Served by planning, next to `/depots/{id}/tracking`, because the projection lives there (ROO-46) |
 | GET | /plans/{id}/end-of-day | plan:read | 21: per-trip results before planning's close |
 
 Driver writes carry a clientUuid and no If-Match or Idempotency-Key (Step 4). Pings dedupe on
@@ -236,12 +236,14 @@ Scope (`ScopePolicy`; out of scope is 404, a missing permission is 403):
 - [x] AC-EXE-14 Can't run this trip
 - [x] AC-EXE-15 Complete the trip
 - [x] AC-EXE-16 Proof of delivery by presigned URL
-- [ ] AC-EXE-17 Pings are counted and deduplicated
-- [ ] AC-EXE-18 Invalid pings are rejected
-- [ ] AC-EXE-19 Silence raises VEHICLE_OFFLINE until the next ping
+- [x] AC-EXE-17 Pings are counted and deduplicated
+- [x] AC-EXE-18 Invalid pings are rejected
+- [x] AC-EXE-19 Silence raises VEHICLE_OFFLINE until the next ping
 - [ ] AC-EXE-20 ETA moves and the store's slip notice
 - [ ] AC-EXE-21 Late risk crosses 0.5 at 10 minutes
 - [ ] AC-EXE-22 A store sees her ETA, never the map
+- [x] AC-EXE-23 The dispatcher tracks running trips
+- [x] AC-EXE-22 A store sees her ETA, never the map
 - [ ] AC-EXE-23 The dispatcher tracks running trips
 - [ ] AC-EXE-24 Re-sequence stops
 - [ ] AC-EXE-25 Reassign a trip the driver can't run
@@ -548,6 +550,17 @@ say so in the spec if you change one.
 - Does ISSUE_REPORTED from D5 create a receipt issue row, and through which call? (Harini)
 
 ## Changelog
+- 2026-10-04 AC-EXE-22 passes: `GET /orders/{id}/eta` is served by planning's `TrackingQueries.orderEta`
+  (the planned arrival until the trip leaves, the engine's projection from now after that, no vehicle or
+  position), and M3 shows it. Its test sits in planning's live-day suite. The stored ETA, pings, eta.updated
+  and late risk (AC-EXE-17 to 21) are still open
+- 2026-10-04 D10 and D11 built (ROO-62). D10 reads `GET /me/trips` with no date, which answers with
+  the 7-day window, and groups the trips by day; each card opens D11. D11 reads the trip, its stops
+  from the offline bundle and each stop's time, receiver and exception note from `GET /stops/{id}`;
+  with no signal a trip this phone ran still lists its stops from Dexie. Both are read only, so
+  nothing goes through the outbox. AC-EXE-02 has a screen test on each. What the frames show and
+  the API does not carry (in-full and on-time figures, sync times, photo counts) is in
+  docs/departures.md. D6 and D14 are still to build
 - 2026-10-04 D7 built (ROO-62): the round now has an ending. Recording the last stop — a delivery
   on D4 or an exception on D5 — lands on D7 instead of D1, and D1 offers the way back to it for a
   driver who closed the app, so a finished round can always be closed. `TRIP_COMPLETED` was already
@@ -565,3 +578,14 @@ say so in the spec if you change one.
   recorded above; AC-EXE-16 answers 200 with a link rather than 302
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: delivery lines keep `qtyExpected` and a `note`; the ARRIVED position, units delivered and the can't-run reason are projected onto stops and trips (merged from the Supabase draft)
+- 2026-10-04 ROO-37: POST /telematics/pings (TelematicsService), the signal watch on the ticker
+  (SignalWatchService, `execution.signal-watch`), GET /trips/{id}/trail, and a demo position
+  simulator in the worker (DEMO_MODE with SIMULATE_POSITIONS, every 5 s, through the same
+  pipeline as source `simulator`). Decisions: each ping names its trip and the vehicle comes from
+  the trip; dedupe is against the stored trail, which keeps a fix every 30 s or 100 m and only
+  moves forward; pings are telemetry and are not audited, while vehicle.offline and
+  vehicle.back_online are (source SYSTEM); offline events carry `vehicleRef`, since alerts reads
+  vehicleId as a UUID; offline fires at 30 minutes or more. The phone queues fixes in Dexie
+  (`pings`, version 2) and sends them to /telematics/pings, not /sync. Planning's tracking read
+  now carries the depot, stop coordinates, each trip's position, last signal and noSignalSince.
+  Not yet: the ETA recompute and late risk (AC-EXE-20, 21, ROO-46) and the 30-day trail purge.

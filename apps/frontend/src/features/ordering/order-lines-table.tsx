@@ -27,7 +27,7 @@ export interface OrderLinesTableProps {
 export function OrderLinesTable({ order, orders, lines, loading, action, onChangeQty, busy }: OrderLinesTableProps) {
   const editable = Boolean(getLink(order._links, 'setLines'))
   return (
-    <TableContainer className="w-[568px] shrink-0" aria-busy={busy || undefined}>
+    <TableContainer className="w-auto min-w-0 flex-1 basis-[420px]" aria-busy={busy || undefined}>
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 pb-[13px] pt-3">
         <div className="flex items-center gap-2.5">
           <h2 className="type-card-title m-0 text-foreground">{classLabel(order.tempClass)}</h2>

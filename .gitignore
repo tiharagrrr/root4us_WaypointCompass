@@ -28,11 +28,10 @@ pnpm-debug.log*
 !.vscode/extensions.json
 !.vscode/settings.json
 
-# Competition datasets are confidential and must not be published. data/seed holds the CSVs the
-# seed reads; only its README and .gitkeep are tracked.
-data/seed/*
-!data/seed/.gitkeep
-!data/seed/README.md
+# Competition datasets are confidential. The CSVs the seed reads are tracked in this private repo,
+# so a clone and a deploy both seed themselves: docs/adr/0004-datasets-in-the-private-repo.md. They
+# are never copied, published or shared outside it, and agents still must not open them -- see
+# .claude/hooks/protect-data.mjs.
 datathon/data/*
 !datathon/data/.gitkeep
 datathon/.venv/

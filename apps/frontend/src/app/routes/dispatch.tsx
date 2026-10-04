@@ -32,7 +32,12 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('Order queue'),
             lazy: async () => ({ Component: (await import('@/features/ordering/order-queue-page')).OrderQueuePage }),
           },
-          { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
+          {
+            // 04 (ROO-35).
+            path: 'past-orders',
+            handle: handle('Past orders'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/past-orders-page')).PastOrdersPage }),
+          },
           {
             path: 'plan',
             handle: handle('Plan'),
@@ -104,6 +109,12 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('Deferrals'),
             loader: prefetchLoader((qc) => qc.prefetchQuery(getDeferralReasonsListQueryOptions())),
             lazy: async () => ({ Component: (await import('@/features/deferrals/dispatch-deferrals-page')).DispatchDeferralsPage }),
+          },
+          {
+            // No frame: the run panel A6 → Demo shows, on the dispatcher's own screen (ROO-55).
+            path: 'simulation',
+            handle: handle('Simulation'),
+            lazy: async () => ({ Component: (await import('@/features/simulation/simulation-page')).SimulationPage }),
           },
         ],
       },

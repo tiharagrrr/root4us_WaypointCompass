@@ -70,6 +70,9 @@ export class OutletsController {
     @Body() dto: UpdateOutletDto,
     @Actor() actor: SignedIn,
   ) {
-    return this.links.one(await this.outlets.update(id, dto, actor), actor);
+    await this.outlets.update(id, dto, actor);
+    // Read it back for the manager A3 shows beside the row (AC-MD-05); the
+    // read is in the same transaction as the write.
+    return this.links.one(await this.queries.get(id, actor), actor);
   }
 }

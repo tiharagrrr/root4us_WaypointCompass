@@ -7,6 +7,7 @@ import { demoDays } from './demo-clock';
 import { HISTORY_FILE, importHistory, parseHistory } from './history';
 import { importS1 } from './import-s1';
 import { importKandyDay } from './kandy-day';
+import { placeOnMap } from './coordinates';
 import { nameOutlets } from './outlet-names';
 import { rebuildDemoDay } from './rebuild';
 
@@ -18,7 +19,11 @@ import { rebuildDemoDay } from './rebuild';
 export async function seedDemoDay(db: Database, dir: string): Promise<void> {
   const itemCount = await seedCatalog(db);
   const renamed = await nameOutlets(db);
-  console.log(`[seed] catalog: ${itemCount} items; ${renamed} outlets named`);
+  // After naming: an outlet goes on the map at the town it is named after.
+  const placed = await placeOnMap(db);
+  console.log(
+    `[seed] catalog: ${itemCount} items; ${renamed} outlets named, ${placed.outlets} placed on the map`,
+  );
 
   const days = await demoDays(db);
   const [, d] = days;

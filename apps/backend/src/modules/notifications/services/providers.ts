@@ -1,19 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { uuidv7 } from 'uuidv7';
 import { ClockService } from '../../../core/clock/clock.service';
 import { DemoInbox } from '../../../core/demo/demo-inbox';
+import {
+  ProviderError,
+  SMS_PROVIDER,
+  type SmsProvider,
+} from '../../../core/providers/ports';
 
-/** A provider's refusal; `retryable` says whether trying again could help (AC-NTF-06, 07). */
-export class ProviderError extends Error {
-  constructor(
-    message: string,
-    readonly retryable: boolean,
-  ) {
-    super(message);
-    this.name = 'ProviderError';
-  }
-}
+export { ProviderError } from '../../../core/providers/ports';
 
 /** One message on its way out. */
 export interface Delivery {
@@ -34,9 +30,11 @@ const RESEND_URL = 'https://api.resend.com/emails';
 
 /**
  * Picks where each message goes. Email: Resend when EMAIL_PROVIDER=resend (or
- * a key is set and no provider named), else the demo inbox. SMS: the demo
- * inbox until an SMS provider is wired. With DEMO_MODE=true every email also
- * leaves a copy in the demo inbox, so judges see what was sent (AC-NTF-15).
+ * a key is set and no provider named), else the demo inbox. SMS: the adapter
+ * SMS_PROVIDER names, from core/providers - demo-inbox, notifylk, textlk or
+ * twilio - so a gateway is swapped with one variable and never from here.
+ * With DEMO_MODE=true every email also leaves a copy in the demo inbox, so
+ * judges see what was sent (AC-NTF-15); an SMS adapter writes its own copy.
  * No provider at all is a permanent failure, never a retry loop.
  */
 @Injectable()
@@ -47,6 +45,7 @@ export class OutboundProviders {
     private readonly config: ConfigService,
     private readonly inbox: DemoInbox,
     private readonly clock: ClockService,
+    @Inject(SMS_PROVIDER) private readonly sms: SmsProvider,
   ) {
     const named = config.get<'resend' | 'demo-inbox'>('EMAIL_PROVIDER');
     this.emailProvider =
@@ -54,14 +53,22 @@ export class OutboundProviders {
   }
 
   async deliver(delivery: Delivery): Promise<Sent> {
-    if (delivery.channel === 'EMAIL' && this.emailProvider === 'resend') {
+    if (delivery.channel === 'SMS') {
+      const sent = await this.sms.send({
+        to: delivery.to,
+        text: delivery.text,
+        idempotencyKey: delivery.notificationId,
+      });
+      return { provider: sent.provider, messageId: sent.providerMessageId };
+    }
+    if (this.emailProvider === 'resend') {
       const messageId = await this.resend(delivery);
       if (this.inbox.enabled) await this.copyToInbox(delivery);
       return { provider: 'resend', messageId };
     }
     if (!this.inbox.enabled)
       throw new ProviderError(
-        `No ${delivery.channel === 'SMS' ? 'SMS' : 'email'} provider is configured: set DEMO_MODE=true to use the demo inbox${delivery.channel === 'EMAIL' ? ', or EMAIL_PROVIDER=resend with RESEND_API_KEY' : ''}`,
+        'No email provider is configured: set EMAIL_PROVIDER=resend with RESEND_API_KEY, or DEMO_MODE=true to use the demo inbox',
         false,
       );
     await this.copyToInbox(delivery);
@@ -115,12 +122,9 @@ export class OutboundProviders {
 
   private copyToInbox(delivery: Delivery): Promise<void> {
     return this.inbox.push({
-      channel: delivery.channel === 'SMS' ? 'sms' : 'email',
+      channel: 'email',
       to: delivery.to,
-      body:
-        delivery.channel === 'EMAIL'
-          ? `${delivery.subject}\n\n${delivery.text}`
-          : delivery.text,
+      body: `${delivery.subject}\n\n${delivery.text}`,
       sentAt: this.clock.toIso(this.clock.now()),
     });
   }

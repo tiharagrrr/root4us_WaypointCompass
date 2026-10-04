@@ -8,14 +8,14 @@ export interface ScreenPlaceholderProps {
   node: string
 }
 
-/** Stands in for a screen until its frame is built (react-screen skill). */
-export function ScreenPlaceholder({ code, name, node }: ScreenPlaceholderProps) {
+/**
+ * Stands in for a screen until its frame is built (react-screen skill). `code` and `node` stay on
+ * the props for traceability with specs/frontend/screens.md; they are never shown to a user.
+ */
+export function ScreenPlaceholder({ name }: ScreenPlaceholderProps) {
   return (
     <Card>
       <CardContent className="flex flex-col gap-1">
-        <p className="type-label m-0 uppercase text-muted-foreground">
-          {code} · Figma {node}
-        </p>
         <p className="type-body-strong m-0 text-foreground">{name}</p>
         <p className="type-body m-0 text-muted-foreground">This screen is not built yet.</p>
       </CardContent>
@@ -41,13 +41,10 @@ export interface RegionPlaceholderProps {
  * are execution and alerts — so a half-built frame says which half is
  * missing and who builds it, instead of looking finished or looking broken.
  */
-export function RegionPlaceholder({ region, frame, node, owner, what }: RegionPlaceholderProps) {
+export function RegionPlaceholder({ region, what }: RegionPlaceholderProps) {
   return (
     <Card className="border-dashed bg-page shadow-none">
       <CardContent className="flex flex-col gap-1">
-        <p className="type-label m-0 uppercase text-muted-foreground">
-          {frame} · {node} · {owner}
-        </p>
         <p className="type-body-strong m-0 text-foreground">{region}</p>
         <p className="type-body m-0 text-muted-foreground">{what}</p>
       </CardContent>

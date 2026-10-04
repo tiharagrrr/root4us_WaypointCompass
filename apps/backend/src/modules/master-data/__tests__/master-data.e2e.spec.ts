@@ -30,6 +30,7 @@ interface OutletBody {
   accessNotes: string | null;
   accessNotesUpdatedAt: string | null;
   accessNotesUpdatedById: string | null;
+  manager: { id: string; name: string } | null;
   brand: string;
   districtId: string;
   depotId: string;
@@ -56,6 +57,7 @@ describeWithDb('master data', () => {
   let close: () => Promise<void>;
   let depot: Awaited<ReturnType<typeof depotFixture>>;
   let outletId: string;
+  let unmanagedOutletId: string;
   let itemIds: { dry: string; chilled: string; style: string };
   const cookies: Record<string, string> = {};
   const users: Record<string, string> = {};
@@ -75,6 +77,12 @@ describeWithDb('master data', () => {
         windowOpenMin: 360,
         windowCloseMin: 600,
       },
+    );
+    unmanagedOutletId = await outletFixture(
+      db,
+      `OUTN${sfx}`,
+      { depotId: depot.plg, districtId: depot.plgDistrict },
+      { name: `Fresh Ragama ${sfx}` },
     );
     itemIds = {
       dry: await itemFixture(db, {
@@ -385,6 +393,42 @@ describeWithDb('master data', () => {
       expect([role, path, res.status]).toEqual([role, path, 403]);
       expectProblem(res, 'FORBIDDEN');
     }
+  });
+
+  it('AC-MD-05 outlets without a manager are flagged', async () => {
+    const withManager = await call(
+      'admin',
+      'get',
+      `/outlets?filter[depotId]=${depot.plg}&filter[hasManager]=true&limit=100`,
+    );
+
+    expect(withManager.status).toBe(200);
+    const managed = (withManager.body as { data: OutletBody[] }).data;
+    expect(managed.map((o) => o.id)).toContain(outletId);
+    expect(managed.map((o) => o.id)).not.toContain(unmanagedOutletId);
+    const manager = managed.find((o) => o.id === outletId)?.manager;
+    expect(manager?.id).toBe(users.store);
+    expect(typeof manager?.name).toBe('string');
+
+    const without = await call(
+      'admin',
+      'get',
+      `/outlets?filter[depotId]=${depot.plg}&filter[hasManager]=false&limit=100`,
+    );
+
+    expect(without.status).toBe(200);
+    const unmanaged = (without.body as { data: OutletBody[] }).data;
+    expect(unmanaged.map((o) => o.id)).toContain(unmanagedOutletId);
+    expect(unmanaged.map((o) => o.id)).not.toContain(outletId);
+    expect(
+      unmanaged.find((o) => o.id === unmanagedOutletId)?.manager,
+    ).toBeNull();
+
+    const bad = await call('admin', 'get', '/outlets?filter[hasManager]=maybe');
+    expect(bad.status).toBe(400);
+    expect(
+      JSON.stringify(expectProblem(bad, 'VALIDATION_FAILED').errors),
+    ).toContain('hasManager');
   });
 
   it('AC-MD-06 depot settings are audited (A4)', async () => {

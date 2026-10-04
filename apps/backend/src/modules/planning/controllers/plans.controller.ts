@@ -12,7 +12,11 @@ import { EndOfDayDto } from '../dto/end-of-day.dto';
 import { PlanRevisionDto, UnplannedOrderDto } from '../dto/plan-actions.dto';
 import { PlanContextDto } from '../dto/plan-engine.dto';
 import { PlanDayParamsDto, PlanDto, TripDto } from '../dto/plan.dto';
-import { TrackingDayDto, TrackingQueryDto } from '../dto/tracking.dto';
+import {
+  OrderEtaDto,
+  TrackingDayDto,
+  TrackingQueryDto,
+} from '../dto/tracking.dto';
 import { DriverOptionDto } from '../dto/trip-ops.dto';
 import { DayCloseService } from '../services/day-close.service';
 import { TrackingQueries } from '../services/tracking.queries';
@@ -59,6 +63,19 @@ export class PlansController {
     @Actor() actor: SignedIn,
   ) {
     return this.trackingQueries.day(depotId, query.date, actor);
+  }
+
+  /** M3: the store's ETA for an order, never the map (AC-EXE-22). */
+  @Get('orders/:id/eta')
+  @RequirePermission('tracking:read')
+  @ApiResource(OrderEtaDto)
+  @ApiOperation({
+    summary: "An order's ETA",
+    description:
+      'When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.',
+  })
+  orderEta(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
+    return this.trackingQueries.orderEta(id, actor);
   }
 
   @Get('plans/:id')

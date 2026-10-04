@@ -25,8 +25,10 @@ Envelope as consumers receive it (`DeliveredEvent`): `id`, `type`, `depotId`, `o
 | `loading` | loading | `plan.published`, `plan.revised`, `trip.reassigned` (`LOAD_CONSUMES`) |
 | `receipt` | receipt | `stop.completed` (`RECEIPT_CONSUMES`): a receipt the store confirmed before the driver's record synced stops waiting and its order moves on |
 | `planning` | planning | `vehicle.status_changed`: a breakdown flags the vehicle's published trips for repair (ROO-56) |
+| `notifications` | notifications | every type in the notification catalog: the dispatcher turns each into in-app, email and SMS jobs |
+| `notifications-receipts` | notifications | provider delivery receipts stored by the webhooks gateway |
 
-Still to register: notifications (ROO-26), webhooks (ROO-36), planning (`order.cancelled`,
+Still to register: outbound webhooks (ROO-36), planning (`order.cancelled`,
 `order.priority_changed`).
 
 ## Producers

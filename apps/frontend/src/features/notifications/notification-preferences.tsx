@@ -70,6 +70,7 @@ export function NotificationPreferences({ touch = false }: { touch?: boolean }) 
           <div>
             <Action link={getLink(sheet._links, 'resumeEmail')} size="sm" variant="outline" onAction={() => resume.mutateAsync()} />
           </div>
+          {resume.isError ? <ErrorState error={resume.error} /> : null}
         </div>
       ) : null}
 

@@ -24,6 +24,15 @@ export const EXECUTION_EVENTS = {
    * ordering completed its own for a draft's life.
    */
   tripDownloaded: 'trip.downloaded',
+  /** 30 minutes with no ping or event on a running trip (AC-EXE-19). */
+  vehicleOffline: 'vehicle.offline',
+  /** The next ping after vehicle.offline. */
+  vehicleBackOnline: 'vehicle.back_online',
+} as const;
+
+/** @OnTick names; the worker's ticker runs them once a minute. */
+export const EXECUTION_TICKS = {
+  signalWatch: 'execution.signal-watch',
 } as const;
 
 /** Audit actions and the log `event` field, which carry the module. */
@@ -39,6 +48,8 @@ export const EXECUTION_AUDIT = {
   tripCompleted: 'execution.trip.completed',
   attachmentPresigned: 'execution.attachment.presigned',
   attachmentUploaded: 'execution.attachment.uploaded',
+  vehicleOffline: 'execution.vehicle.offline',
+  vehicleBackOnline: 'execution.vehicle.back_online',
 } as const;
 
 /** Log-only events: no audit row, no outbox event. */
@@ -47,6 +58,11 @@ export const EXECUTION_LOGS = {
   stopRecorded: 'execution.stop.recorded',
   /** A driver who arrived at a later stop before an earlier one (AC-EXE-08). */
   outOfSequence: 'execution.stop.out_of_sequence',
+  /** A batch of pings: counts only, never coordinates. */
+  pingsReceived: 'tracking.pings.received',
+  positionNotPublished: 'tracking.position.not_published',
+  vehicleOffline: 'tracking.vehicle.offline',
+  vehicleBackOnline: 'tracking.vehicle.back_online',
 } as const;
 
 /** D10: how far back a driver's own trips go. */

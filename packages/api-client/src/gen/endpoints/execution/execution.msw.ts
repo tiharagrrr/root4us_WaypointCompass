@@ -32,7 +32,8 @@ import type {
   TripsComplete200,
   TripsDownloaded200,
   TripsGet200,
-  TripsStart200
+  TripsStart200,
+  TripsTrail200
 } from '../../model';
 
 
@@ -41,6 +42,8 @@ export const getMyTripsListResponseMock = (overrideResponse: Partial<Extract<MyT
       }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }, ...overrideResponse})
+
+export const getTripsTrailResponseMock = (overrideResponse: Partial<Extract<TripsTrail200, object>> = {}): TripsTrail200 => ({data: {tripId: faker.string.alpha({length: {min: 10, max: 20}}), points: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({lat: 7.001, lng: 79.953, recordedAt: "2026-10-02T04:12:05+05:30"}))}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getTripsGetResponseMock = (overrideResponse: Partial<Extract<TripsGet200, object>> = {}): TripsGet200 => ({data: {id: "0192a3f4-0000-7000-8000-00000000b001", tripNo: 1, status: "RELEASED", date: "2026-10-02", depotId: "PLG", brand: "FRESH", tempClass: "CHILLED", vehicle: {id: "REF-07", code: "REF-07", temp: "REEFER"}, stops: 6, openStops: 6, plannedDepartAt: "2026-10-02T03:30:00+05:30", releasedAt: "2026-10-02T02:30:00+05:30", downloadedAt: null, startedAt: null, completedAt: null, cantRunReason: null, version: 1, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
@@ -100,6 +103,18 @@ export const getMyTripsListMockHandler = (overrideResponse?: MyTripsList200 | ((
     return HttpResponse.json(overrideResponse !== undefined
     ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
     : getMyTripsListResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getTripsTrailMockHandler = (overrideResponse?: TripsTrail200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<TripsTrail200> | TripsTrail200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/trips/:id/trail', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getTripsTrailResponseMock(),
       { status: 200
       })
   }, options)
@@ -262,6 +277,7 @@ export const getAttachmentsDownloadMockHandler = (overrideResponse?: Attachments
 }
 export const getExecutionMock = () => [
   getMyTripsListMockHandler(),
+  getTripsTrailMockHandler(),
   getTripsGetMockHandler(),
   getTripsBundleMockHandler(),
   getTripsDownloadedMockHandler(),

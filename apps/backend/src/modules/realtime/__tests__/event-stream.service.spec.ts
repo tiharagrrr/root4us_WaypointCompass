@@ -99,6 +99,27 @@ describe('one client stream', () => {
     sub.unsubscribe();
   });
 
+  it('AC-RT-07 Positions are throttled and never replayed', async () => {
+    const t = setup();
+    const sub = t.start(ID(1));
+    await flush();
+    t.feed.next({
+      ...event(7),
+      id: 'VEH014:2026-10-02T04:12:05.000Z',
+      type: 'vehicle.position',
+      aggregateType: 'vehicle',
+      aggregateId: 'VEH014',
+    });
+    await flush();
+    sub.unsubscribe();
+    const position = t.frames.find((f) => f.type === 'vehicle.position');
+    // The frame keeps the outbox cursor, so a reconnect replays events, not positions.
+    expect(position?.id).toBe(ID(1));
+    expect(position?.data).toMatchObject({
+      aggregate: { type: 'vehicle', id: 'VEH014' },
+    });
+  });
+
   it('AC-RT-06 A too-old id gets a resync', async () => {
     const t = setup({ resync: true });
     const sub = t.start(ID(1));

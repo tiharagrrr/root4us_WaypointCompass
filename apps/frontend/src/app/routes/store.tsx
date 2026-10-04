@@ -5,7 +5,6 @@ import { STORE_OPEN_ORDERS } from '@/features/ordering/open-orders-query'
 import { prefetchLoader } from '../loaders'
 import { RoleArea } from '../role-area'
 import type { RouteHandle } from '../route-handle'
-import { ScreenPlaceholder } from '../screen-placeholder'
 
 const handle = (title: string, eyebrow?: string): RouteHandle => (eyebrow ? { title, eyebrow } : { title })
 
@@ -68,8 +67,16 @@ export const storeRoutes: RouteObject[] = [
             handle: handle('Receipts'),
             lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
           },
-          { path: 'history', handle: handle('Order history'), element: <ScreenPlaceholder code="M8" name="Order history" node="185:11842" /> },
-          { path: 'catalog', handle: handle('Item catalog'), element: <ScreenPlaceholder code="M9" name="Item catalog" node="238:825" /> },
+          {
+            path: 'history',
+            handle: handle('Order history'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/order-history-page')).OrderHistoryPage }),
+          },
+          {
+            path: 'catalog',
+            handle: handle('Item catalog'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/item-catalog-page')).ItemCatalogPage }),
+          },
         ],
       },
     ],

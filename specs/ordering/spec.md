@@ -753,3 +753,15 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   `ordering.order.backordered` audit action and `order.backordered` event, because only ordering
   may write `orders`: a dispatcher's REMOVE at the dock owes the store the goods that stayed
   behind. Harini owns them from here; covered by AC-LOD-12, with no ordering test of its own yet
+- 2026-10-04 M8 Order history built at `/store/history`: past orders with Reorder (AC-ORD-07's screen side) and the order timeline; departures logged
+- 2026-10-04 M1 lets the store pick the delivery day (`/store/orders/new?date=`) and start that day's dry or
+  chilled order with `POST /orders` (AC-ORD-09's screen side); before this the screen only showed drafts
+  that already existed. The picker offers tomorrow to 14 days ahead; that horizon is the screen's, the API
+  still accepts any date (see the open question on past dates). Chilled is offered to Fresh outlets only,
+  and a Style outlet is told its delivery weekday. `STORE_OPEN_ORDERS` reads up to 50 orders
+- 2026-10-04 04 Past orders built (ROO-35): one past run a day at a time, read only, with the result
+  tabs' counts read from one-row pages, AC-ORD-31's search, the timeline from each order's link and a
+  CSV export of the day. Orders the day deferred carry the later run's delivery date, so the day's
+  list does not hold them: they are counted and listed from `GET /deferrals?filter[fromDate]=`. 03 and
+  04 switch between each other in the header. What the frame draws and the order list does not carry
+  (the vehicle, on time) is in docs/departures.md

@@ -3,25 +3,25 @@ import { type Actor, can, minuteLabel } from '@waypoint/shared';
 import { ClockService } from '../../../core/clock/clock.service';
 import { LinkBuilder, type LinkMap } from '../../../core/http/links';
 import type { OutletDto } from '../dto/outlet.dto';
-import type { OutletRow } from '../services/outlet.queries';
+import type { OutletView } from '../services/outlet.queries';
 
 const label = (min: number | null) => (min == null ? null : minuteLabel(min));
 
 /** An outlet on A3, with the edit link only for someone who may make it. */
 @Injectable()
 export class OutletLinks extends LinkBuilder<
-  OutletRow,
+  OutletView,
   Omit<OutletDto, '_links'>
 > {
   constructor(protected readonly clock: ClockService) {
     super();
   }
 
-  protected self(o: OutletRow) {
+  protected self(o: OutletView) {
     return `/api/v1/outlets/${o.id}`;
   }
 
-  protected actions(o: OutletRow, actor: Actor): LinkMap {
+  protected actions(o: OutletView, actor: Actor): LinkMap {
     return {
       edit: can(actor, 'masterData:manage') && {
         href: this.self(o),
@@ -36,7 +36,7 @@ export class OutletLinks extends LinkBuilder<
     };
   }
 
-  protected present(o: OutletRow): Omit<OutletDto, '_links'> {
+  protected present(o: OutletView): Omit<OutletDto, '_links'> {
     return {
       id: o.id,
       name: o.name,
@@ -64,6 +64,7 @@ export class OutletLinks extends LinkBuilder<
         ? this.clock.toIso(o.accessNotesUpdatedAt)
         : null,
       accessNotesUpdatedById: o.accessNotesUpdatedById,
+      manager: o.manager,
     };
   }
 }

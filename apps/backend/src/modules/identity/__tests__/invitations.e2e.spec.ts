@@ -21,6 +21,7 @@ import {
 import { expectProblem } from '../../../../test/kernel';
 import { ClockService } from '../../../core/clock/clock.service';
 import type { DemoInbox, DemoMessage } from '../../../core/demo/demo-inbox';
+import type { SmsProvider } from '../../../core/providers/ports';
 import type { Database } from '../../../db/client';
 import {
   accounts,
@@ -154,7 +155,7 @@ describeWithDb('/invitations', () => {
   const tokenOf = (job: Job<AuthInviteJob>) =>
     job.data.link.split('/invite/')[1];
 
-  /** What the worker would put in the demo inbox for a job. */
+  /** What the worker would send for a job: SMS through SMS_PROVIDER, email to the demo inbox. */
   async function deliver(job: Job<AuthInviteJob>) {
     const messages: Omit<DemoMessage, 'id'>[] = [];
     const inbox = {
@@ -164,11 +165,28 @@ describeWithDb('/invitations', () => {
         return Promise.resolve();
       },
     } as unknown as DemoInbox;
+    const sms: SmsProvider = {
+      name: 'demo-inbox',
+      send: (m) => {
+        messages.push({
+          channel: 'sms',
+          to: m.to,
+          body: m.text,
+          sentAt: new Date(job.timestamp).toISOString(),
+        });
+        return Promise.resolve({
+          provider: 'demo-inbox',
+          providerMessageId: 'demo-1',
+        });
+      },
+      health: () => Promise.resolve(true),
+    };
     // Only the auth jobs run here; notify.send's collaborators are not needed.
     await new NotificationsProcessor(
       inbox,
       {} as ConstructorParameters<typeof NotificationsProcessor>[1],
       {} as ConstructorParameters<typeof NotificationsProcessor>[2],
+      sms,
     ).process(job);
     return messages;
   }

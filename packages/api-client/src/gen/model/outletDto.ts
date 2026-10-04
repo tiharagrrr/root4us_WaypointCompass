@@ -8,6 +8,7 @@
 import type { _OutletDtoLinks } from './_outletDtoLinks.ts';
 import type { Brand } from './brand.ts';
 import type { DockType } from './dockType.ts';
+import type { OutletManagerDto } from './outletManagerDto.ts';
 import type { ParkingConstraint } from './parkingConstraint.ts';
 
 export interface OutletDto {
@@ -55,5 +56,10 @@ export interface OutletDto {
   accessNotesUpdatedAt: string | null;
   /** @nullable */
   accessNotesUpdatedById: string | null;
+  /**
+     * The store manager linked here; null means nobody is (A3)
+     * @nullable
+     */
+  manager: OutletManagerDto | null;
   _links: _OutletDtoLinks;
 }

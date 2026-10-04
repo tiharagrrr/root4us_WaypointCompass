@@ -58,6 +58,9 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   // A breakdown: 01, 19 and 20 show the trip can't run and the vehicle's status.
   'trip.cant_run': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/trips'],
   'trip.downloaded': () => ['/api/v1/depots'],
+  // 19's "no signal" estimate and the VEHICLE_OFFLINE alert come and go with these.
+  'vehicle.offline': () => ['/api/v1/depots', '/api/v1/alerts'],
+  'vehicle.back_online': () => ['/api/v1/depots', '/api/v1/alerts'],
   'vehicle.status_changed': () => ['/api/v1/vehicles', '/api/v1/depots', '/api/v1/plans'],
   'stop.failed': () => ['/api/v1/plans', '/api/v1/depots'],
   'plan.closed': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/deferrals', '/api/v1/orders'],

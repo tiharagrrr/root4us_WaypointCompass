@@ -3096,6 +3096,100 @@
         ]
       }
     },
+    "/api/v1/timelines/order/{id}": {
+      "get": {
+        "description": "The order merged with its stops, trip, deferrals, load lines, receipt and issues, by occurredAt. syncedLate marks an offline event recorded more than 5 minutes after it happened.",
+        "operationId": "timelinesOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimelineEntryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's timeline, oldest first",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/calendar": {
       "get": {
         "operationId": "calendarList",
@@ -3432,6 +3526,440 @@
           }
         },
         "summary": "Edit depot settings",
+        "tags": [
+          "depots"
+        ]
+      }
+    },
+    "/api/v1/depots/{depotId}/waves": {
+      "get": {
+        "operationId": "depotWavesList",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DepotWaveDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List a depot's run waves",
+        "tags": [
+          "depots"
+        ]
+      },
+      "post": {
+        "operationId": "depotWavesCreate",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepotWaveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotWaveDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add a run wave",
+        "tags": [
+          "depots"
+        ]
+      }
+    },
+    "/api/v1/depots/{depotId}/waves/{id}": {
+      "get": {
+        "operationId": "depotWavesGet",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotWaveDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One run wave",
+        "tags": [
+          "depots"
+        ]
+      },
+      "patch": {
+        "operationId": "depotWavesUpdate",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepotWaveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotWaveDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit a run wave",
+        "tags": [
+          "depots"
+        ]
+      },
+      "delete": {
+        "operationId": "depotWavesRemove",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Remove a run wave",
         "tags": [
           "depots"
         ]
@@ -3887,6 +4415,15 @@
             "required": false,
             "in": "query",
             "description": "one of NORMAL, VAN_ONLY, MALL_DOCK; comma-separated for any of. Also filter[parkingConstraint][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[hasManager]",
+            "required": false,
+            "in": "query",
+            "description": "true or false; comma-separated for any of. Also filter[hasManager][op] with op in eq.",
             "schema": {
               "type": "string"
             }
@@ -7374,6 +7911,384 @@
         ]
       }
     },
+    "/api/v1/vehicles": {
+      "get": {
+        "operationId": "vehiclesList",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Tables: rows to skip",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Feeds: meta.page.nextCursor of the previous page",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated fields, \"-\" for descending",
+            "schema": {
+              "maxLength": 200,
+              "example": "-submittedAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated related resources",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[depotId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[depotId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[status]",
+            "required": false,
+            "in": "query",
+            "description": "one of ACTIVE, WORKSHOP, BREAKDOWN; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[type]",
+            "required": false,
+            "in": "query",
+            "description": "one of TRUCK, VAN; comma-separated for any of. Also filter[type][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[temp]",
+            "required": false,
+            "in": "query",
+            "description": "one of AMBIENT, REEFER; comma-separated for any of. Also filter[temp][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/VehicleDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List vehicles",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
+    "/api/v1/vehicles/{id}": {
+      "get": {
+        "operationId": "vehiclesGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VehicleDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One vehicle",
+        "tags": [
+          "vehicles"
+        ]
+      },
+      "patch": {
+        "operationId": "vehiclesUpdate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVehicleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/VehicleDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Edit a vehicle",
+        "tags": [
+          "vehicles"
+        ]
+      }
+    },
     "/api/v1/deferral-reasons": {
       "get": {
         "operationId": "deferralReasonsList",
@@ -7906,6 +8821,90 @@
           }
         },
         "summary": "01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/eta": {
+      "get": {
+        "description": "When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.",
+        "operationId": "plansOrderEta",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderEtaDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's ETA",
         "tags": [
           "plans"
         ]
@@ -12704,6 +13703,89 @@
         ]
       }
     },
+    "/api/v1/trips/{id}/trail": {
+      "get": {
+        "operationId": "tripsTrail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TripTrailDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The trip's GPS trail",
+        "tags": [
+          "execution"
+        ]
+      }
+    },
     "/api/v1/trips/{id}": {
       "get": {
         "operationId": "tripsGet",
@@ -13944,6 +15026,100 @@
         "summary": "A link to an attachment",
         "tags": [
           "execution"
+        ]
+      }
+    },
+    "/api/v1/telematics/pings": {
+      "post": {
+        "operationId": "telematicsPings",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PingBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PingResultDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Up to 200 GPS fixes for running trips",
+        "tags": [
+          "telematics"
         ]
       }
     },
@@ -16725,6 +17901,740 @@
           "streams"
         ]
       }
+    },
+    "/api/v1/simulations": {
+      "get": {
+        "operationId": "simulationsList",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SimulationDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The newest simulation runs",
+        "tags": [
+          "simulations"
+        ]
+      },
+      "post": {
+        "operationId": "simulationsCreate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSimulationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a run, or replay one",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}": {
+      "get": {
+        "operationId": "simulationsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Status, simulated time and KPIs",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}/start": {
+      "post": {
+        "operationId": "simulationsStart",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start the run and hand it the demo clock",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}/pause": {
+      "post": {
+        "operationId": "simulationsPause",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Hold simulated time",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}/resume": {
+      "post": {
+        "operationId": "simulationsResume",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Continue simulated time",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}/stop": {
+      "post": {
+        "operationId": "simulationsStop",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SimulationDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "End the run and compute its KPIs",
+        "tags": [
+          "simulations"
+        ]
+      }
+    },
+    "/api/v1/simulations/{id}/injections": {
+      "post": {
+        "operationId": "simulationsInject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateInjectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/InjectionDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Add trouble at a simulated time",
+        "tags": [
+          "simulations"
+        ]
+      }
     }
   },
   "info": {
@@ -18164,6 +20074,116 @@
           "mode"
         ]
       },
+      "TimelineEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Position in the audit chain",
+            "example": 4211
+          },
+          "action": {
+            "type": "string",
+            "description": "<module>.<entity>.<verb>",
+            "example": "ordering.order.submitted"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "The entity the step was recorded on",
+            "example": "order"
+          },
+          "entityId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "example": "usr_nimesha"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a step the system took",
+            "example": "Nimesha Periyapperuma"
+          },
+          "actorRole": {
+            "type": "string",
+            "nullable": true,
+            "example": "store_manager"
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true,
+            "example": "dev_7f3a"
+          },
+          "source": {
+            "type": "string",
+            "description": "WEB, PWA, OFFLINE_SYNC, ENGINE, SYSTEM, SIMULATION or WEBHOOK",
+            "example": "WEB"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "The status the entity moved to, when the step set one",
+            "example": "SUBMITTED"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "reasonNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "When it happened: device or business time",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "When the server recorded it",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "syncedLate": {
+            "type": "boolean",
+            "description": "True when recordedAt trails occurredAt by more than 5 minutes: an offline event that synced late",
+            "example": false
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "action",
+          "entityType",
+          "entityId",
+          "actorId",
+          "actorName",
+          "actorRole",
+          "deviceId",
+          "source",
+          "status",
+          "reasonCode",
+          "reasonNote",
+          "occurredAt",
+          "recordedAt",
+          "syncedLate",
+          "_links"
+        ]
+      },
       "CalendarDayDto": {
         "type": "object",
         "properties": {
@@ -18340,6 +20360,140 @@
           }
         }
       },
+      "Brand": {
+        "type": "string",
+        "enum": [
+          "FRESH",
+          "STYLE",
+          "TECH"
+        ]
+      },
+      "DepotWaveDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192f0c7-0000-7000-8000-000000000000"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "label": {
+            "type": "string",
+            "example": "Run 1"
+          },
+          "departFromMin": {
+            "type": "number",
+            "description": "Minutes after midnight",
+            "example": 315
+          },
+          "departFrom": {
+            "type": "string",
+            "example": "05:15"
+          },
+          "departToMin": {
+            "type": "number",
+            "example": 390
+          },
+          "departTo": {
+            "type": "string",
+            "example": "06:30"
+          },
+          "brands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Brand"
+            },
+            "example": [
+              "FRESH"
+            ]
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "depotId",
+          "label",
+          "departFromMin",
+          "departFrom",
+          "departToMin",
+          "departTo",
+          "brands",
+          "_links"
+        ]
+      },
+      "CreateDepotWaveDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "example": "Run 1"
+          },
+          "departFromMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 315
+          },
+          "departToMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 390
+          },
+          "brands": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/Brand"
+            }
+          }
+        },
+        "required": [
+          "label",
+          "departFromMin",
+          "departToMin",
+          "brands"
+        ]
+      },
+      "UpdateDepotWaveDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "example": "Run 2"
+          },
+          "departFromMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 660
+          },
+          "departToMin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1439,
+            "example": 750
+          },
+          "brands": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/Brand"
+            }
+          }
+        }
+      },
       "RoadClass": {
         "type": "string",
         "enum": [
@@ -18428,14 +20582,6 @@
           "centroidLat",
           "centroidLng",
           "_links"
-        ]
-      },
-      "Brand": {
-        "type": "string",
-        "enum": [
-          "FRESH",
-          "STYLE",
-          "TECH"
         ]
       },
       "TempClass": {
@@ -18547,6 +20693,23 @@
           "NORMAL",
           "VAN_ONLY",
           "MALL_DOCK"
+        ]
+      },
+      "OutletManagerDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "user_01J9"
+          },
+          "name": {
+            "type": "string",
+            "example": "Nimesha Periyapperuma"
+          }
+        },
+        "required": [
+          "id",
+          "name"
         ]
       },
       "OutletDto": {
@@ -18676,6 +20839,16 @@
             "nullable": true,
             "example": null
           },
+          "manager": {
+            "nullable": true,
+            "description": "The store manager linked here; null means nobody is (A3)",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OutletManagerDto"
+              }
+            ]
+          },
           "_links": {
             "type": "object",
             "additionalProperties": {
@@ -18708,6 +20881,7 @@
           "accessNotes",
           "accessNotesUpdatedAt",
           "accessNotesUpdatedById",
+          "manager",
           "_links"
         ]
       },
@@ -19904,6 +22078,204 @@
           "status"
         ]
       },
+      "VehicleType": {
+        "type": "string",
+        "enum": [
+          "TRUCK",
+          "VAN"
+        ]
+      },
+      "VehicleTemp": {
+        "type": "string",
+        "enum": [
+          "AMBIENT",
+          "REEFER"
+        ]
+      },
+      "VehicleStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "WORKSHOP",
+          "BREAKDOWN"
+        ]
+      },
+      "VehicleDriverDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "user_01J9"
+          },
+          "name": {
+            "type": "string",
+            "example": "Aniqa Razick"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "VehicleDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "VEH007"
+          },
+          "code": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "registrationNo": {
+            "type": "string",
+            "example": "WP-REF-07"
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehicleType"
+              }
+            ]
+          },
+          "temp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehicleTemp"
+              }
+            ]
+          },
+          "weightCapKg": {
+            "type": "number",
+            "example": 3000
+          },
+          "volumeCapM3": {
+            "type": "number",
+            "example": 20
+          },
+          "fuelType": {
+            "type": "string",
+            "example": "diesel"
+          },
+          "kmPerL": {
+            "type": "number",
+            "example": 6
+          },
+          "weeklyFuelQuotaL": {
+            "type": "number",
+            "example": 400
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehicleStatus"
+              }
+            ]
+          },
+          "statusReason": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "statusChangedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "driver": {
+            "nullable": true,
+            "description": "The driver linked to this vehicle; null when none is",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehicleDriverDto"
+              }
+            ]
+          },
+          "version": {
+            "type": "number",
+            "example": 4,
+            "description": "Send back as If-Match on a write"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "registrationNo",
+          "type",
+          "temp",
+          "weightCapKg",
+          "volumeCapM3",
+          "fuelType",
+          "kmPerL",
+          "weeklyFuelQuotaL",
+          "depotId",
+          "status",
+          "statusReason",
+          "statusChangedAt",
+          "driver",
+          "version",
+          "_links"
+        ]
+      },
+      "UpdateVehicleDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "REF-07"
+          },
+          "registrationNo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20,
+            "example": "WP-REF-07"
+          },
+          "weightCapKg": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100000,
+            "example": 3000
+          },
+          "volumeCapM3": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 1000,
+            "example": 20
+          },
+          "fuelType": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "example": "diesel"
+          },
+          "kmPerL": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "example": 6
+          },
+          "weeklyFuelQuotaL": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "example": 400
+          }
+        }
+      },
       "DeferralReasonDto": {
         "type": "object",
         "properties": {
@@ -20111,6 +22483,23 @@
           "_links"
         ]
       },
+      "MapPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          }
+        },
+        "required": [
+          "lat",
+          "lng"
+        ]
+      },
       "TrackingTotalsDto": {
         "type": "object",
         "properties": {
@@ -20162,6 +22551,40 @@
           "repeatSkips"
         ]
       },
+      "VehiclePositionDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "speedKmh": {
+            "type": "number",
+            "nullable": true,
+            "example": 38
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "heading",
+          "speedKmh",
+          "recordedAt"
+        ]
+      },
       "TrackingStopDto": {
         "type": "object",
         "properties": {
@@ -20185,6 +22608,16 @@
           "outletName": {
             "type": "string",
             "example": "Fresh Ja-Ela"
+          },
+          "at": {
+            "nullable": true,
+            "description": "The outlet on the map; null when it has no coordinates",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapPointDto"
+              }
+            ]
           },
           "status": {
             "type": "string",
@@ -20247,6 +22680,7 @@
           "orderNo",
           "outletId",
           "outletName",
+          "at",
           "status",
           "windowOpenMin",
           "windowCloseMin",
@@ -20357,6 +22791,28 @@
             "type": "number",
             "example": 15.8
           },
+          "position": {
+            "nullable": true,
+            "description": "Latest position while on this trip; null before the first ping",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VehiclePositionDto"
+              }
+            ]
+          },
+          "lastSignalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:30:00+05:30",
+            "description": "Last ping, stop event or start, for a trip on the road"
+          },
+          "noSignalSince": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:30:00+05:30",
+            "description": "Set once a trip on the road has been silent for 10 minutes: \"No signal since 04:30\""
+          },
           "stops": {
             "type": "array",
             "items": {
@@ -20385,6 +22841,9 @@
           "plannedDepartAt",
           "loadWeightKg",
           "loadVolumeM3",
+          "position",
+          "lastSignalAt",
+          "noSignalSince",
           "stops"
         ]
       },
@@ -20409,6 +22868,16 @@
             "nullable": true,
             "example": "PUBLISHED"
           },
+          "depot": {
+            "nullable": true,
+            "description": "The depot on the map",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapPointDto"
+              }
+            ]
+          },
           "totals": {
             "$ref": "#/components/schemas/TrackingTotalsDto"
           },
@@ -20431,8 +22900,93 @@
           "date",
           "planId",
           "planStatus",
+          "depot",
           "totals",
           "trips",
+          "_links"
+        ]
+      },
+      "OrderEtaDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "stopId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stop the order is on; null until it is planned",
+            "example": "0192a3f4-0000-7000-8000-00000000s001"
+          },
+          "tripStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "IN_PROGRESS"
+          },
+          "stopStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PENDING"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:54:00+05:30",
+            "description": "When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 6,
+            "description": "Minutes between the ETA and the window closing; negative is late"
+          },
+          "standing": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
+            ],
+            "type": "string",
+            "example": "NEXT"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:52:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "orderId",
+          "orderNo",
+          "stopId",
+          "tripStatus",
+          "stopStatus",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "standing",
+          "completedAt",
           "_links"
         ]
       },
@@ -23727,6 +26281,46 @@
           "_links"
         ]
       },
+      "TrailPointDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30"
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "recordedAt"
+        ]
+      },
+      "TripTrailDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string"
+          },
+          "points": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrailPointDto"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "points"
+        ]
+      },
       "BundleTripDto": {
         "type": "object",
         "properties": {
@@ -24858,6 +27452,105 @@
           "url",
           "expiresAt",
           "_links"
+        ]
+      },
+      "PingResultDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "number",
+            "example": 18
+          },
+          "duplicates": {
+            "type": "number",
+            "example": 2
+          },
+          "rejected": {
+            "type": "number",
+            "example": 0
+          },
+          "reasons": {
+            "description": "Index in the batch and reason for each refused fix",
+            "example": [
+              {
+                "index": 3,
+                "reason": "inaccurate"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "accepted",
+          "duplicates",
+          "rejected",
+          "reasons"
+        ]
+      },
+      "PingDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The running trip this fix belongs to"
+          },
+          "lat": {
+            "type": "number",
+            "example": 7.001
+          },
+          "lng": {
+            "type": "number",
+            "example": 79.953
+          },
+          "accuracyM": {
+            "type": "number",
+            "nullable": true,
+            "example": 12
+          },
+          "speedKmh": {
+            "type": "number",
+            "nullable": true,
+            "example": 38
+          },
+          "heading": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "reeferTempC": {
+            "type": "number",
+            "nullable": true,
+            "example": 3.5
+          },
+          "recordedAt": {
+            "type": "string",
+            "example": "2026-10-02T04:12:05+05:30",
+            "description": "When the phone took the fix, on the server clock it was given"
+          }
+        },
+        "required": [
+          "tripId",
+          "lat",
+          "lng",
+          "recordedAt"
+        ]
+      },
+      "PingBatchDto": {
+        "type": "object",
+        "properties": {
+          "pings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PingDto"
+            }
+          }
+        },
+        "required": [
+          "pings"
         ]
       },
       "SyncResultStatus": {
@@ -26092,6 +28785,248 @@
           "requestedLocale",
           "locale",
           "audiences"
+        ]
+      },
+      "InjectionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000e001"
+          },
+          "kind": {
+            "type": "string",
+            "example": "ROAD_DELAY"
+          },
+          "atSim": {
+            "type": "string",
+            "example": "2026-10-02T06:00:00+05:30"
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          },
+          "proposedBy": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent"
+            ],
+            "example": "human"
+          },
+          "firedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "atSim",
+          "target",
+          "params",
+          "proposedBy",
+          "firedAt"
+        ]
+      },
+      "SimulationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "scenario": {
+            "type": "string",
+            "example": "normal-day"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "RUNNING",
+              "PAUSED",
+              "COMPLETED",
+              "FAILED"
+            ],
+            "example": "RUNNING"
+          },
+          "planId": {
+            "type": "string",
+            "nullable": true
+          },
+          "depotId": {
+            "type": "string",
+            "nullable": true,
+            "example": "PLG"
+          },
+          "planDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02"
+          },
+          "seed": {
+            "type": "number",
+            "example": 42
+          },
+          "speed": {
+            "type": "number",
+            "example": 60
+          },
+          "simStartAt": {
+            "type": "string",
+            "example": "2026-10-02T03:20:00+05:30"
+          },
+          "simNow": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:30:00+05:30"
+          },
+          "agentic": {
+            "type": "boolean",
+            "description": "The AI scenario director may add trouble"
+          },
+          "narrative": {
+            "type": "string",
+            "nullable": true
+          },
+          "kpis": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true,
+            "example": {
+              "stopsDelivered": 12,
+              "stopsFailed": 1,
+              "tripsCompleted": 2,
+              "injections": 1
+            }
+          },
+          "injections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InjectionDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-04T10:00:00+05:30"
+          },
+          "finishedAt": {
+            "type": "string",
+            "nullable": true
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "scenario",
+          "status",
+          "planId",
+          "depotId",
+          "planDate",
+          "seed",
+          "speed",
+          "simStartAt",
+          "simNow",
+          "agentic",
+          "narrative",
+          "kpis",
+          "injections",
+          "createdAt",
+          "finishedAt",
+          "_links"
+        ]
+      },
+      "CreateSimulationDto": {
+        "type": "object",
+        "properties": {
+          "scenario": {
+            "type": "string",
+            "enum": [
+              "normal-day"
+            ],
+            "example": "normal-day"
+          },
+          "planId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The published plan to run; required unless replayOf is given",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "seed": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "example": 42
+          },
+          "speed": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 600,
+            "description": "Simulated seconds per real second",
+            "example": 60
+          },
+          "agentic": {
+            "type": "boolean",
+            "description": "Let the AI scenario director add trouble; refused unless the collection carries the director link",
+            "example": false
+          },
+          "replayOf": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Replay this run: its scenario, plan, seed, speed and stored injections, with no model call",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          }
+        }
+      },
+      "CreateInjectionDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "ROAD_DELAY",
+              "FAILED_DELIVERY"
+            ],
+            "type": "string",
+            "example": "ROAD_DELAY"
+          },
+          "atSim": {
+            "type": "string",
+            "example": "2026-10-02T06:00:00+05:30"
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "ROAD_DELAY: { districtId }. FAILED_DELIVERY: { stopId }.",
+            "example": {
+              "districtId": "kandy"
+            }
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "ROAD_DELAY: { speedIndex (10 to 100), minutes }. FAILED_DELIVERY: { reason: REFUSED | DAMAGED | OUTLET_CLOSED }.",
+            "example": {
+              "speedIndex": 55,
+              "minutes": 60
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "atSim",
+          "target"
         ]
       }
     }

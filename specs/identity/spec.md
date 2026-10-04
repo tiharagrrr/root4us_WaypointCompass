@@ -129,6 +129,7 @@ Settings registered by `SettingsService` (each with a zod schema and a default):
 | tracking.etaSlipNotifyMinutes | 15 | Store ETA notification | A6 |
 | tracking.lateRiskThreshold | 0.5 | LATE_RISK alert | A6 |
 | store.mustAcknowledgeDeferral | true | M4 | A6 |
+| simulation.aiDirector | false | The simulator's AI scenario director (specs/simulation/spec.md) | A6 (Demo) |
 | demo.clock | { mode: 'real' } | ClockService | A6, demo mode only |
 
 ## Endpoints

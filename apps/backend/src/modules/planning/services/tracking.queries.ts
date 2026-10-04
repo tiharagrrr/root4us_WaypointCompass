@@ -7,26 +7,32 @@ import {
   type TripDraft,
 } from '@waypoint/engine';
 import { type Actor, businessDateOf, instantAt } from '@waypoint/shared';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { ClockService } from '../../../core/clock/clock.service';
 import { NotFoundError } from '../../../core/errors/domain-errors';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
+import { stampActor, SYSTEM_ACTOR } from '../../../db/actor';
 import {
   deferrals,
+  depots,
   orders,
   outlets,
   plans,
+  stopEvents,
   stops,
   trips,
   users,
+  vehiclePositions,
   vehicles,
 } from '../../../db/schema';
 import type {
+  OrderEtaDto,
   TrackingDayDto,
   TrackingStopDto,
   TrackingTripDto,
 } from '../dto/tracking.dto';
 import { PlanScope } from '../policies/plan.scope';
+import { OrderQueries } from '../../ordering';
 import { PlanContextBuilder, type PlanContext } from './plan-context.builder';
 
 type StopRow = typeof stops.$inferSelect;
@@ -35,6 +41,13 @@ type TripRow = typeof trips.$inferSelect;
 /** A stop still to come this close to its window closing is at risk (19's amber). */
 const AT_RISK_MIN = 15;
 const DONE = new Set(['DELIVERED', 'PARTIAL', 'FAILED']);
+/** 19 shows "No signal since" after this many silent minutes (specs/execution/spec.md, step 7). */
+const NO_SIGNAL_MIN = 10;
+
+type Signal = {
+  position: TrackingTripDto['position'];
+  lastSignalAt: Date | null;
+};
 
 const minuteOfDay = (at: Date): number => {
   const local = new Date(at.getTime() + 330 * 60_000);
@@ -58,6 +71,7 @@ export class TrackingQueries {
     private readonly clock: ClockService,
     private readonly scope: PlanScope,
     private readonly contexts: PlanContextBuilder,
+    private readonly orderQueries: OrderQueries,
   ) {}
 
   @Transactional()
@@ -68,6 +82,97 @@ export class TrackingQueries {
   ): Promise<TrackingDayDto> {
     if (!this.scope.allowsDepot(depotId, actor))
       throw new NotFoundError('depot');
+    return this.dayOf(depotId, date);
+  }
+
+  /**
+   * M3: when one order is due (AC-EXE-22). The order is read inside the caller's own scope,
+   * so another outlet's order is 404; the answer is the order's stop out of the same
+   * projection the dispatcher sees, without the vehicle or its position.
+   */
+  @Transactional()
+  async orderEta(orderId: string, actor: Actor): Promise<OrderEtaDto> {
+    const order = await this.orderQueries.get(orderId, actor);
+    const base = {
+      orderId: order.id,
+      orderNo: order.orderNo,
+      _links: {
+        self: { href: `/api/v1/orders/${order.id}/eta` },
+        order: { href: `/api/v1/orders/${order.id}` },
+      },
+    };
+    const none: OrderEtaDto = {
+      ...base,
+      stopId: null,
+      tripStatus: null,
+      stopStatus: null,
+      plannedArrivalAt: null,
+      etaAt: null,
+      spareMin: null,
+      standing: null,
+      completedAt: null,
+    };
+    const tx = this.txHost.tx;
+    const [stop] = await tx
+      .select({ id: stops.id, tripId: stops.tripId })
+      .from(stops)
+      .where(and(eq(stops.orderId, order.id), ne(stops.status, 'CANCELLED')))
+      .orderBy(desc(stops.createdAt))
+      .limit(1);
+    if (!stop) return none;
+    const [trip] = await tx
+      .select({
+        status: trips.status,
+        date: plans.date,
+        depotId: plans.depotId,
+      })
+      .from(trips)
+      .innerJoin(plans, eq(plans.id, trips.planId))
+      .where(eq(trips.id, stop.tripId));
+    if (!trip) return none;
+    const day = await this.asSystem(actor, () =>
+      this.dayOf(trip.depotId, trip.date),
+    );
+    const view = day.trips
+      .flatMap((t) => t.stops)
+      .find((s) => s.stopId === stop.id);
+    if (!view) return none;
+    const pending = view.completedAt === null && view.status !== 'FAILED';
+    return {
+      ...base,
+      stopId: view.stopId,
+      tripStatus: trip.status,
+      stopStatus: view.status,
+      plannedArrivalAt: view.plannedArrivalAt,
+      etaAt: pending ? (view.etaAt ?? view.plannedArrivalAt) : null,
+      spareMin: view.spareMin,
+      standing: view.standing,
+      completedAt: view.completedAt,
+    };
+  }
+
+  /**
+   * Runs a read with the transaction stamped as the system, then stamps the caller back.
+   * The projection needs every order on the trip, and row-level security hides other
+   * outlets' orders from a store; the caller has already been checked against the one
+   * order she asked about, and only that order's stop leaves this class.
+   */
+  private async asSystem<T>(actor: Actor, work: () => Promise<T>): Promise<T> {
+    const tx = this.txHost.tx;
+    await stampActor(tx, SYSTEM_ACTOR);
+    try {
+      return await work();
+    } finally {
+      // A failed transaction cannot be stamped again, and is rolled back anyway.
+      await stampActor(tx, actor).catch(() => undefined);
+    }
+  }
+
+  /** The day's trips and totals, with no scope check: callers decide who may see what. */
+  private async dayOf(
+    depotId: string,
+    date: string | undefined,
+  ): Promise<TrackingDayDto> {
     const now = this.clock.now();
     const day = date ?? businessDateOf(now);
     const self = `/api/v1/depots/${depotId}/tracking?date=${day}`;
@@ -75,11 +180,20 @@ export class TrackingQueries {
       .select()
       .from(plans)
       .where(and(eq(plans.depotId, depotId), eq(plans.date, day)));
+    const [depotRow] = await this.txHost.tx
+      .select({ lat: depots.lat, lng: depots.lng })
+      .from(depots)
+      .where(eq(depots.id, depotId));
+    const depot =
+      depotRow?.lat != null && depotRow.lng != null
+        ? { lat: depotRow.lat, lng: depotRow.lng }
+        : null;
     const empty: TrackingDayDto = {
       depotId,
       date: day,
       planId: null,
       planStatus: null,
+      depot,
       totals: {
         trips: 0,
         onRoad: 0,
@@ -131,7 +245,12 @@ export class TrackingQueries {
     const outletIds = [...new Set(stopRows.map((s) => s.outletId))];
     const outletRows = outletIds.length
       ? await tx
-          .select({ id: outlets.id, name: outlets.name })
+          .select({
+            id: outlets.id,
+            name: outlets.name,
+            lat: outlets.lat,
+            lng: outlets.lng,
+          })
           .from(outlets)
           .where(inArray(outlets.id, outletIds))
       : [];
@@ -151,6 +270,13 @@ export class TrackingQueries {
     const vehicleOf = new Map(vehicleRows.map((v) => [v.id, v]));
     const driverOf = new Map(driverRows.map((d) => [d.id, d.name]));
     const outletOf = new Map(outletRows.map((o) => [o.id, o.name]));
+    const pointOf = new Map(
+      outletRows.map((o) => [
+        o.id,
+        o.lat != null && o.lng != null ? { lat: o.lat, lng: o.lng } : null,
+      ]),
+    );
+    const signals = await this.signals(tripRows);
     const orderOf = new Map(orderRows.map((o) => [o.id, o.orderNo]));
 
     // The engine's projection for trips on the road, from now.
@@ -171,7 +297,10 @@ export class TrackingQueries {
             driverName: t.driverId ? (driverOf.get(t.driverId) ?? null) : null,
             outletName: (id) => outletOf.get(id) ?? id,
             orderNo: (id) => orderOf.get(id) ?? '',
+            point: (id) => pointOf.get(id) ?? null,
           },
+          signals.get(t.id) ?? { position: null, lastSignalAt: null },
+          now,
         ),
       )
       .sort(
@@ -187,6 +316,7 @@ export class TrackingQueries {
       date: day,
       planId: plan.id,
       planStatus: plan.status,
+      depot,
       totals: {
         trips: tripsOut.length,
         onRoad: onRoad.length,
@@ -208,6 +338,57 @@ export class TrackingQueries {
         endOfDay: { href: `/api/v1/plans/${plan.id}/end-of-day` },
       },
     };
+  }
+
+  /**
+   * Each trip's latest position (written by execution's ping pipeline, read
+   * here) and its last signal: the newest of that position, its stop events
+   * and its start.
+   */
+  private async signals(
+    tripRows: readonly TripRow[],
+  ): Promise<Map<string, Signal>> {
+    const out = new Map<string, Signal>();
+    const ids = tripRows.map((t) => t.id);
+    if (!ids.length) return out;
+    const tx = this.txHost.tx;
+    const positions = await tx
+      .select()
+      .from(vehiclePositions)
+      .where(inArray(vehiclePositions.tripId, ids));
+    const events = await tx
+      .select({
+        tripId: stopEvents.tripId,
+        at: sql<Date>`max(${stopEvents.occurredAt})`.mapWith(
+          (v: string | Date) => new Date(v),
+        ),
+      })
+      .from(stopEvents)
+      .where(inArray(stopEvents.tripId, ids))
+      .groupBy(stopEvents.tripId);
+    const positionOf = new Map(positions.map((p) => [p.tripId, p]));
+    const eventOf = new Map(events.map((e) => [e.tripId, e.at]));
+    for (const t of tripRows) {
+      const p = positionOf.get(t.id);
+      const times = [p?.recordedAt, eventOf.get(t.id), t.startedAt].filter(
+        (d): d is Date => d instanceof Date,
+      );
+      out.set(t.id, {
+        position: p
+          ? {
+              lat: p.lat,
+              lng: p.lng,
+              heading: p.heading,
+              speedKmh: p.speedKmh,
+              recordedAt: this.clock.toIso(p.recordedAt),
+            }
+          : null,
+        lastSignalAt: times.length
+          ? new Date(Math.max(...times.map((d) => d.getTime())))
+          : null,
+      });
+    }
+    return out;
   }
 
   /** Projected arrival minute per stop id still to come, for the trips on the road. */
@@ -269,7 +450,10 @@ export class TrackingQueries {
       driverName: string | null;
       outletName: (id: string) => string;
       orderNo: (id: string) => string;
+      point: (id: string) => { lat: number; lng: number } | null;
     },
+    signal: Signal,
+    now: Date,
   ): TrackingTripDto {
     const iso = (at: Date | null) => (at ? this.clock.toIso(at) : null);
     const ordered = [...tripStops].sort((a, b) => {
@@ -303,6 +487,7 @@ export class TrackingQueries {
         orderNo: names.orderNo(s.orderId),
         outletId: s.outletId,
         outletName: names.outletName(s.outletId),
+        at: names.point(s.outletId),
         status: s.status,
         windowOpenMin: s.windowOpenMin,
         windowCloseMin: s.windowCloseMin,
@@ -352,6 +537,17 @@ export class TrackingQueries {
       plannedDepartAt: iso(t.plannedDepartAt),
       loadWeightKg: t.loadWeightKg,
       loadVolumeM3: t.loadVolumeM3,
+      position: signal.position,
+      lastSignalAt:
+        t.status === 'IN_PROGRESS' && signal.lastSignalAt
+          ? this.clock.toIso(signal.lastSignalAt)
+          : null,
+      noSignalSince:
+        t.status === 'IN_PROGRESS' &&
+        signal.lastSignalAt &&
+        now.getTime() - signal.lastSignalAt.getTime() >= NO_SIGNAL_MIN * 60_000
+          ? this.clock.toIso(signal.lastSignalAt)
+          : null,
       stops: stopsOut,
     };
   }

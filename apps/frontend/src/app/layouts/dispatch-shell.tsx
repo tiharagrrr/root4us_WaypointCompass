@@ -30,12 +30,13 @@ export function DispatchShell() {
   const nav = useMemo<ShellNavItem[]>(
     () => [
       { to: '/dispatch', label: t('nav.dashboard'), icon: 'dashboard' },
-      { to: '/dispatch/orders', label: t('nav.orderQueue'), icon: 'orders' },
+      { to: '/dispatch/orders', label: t('nav.orderQueue'), icon: 'orders', alsoActive: ['/dispatch/past-orders'] },
       { to: '/dispatch/plan', label: t('nav.plan'), icon: 'plan', deep: true },
       { to: '/dispatch/tracking', label: t('nav.tracking'), icon: 'tracking', alsoActive: ['/dispatch/trips', '/dispatch/end-of-day'] },
       { to: '/dispatch/forecast', label: t('nav.forecast'), icon: 'forecast' },
       { to: '/dispatch/deferrals', label: t('nav.deferrals'), icon: 'deferrals' },
       { to: '/dispatch/issues', label: t('nav.issues'), icon: 'flag', deep: true },
+      { to: '/dispatch/simulation', label: t('nav.simulation'), icon: 'bolt' },
     ],
     [t],
   )

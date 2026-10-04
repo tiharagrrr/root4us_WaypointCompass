@@ -13,6 +13,7 @@ import {
 import { keepPreviousData, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useDeferredValue, useState } from 'react'
 import { HeaderActions } from '@/app/layouts/header-actions'
+import { toastProblem } from '@/lib/problem-toast'
 import { cn } from '@/lib/cn'
 import { getLink } from '@/lib/links'
 import { roleLabel } from '@/lib/roles'
@@ -77,8 +78,8 @@ export function UsersPage() {
       getUsersListQueryOptions({ limit: 1, ...(s.value === 'all' ? {} : { 'filter[role]': s.value }) }),
     ),
   })
-  const resend = useInvitationsResend()
-  const revoke = useInvitationsRevoke()
+  const resend = useInvitationsResend({ mutation: { onError: (error) => toastProblem(error, "The invite wasn't sent again") } })
+  const revoke = useInvitationsRevoke({ mutation: { onError: (error) => toastProblem(error, "The invitation wasn't withdrawn") } })
 
   const openInvitations = (invitations.data?.data ?? []).filter(
     (i) => OPEN_INVITATIONS.has(i.status) && (!role || i.role === role),

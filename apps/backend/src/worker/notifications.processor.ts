@@ -1,8 +1,10 @@
-import { Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { type Job, UnrecoverableError } from 'bullmq';
 import { JobContextRunner } from '../core/context/job-context';
 import { DemoInbox, type DemoMessage } from '../core/demo/demo-inbox';
+import { maskPhone } from '../core/phone/sri-lanka-phone';
+import { SMS_PROVIDER, type SmsProvider } from '../core/providers/ports';
 import {
   AUTH_INVITE_JOB,
   AUTH_OTP_JOB,
@@ -26,8 +28,12 @@ export const notifyBackoff = (attemptsMade: number): number =>
 /**
  * Sends what the API queues on the notifications queue: driver sign-in codes
  * and invitation links (security messages, outside the catalog), and the
- * notifications module's EMAIL, SMS and PUSH rows (notify.send). In demo
- * mode SMS and email land in the demo inbox.
+ * notifications module's EMAIL, SMS and PUSH rows (notify.send).
+ *
+ * SMS goes through SMS_PROVIDER, so a sign-in code takes the same gateway as
+ * every other message: the demo inbox by default, a Sri Lankan gateway once
+ * one is configured. Email has no adapter of its own outside notify.send yet,
+ * so an invitation email still needs the demo inbox.
  */
 @Processor(QUEUES.notifications, {
   settings: { backoffStrategy: notifyBackoff },
@@ -39,6 +45,7 @@ export class NotificationsProcessor extends WorkerHost {
     private readonly inbox: DemoInbox,
     private readonly sender: NotificationSender,
     private readonly jobs: JobContextRunner,
+    @Inject(SMS_PROVIDER) private readonly sms: SmsProvider,
   ) {
     super();
   }
@@ -54,6 +61,10 @@ export class NotificationsProcessor extends WorkerHost {
           to: phoneNumber,
           body: `Your Waypoint Compass sign-in code is ${code}. It expires in 5 minutes.`,
           sentAt,
+          // One key per job, so a gateway with idempotency sends the code
+          // once however many times BullMQ retries. Never the code itself:
+          // the key reaches the gateway and its own logs.
+          idempotencyKey: `otp-${job.id ?? job.timestamp}`,
         });
       }
       case AUTH_INVITE_JOB: {
@@ -63,6 +74,7 @@ export class NotificationsProcessor extends WorkerHost {
           to: invite.to,
           body: inviteText(invite),
           sentAt,
+          idempotencyKey: `invite-${invite.invitationId}`,
         });
       }
       default:
@@ -90,14 +102,37 @@ export class NotificationsProcessor extends WorkerHost {
       throw new UnrecoverableError('notify.send failed for good');
   }
 
-  private async deliver(message: Omit<DemoMessage, 'id'>): Promise<void> {
-    if (!this.inbox.enabled) {
-      const provider = message.channel === 'sms' ? 'SMS' : 'email';
-      throw new Error(
-        `No ${provider} provider yet: set DEMO_MODE=true to use the demo inbox`,
-      );
+  /**
+   * A sign-in code or an invitation link. SMS goes to the configured gateway;
+   * the demo-inbox adapter is the one that writes to Redis, so demo mode is
+   * its business, not this job's. Email has only the demo inbox here.
+   */
+  private async deliver(
+    message: Omit<DemoMessage, 'id'> & { idempotencyKey: string },
+  ): Promise<void> {
+    if (message.channel === 'sms') {
+      const sent = await this.sms.send({
+        to: message.to,
+        text: message.body,
+        idempotencyKey: message.idempotencyKey,
+      });
+      this.logger.log({
+        event: 'notifications.security.sent',
+        provider: sent.provider,
+        to: maskPhone(message.to),
+      });
+      return;
     }
-    await this.inbox.push(message);
+    if (!this.inbox.enabled)
+      throw new Error(
+        'No email provider yet for invitations: set DEMO_MODE=true to use the demo inbox',
+      );
+    await this.inbox.push({
+      channel: message.channel,
+      to: message.to,
+      body: message.body,
+      sentAt: message.sentAt,
+    });
   }
 }
 

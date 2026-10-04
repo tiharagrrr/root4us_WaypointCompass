@@ -23,6 +23,7 @@
     "db:generate": "tsx scripts/db-generate.ts",
     "db:custom": "tsx scripts/db-generate.ts --custom",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:bootstrap-roles": "tsx src/db/bootstrap-roles.ts",
     "db:check": "drizzle-kit check",
     "db:seed": "tsx src/db/seed.ts",
     "db:reset-demo": "tsx src/db/reset-demo.ts",
@@ -37,6 +38,7 @@
     "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@aws-sdk/client-s3": "^3.1144.0",
     "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "@nestjs-cls/transactional": "^4.0.1",
@@ -120,6 +122,8 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "testTimeout": 30000,
+    "workerIdleMemoryLimit": "1GB",
     "setupFiles": [
       "<rootDir>/../test/setup-env.ts"
     ]
