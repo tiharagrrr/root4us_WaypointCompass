@@ -23403,6 +23403,11 @@
             "type": "string",
             "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
           },
+          "orderStatus": {
+            "type": "string",
+            "example": "SUBMITTED",
+            "description": "SUBMITTED: still open until the cutoff, so the store may change it, which takes it off the draft"
+          },
           "orderNo": {
             "type": "string",
             "example": "WF-0171"
@@ -23511,6 +23516,7 @@
         },
         "required": [
           "orderId",
+          "orderStatus",
           "orderNo",
           "outletId",
           "outletName",

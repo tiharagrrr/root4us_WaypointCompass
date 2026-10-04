@@ -31,6 +31,10 @@ import { PlanQueries } from './services/plan.queries';
 import { PlanViews } from './services/plan.views';
 import { DayCloseService } from './services/day-close.service';
 import { TripOperationsService } from './services/trip-operations.service';
+import {
+  consumesStoreChange,
+  StoreChangeListener,
+} from './services/store-change.listener';
 import { TrackingQueries } from './services/tracking.queries';
 import { TripOperationsController } from './controllers/trip-operations.controller';
 import { PlansService } from './services/plans.service';
@@ -72,6 +76,7 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
     PlansService,
     DayCloseService,
     TripOperationsService,
+    StoreChangeListener,
     TrackingQueries,
     DeferralDecisions,
     EngineRunner,
@@ -85,6 +90,7 @@ export class PlanningModule implements OnModuleInit {
   constructor(
     private readonly bus: EventBus,
     private readonly tripOps: TripOperationsService,
+    private readonly storeChanges: StoreChangeListener,
   ) {}
 
   /** A vehicle taken out under a published trip flags the trip for repair (ROO-56). */
@@ -93,6 +99,12 @@ export class PlanningModule implements OnModuleInit {
       name: 'planning',
       consumes: (type) => type === FLEET_EVENTS.vehicleStatusChanged,
       handle: (event) => this.tripOps.onVehicleStatusChanged(event.payload),
+    });
+    // A store's change to an open order takes it off the draft it sat on.
+    this.bus.register({
+      name: 'planning-store-changes',
+      consumes: consumesStoreChange,
+      handle: (event) => this.storeChanges.handle(event),
     });
   }
 }
