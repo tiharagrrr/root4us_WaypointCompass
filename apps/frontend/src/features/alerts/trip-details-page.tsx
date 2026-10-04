@@ -1,7 +1,8 @@
 // Figma: 19a Trip details · 464:1966
+import { DEPOT_NAMES } from '@waypoint/shared/domain'
 import { useParams } from 'react-router'
 import { useDepot } from '@/app/layouts/depot-context'
-import { RegionPlaceholder } from '@/app/screen-placeholder'
+import { LiveMap } from '@/features/execution/live-map/live-map'
 import { Card, CardContent } from '@/ui/card'
 import { LiveTripsList } from '@/features/planning/live-trips-list'
 import { StopTimeline } from '@/features/planning/stop-timeline'
@@ -10,8 +11,9 @@ import { AlertsColumn } from './alerts-column'
 import { TripAlertChips } from './trip-alert-chips'
 
 /**
- * 19a, one trip. The frame keeps 19's trip list and map and swaps the right
- * column for the trip's own detail: its stops planned, projected and actual
+ * 19a, one trip. The frame keeps 19's trip list and map (here centred on the
+ * trip, its stops numbered and its route drawn) and swaps the right column
+ * for the trip's own detail: its stops planned, projected and actual
  * (planning's live day), what can be changed (20 and 19b), and alerts' chips
  * and the trip's alerts (`GET /alerts?filter[tripId]=`).
  */
@@ -23,13 +25,7 @@ export function TripDetailsPage() {
   return (
     <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[300px_minmax(0,1fr)_380px]">
       <LiveTripsList depotId={depot} selectedId={id} />
-      <RegionPlaceholder
-        region="Live map"
-        frame="19a"
-        node="464:1966"
-        owner="execution"
-        what="The trip's route, its breadcrumb and the stops still to come. Waits on position ingest (ROO-37) and outlet coordinates."
-      />
+      <LiveMap depotId={depot} depotName={DEPOT_NAMES[depot] ?? depot} selectedTripId={id} />
 
       <div className="flex flex-col gap-4">
         <StopTimeline depotId={depot} tripId={id} />

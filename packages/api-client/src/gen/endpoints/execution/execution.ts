@@ -47,7 +47,8 @@ import type {
   TripsComplete200,
   TripsDownloaded200,
   TripsGet200,
-  TripsStart200
+  TripsStart200,
+  TripsTrail200
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -170,6 +171,106 @@ export function useMyTripsList<TData = Awaited<ReturnType<typeof myTripsList>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getMyTripsListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getTripsTrailUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/trips/${id}/trail`
+}
+
+/**
+ * @summary The trip's GPS trail
+ */
+export const tripsTrail = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<TripsTrail200> => {
+
+  return compassFetch<TripsTrail200>(getTripsTrailUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getTripsTrailQueryKey = (id: string,) => {
+    return [
+    `/api/v1/trips/${id}/trail`
+    ] as const;
+    }
+
+
+export const getTripsTrailQueryOptions = <TData = Awaited<ReturnType<typeof tripsTrail>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getTripsTrailQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof tripsTrail>>> = ({ signal }) => tripsTrail(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type TripsTrailQueryResult = NonNullable<Awaited<ReturnType<typeof tripsTrail>>>
+export type TripsTrailQueryError = ErrorType<ProblemDto>
+
+
+export function useTripsTrail<TData = Awaited<ReturnType<typeof tripsTrail>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof tripsTrail>>,
+          TError,
+          Awaited<ReturnType<typeof tripsTrail>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTripsTrail<TData = Awaited<ReturnType<typeof tripsTrail>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof tripsTrail>>,
+          TError,
+          Awaited<ReturnType<typeof tripsTrail>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useTripsTrail<TData = Awaited<ReturnType<typeof tripsTrail>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary The trip's GPS trail
+ */
+
+export function useTripsTrail<TData = Awaited<ReturnType<typeof tripsTrail>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof tripsTrail>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getTripsTrailQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

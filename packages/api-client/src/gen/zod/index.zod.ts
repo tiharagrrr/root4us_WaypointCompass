@@ -29,6 +29,7 @@ export * from './root/root.zod.ts';
 export * from './settings/settings.zod.ts';
 export * from './streams/streams.zod.ts';
 export * from './sync/sync.zod.ts';
+export * from './telematics/telematics.zod.ts';
 export * from './trips/trips.zod.ts';
 export * from './users/users.zod.ts';
 export * from './vehicles/vehicles.zod.ts';

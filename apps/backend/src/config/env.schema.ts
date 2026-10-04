@@ -30,6 +30,8 @@ export const envSchema = z.object({
   ENABLE_BEARER: flag('false'),
   /** Demo clock, demo reset and the demo inbox of SMS and emails. */
   DEMO_MODE: flag('false'),
+  /** With DEMO_MODE, the worker moves running trips on the map (no phone needed). */
+  SIMULATE_POSITIONS: flag('true'),
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().default('us-east-1'),
   S3_BUCKET: z.string().default('pod'),

@@ -395,3 +395,8 @@ const vehicle = { id: 'VEH901', type: 'TRUCK', temp: 'REEFER', depotId: 'PLG',
   the booklet's folders. The reset rebuilds from a `demo.s1` snapshot in settings, not the CSVs. History
   (14 days) and the Kandy day are still open
 - 2026-09-30 created from the booklet and the Build Spec
+
+Map coordinates (ROO-37): `src/db/seed/coordinates.ts` fills empty `depots.lat/lng`,
+`districts.centroidLat/Lng` and `outlets.lat/lng` from public coordinates of the depots, every
+district's main town and each town outlet names use, nudged per outlet id and always inland. A
+position someone edits is kept.
