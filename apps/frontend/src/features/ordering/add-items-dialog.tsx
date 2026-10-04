@@ -87,7 +87,7 @@ export function AddItemsDialog({ open, onOpenChange, order, lines, onAdd }: AddI
 
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-      <DialogContent className="w-[462px]">
+      <DialogContent className="w-[462px] max-w-[calc(100vw-2rem)]">
         <DialogHeader
           title={`Add items to ${classLabelInline(order.tempClass)}`}
           description={`Waypoint ${brandWord(order.brand)} range · ${order.tempClass.toLowerCase()} items only`}

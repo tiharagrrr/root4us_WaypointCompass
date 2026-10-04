@@ -1,6 +1,7 @@
 // Figma: M1 New order · 185:10376 ("Stack / Orders · Wed 30 Sep"), M1b 228:970, M2 185:10649
-import type { OrderDto } from '@compass/api-client'
+import type { OrderDto, TempClass } from '@compass/api-client'
 import { cn } from '@/lib/cn'
+import { Icon } from '@/ui/icon'
 import { Skeleton } from '@/ui/skeleton'
 import { StatusChip } from '@/ui/status-chip'
 import { classLabel, dayLabel, kg, positionLabel, timeLabel } from './order-format'
@@ -14,6 +15,11 @@ export interface OrderSwitcherProps {
   selectedId: string | null
   onSelect: (order: OrderDto) => void
   loading?: boolean
+  /** The classes this day has no order for yet and the store may start one in. */
+  startable?: readonly TempClass[]
+  onStart?: (tempClass: TempClass) => void
+  /** A start is on its way to the server. */
+  starting?: boolean
 }
 
 /**
@@ -21,7 +27,7 @@ export interface OrderSwitcherProps {
  * so this is where M1 (dry), M1b (chilled, with the dry one already sent) and M2 (rolled to the
  * following run) differ: the cards, not the screen.
  */
-export function OrderSwitcher({ day, orders, selectedId, onSelect, loading }: OrderSwitcherProps) {
+export function OrderSwitcher({ day, orders, selectedId, onSelect, loading, startable = [], onStart, starting }: OrderSwitcherProps) {
   return (
     <div className="flex flex-col gap-2">
       <p className="type-label m-0 uppercase text-muted-foreground">Orders · {loading ? '…' : dayLabel(day)}</p>
@@ -41,6 +47,20 @@ export function OrderSwitcher({ day, orders, selectedId, onSelect, loading }: Or
           />
         ))
       )}
+      {loading
+        ? null
+        : startable.map((tempClass) => (
+            <button
+              key={tempClass}
+              type="button"
+              disabled={starting}
+              onClick={() => onStart?.(tempClass)}
+              className="type-body-medium flex w-full cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-background px-[15px] py-[13px] text-left text-foreground outline-none transition-colors hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Icon name="plus" size={18} />
+              Start {classLabel(tempClass).toLowerCase()}
+            </button>
+          ))}
       <p className="type-caption m-0 leading-[17.4px] text-muted-foreground">{HINT}</p>
     </div>
   )

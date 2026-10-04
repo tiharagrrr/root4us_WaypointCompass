@@ -353,3 +353,4 @@ each criterion in the checklist above.
   ordering. AC-MD-01 to 04, 06, 08 and 10 to 13 pass
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `depots.kind`, `districts.province`, allowance and weekday checks (merged from the Supabase draft)
+- 2026-10-04 M9 Item catalog built at `/store/catalog` on `GET /items` (the outlet's brand, active items): search, category and storage filters, paging, and Add onto the open order of the item's class; departures logged. The store shell now names the outlet over the nav and in every page eyebrow
