@@ -11,6 +11,8 @@ export interface OfflineStatus {
   online: boolean
   pending: number
   conflicts: number
+  /** A 401 paused sync: the records are safe and wait for the same person to sign back in. */
+  paused: boolean
   lastSyncAt: Date | null
 }
 
@@ -18,11 +20,13 @@ export const useOfflineStatus = (): OfflineStatus => {
   const online = useOnline()
   const pending = useLiveQuery(() => pendingCount(), [], 0)
   const conflicts = useLiveQuery(() => conflictCount(), [], 0)
+  const paused = useLiveQuery(() => db.meta.get(META_KEYS.syncPaused), [], undefined)
   const lastSync = useLiveQuery(() => db.meta.get(META_KEYS.lastSyncAt), [], undefined)
   return {
     online,
     pending: pending ?? 0,
     conflicts: conflicts ?? 0,
+    paused: paused?.value === 1,
     lastSyncAt: typeof lastSync?.value === 'string' ? new Date(lastSync.value) : null,
   }
 }

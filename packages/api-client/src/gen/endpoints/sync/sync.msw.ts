@@ -22,13 +22,20 @@ import {
   SyncResultStatus
 } from '../../model';
 import type {
-  SyncApply200
+  SyncApply200,
+  SyncPull200
 } from '../../model';
 
 
 export const getSyncApplyResponseMock = (overrideResponse: Partial<Extract<SyncApply200, object>> = {}): SyncApply200 => ({data: {batchId: "0192a3f4-0000-7000-8000-0000000000cc", results: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({clientUuid: "0192a3f4-0000-7000-8000-0000000000aa", status: faker.helpers.arrayElement(Object.values(SyncResultStatus)), code: "VALIDATION_FAILED", message: "Who took the delivery?", id: "0192a3f4-0000-7000-8000-0000000000bb"})), received: 6, applied: 5, duplicates: 1, conflicts: 0, rejected: 0, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getSyncPullResponseMock = (overrideResponse: Partial<Extract<SyncPull200, object>> = {}): SyncPull200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192a3f4-0000-7000-8000-0000000000dd", type: "trip.resequenced", occurredAt: "2026-10-02T04:35:00.000Z", tripId: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), null]), data: {}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }, ...overrideResponse})
 
 
 export const getSyncApplyMockHandler = (overrideResponse?: SyncApply200 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<SyncApply200> | SyncApply200), options?: RequestHandlerOptions) => {
@@ -42,6 +49,19 @@ export const getSyncApplyMockHandler = (overrideResponse?: SyncApply200 | ((info
       })
   }, options)
 }
+
+export const getSyncPullMockHandler = (overrideResponse?: SyncPull200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<SyncPull200> | SyncPull200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/sync/changes', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getSyncPullResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getSyncMock = () => [
-  getSyncApplyMockHandler()
+  getSyncApplyMockHandler(),
+  getSyncPullMockHandler()
 ]

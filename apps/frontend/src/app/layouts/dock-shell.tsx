@@ -26,6 +26,7 @@ export function DockShell() {
   const me = useMeGet()
   const signOut = useSignOut('/sign-in/dock')
   const person = me.data?.data
+  useSyncEngine(Boolean(person))
   const depotId = person?.depotId
   const depot = isDepot(depotId) ? DEPOT_NAMES[depotId].toUpperCase() : null
 

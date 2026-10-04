@@ -36,3 +36,4 @@ export {
   useOnline,
 } from './use-offline'
 export type { OfflineStatus } from './use-offline'
+export { PENDING_POLL_MS, syncEngine, useSyncEngine } from './use-sync-engine'

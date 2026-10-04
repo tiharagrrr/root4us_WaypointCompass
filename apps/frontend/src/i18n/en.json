@@ -164,7 +164,17 @@
     "finished": "Finished",
     "stopsAndProof": "Stops & proof of delivery",
     "nothingRecorded": "Nothing recorded",
-    "failedStops": "Failed"
+    "failedStops": "Failed",
+    "offlineNothingPending": "No signal. Everything recorded so far has been sent.",
+    "offlineSafe": "Your taps are saved on this phone and go by themselves when there is signal.",
+    "signInToSendBody": "You were signed out. Nothing is lost: the records stay on this phone.",
+    "signInAction": "Sign in",
+    "lastSent": "Last sent {{time}}",
+    "neverSent": "Nothing sent from this phone yet",
+    "offline_one": "No signal. 1 record waiting to send.",
+    "offline_other": "No signal. {{count}} records waiting to send.",
+    "signInToSend_one": "Sign in to send 1 record",
+    "signInToSend_other": "Sign in to send {{count}} records"
   },
   "common": {
     "cancel": "Cancel",

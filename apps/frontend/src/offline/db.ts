@@ -173,6 +173,8 @@ export const META_KEYS = {
   deviceId: 'deviceId',
   lastSyncAt: 'lastSyncAt',
   lastBundleAt: 'lastBundleAt',
+  /** 'true' while a 401 has paused sync; the banner reads it to say "Sign in to send". */
+  syncPaused: 'syncPaused',
   changeCursor: 'changeCursor',
   checkedByName: 'checkedByName',
 } as const

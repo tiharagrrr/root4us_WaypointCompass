@@ -137,7 +137,7 @@ dispatcher sees conflicts for `depotId = actor.depotId`, or all depots when none
 - [x] AC-SYN-01 A batch applies in deviceSeq order
 - [x] AC-SYN-02 A replayed batch changes nothing
 - [x] AC-SYN-03 One bad event never blocks the rest
-- [ ] AC-SYN-04 A late event keeps its device time
+- [x] AC-SYN-04 A late event keeps its device time
 - [x] AC-SYN-05 Batches over 100 are refused
 - [ ] AC-SYN-06 A delivery after a deferral conflicts
 - [ ] AC-SYN-07 Moved and cancelled stops conflict too
@@ -145,10 +145,10 @@ dispatcher sees conflicts for `depotId = actor.depotId`, or all depots when none
 - [ ] AC-SYN-09 Keep server supersedes the event
 - [ ] AC-SYN-10 Resolving needs a reason and an open conflict
 - [ ] AC-SYN-11 Only dispatchers in scope see conflicts
-- [ ] AC-SYN-12 The changes feed covers the device's trips
+- [x] AC-SYN-12 The changes feed covers the device's trips
 - [x] AC-SYN-13 Loader events ride the same endpoint
-- [ ] AC-SYN-14 A 401 pauses sync and loses nothing
-- [ ] AC-SYN-15 Sync retries back off
+- [x] AC-SYN-14 A 401 pauses sync and loses nothing
+- [x] AC-SYN-15 Sync retries back off
 
 ```gherkin
 AC-SYN-01  A batch applies in deviceSeq order
@@ -293,6 +293,19 @@ AC-SYN-15  Sync retries back off
   payload? The doc also gives no data fields for the `sync.*` events. (Aniqa)
 
 ## Changelog
+- 2026-10-04 changes feed and offline client (ROO-44, second slice): `GET /sync/changes?since=&limit=` built
+  (`ChangesFeed`, `ChangesScope`, `changes-cursor.ts`): outbox rows of `plan.revised`, `trip.reassigned`,
+  `trip.resequenced`, `trip.cancelled`, `stop.deferred` and `load.flag_decided` whose `tripId` (or `tripIds`)
+  is a trip in the caller's scope (a driver's own; a loader's depot, today and tomorrow), oldest first, paged by
+  a (time to the millisecond, id) cursor; a tampered cursor is 400 VALIDATION_FAILED on `since`; a role without
+  `stop:record` or `load:check` is 403. `meta.page.nextCursor` is the position of the last change returned,
+  whether or not more follow (null only when nothing is newer than `since`), so a caught-up device keeps a place
+  to resume; the query parameter stays `since` as the criterion says. The PWA's sync engine is now started by the
+  driver and dock shells (`useSyncEngine`: mount, `online`, foreground, every 30 s). A 401 no longer charges the
+  rows a backoff (they would have waited 2 s after sign-in), stores `syncPaused` so D6 reads "Sign in to send 3
+  records", and `resume()` runs when the session answers again. D6's banner is `DriverOfflineBanner`. AC-SYN-04
+  (e2e), 12 (e2e), 14 and 15 (Vitest) pass. Not yet: the client's pull of the feed into Dexie, metrics, and
+  06 to 11 (ROO-45)
 - 2026-10-04 `POST /sync` built (ROO-44, first slice): `SyncService` checks the envelope (400), refuses a batch
   over 100 events (413), answers 403 to a role with neither `stop:record` nor `load:check`, sorts by deviceSeq,
   applies each event in its own savepoint through execution's `StopEventService.apply` or loading's

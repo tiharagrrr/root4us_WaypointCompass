@@ -8,6 +8,15 @@ import {
   type Link,
   type SyncResultStatus,
 } from '@waypoint/shared';
+import { Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiLinks } from '../../../core/http/decorators';
 
 /** One event's verdict, keyed by the clientUuid the device made. */
@@ -133,3 +142,52 @@ export const SYNC_BATCH_API_BODY: ApiBodyOptions = {
     },
   },
 };
+
+/** Query of `GET /sync/changes`: where the device read up to, and how many it wants. */
+export class ChangesQueryDto {
+  @ApiPropertyOptional({
+    description:
+      'The meta.page.nextCursor of the previous pull. Without it the feed starts at the first change for the device',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  since?: string;
+
+  @ApiPropertyOptional({ example: 50, minimum: 1, maximum: 200 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  limit?: number;
+}
+
+/** One server change for a device's trip. */
+export class SyncChangeDto {
+  @ApiProperty({ example: '0192a3f4-0000-7000-8000-0000000000dd' })
+  id!: string;
+
+  @ApiProperty({
+    example: 'trip.resequenced',
+    description:
+      'plan.revised, trip.reassigned, trip.resequenced, trip.cancelled, stop.deferred or load.flag_decided',
+  })
+  type!: string;
+
+  @ApiProperty({ example: '2026-10-02T04:35:00.000Z' })
+  occurredAt!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  tripId!: string | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: true,
+    description: 'The event payload, with v: 1',
+  })
+  data!: Record<string, unknown>;
+
+  @ApiLinks()
+  _links!: Record<string, Link>;
+}

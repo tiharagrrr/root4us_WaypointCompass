@@ -9,6 +9,7 @@ import { useSyncEngine } from '@/offline'
 import { DriverOfflineBanner } from '@/features/execution/driver-offline-banner'
 import { useTripTracking } from '@/features/execution/position-sender'
 import { useEventStream } from '@/realtime/use-event-stream'
+import { useSyncEngine } from '@/offline/use-sync-engine'
 import { Avatar } from '@/ui/avatar'
 import { Icon, type IconName } from '@/ui/icon'
 import { Skeleton } from '@/ui/skeleton'
@@ -36,6 +37,8 @@ export function DriverShell() {
   useTripTracking()
   const me = useMeGet()
   const person = me.data?.data
+  // The outbox leaves on its own; a 401 pauses it until this person is signed in again (D6).
+  useSyncEngine(Boolean(person))
 
   return (
     <div data-density="touch" className="flex min-h-svh flex-col bg-background text-foreground">
@@ -50,6 +53,7 @@ export function DriverShell() {
       <DriverOfflineBanner />
 
       <main className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-4">
+        <DriverOfflineBanner />
         <Outlet />
       </main>
 

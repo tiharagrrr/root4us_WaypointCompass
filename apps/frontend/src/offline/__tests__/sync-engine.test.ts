@@ -7,6 +7,7 @@ import {
   BACKOFF_SECONDS,
   BATCH_LIMIT,
   PausedError,
+  postSync,
   SyncEngine,
   backoffMs,
   toWireEvent,
@@ -121,9 +122,14 @@ describe('flush', () => {
 
     // Paused: a later flush must not even reach the transport.
     const transport = vi.fn()
-    const paused = new SyncEngine({ database: db, transport, now })
-    await paused.flush()
+    const sent = new SyncEngine({ database: db, transport, now })
+    Object.assign(sent, { paused: true })
+    await sent.flush()
     expect(transport).not.toHaveBeenCalled()
+    await engine.flush()
+    expect(engine.isPaused).toBe(true)
+    // The rows are untouched by the 401: no backoff is charged, so they go at once after sign-in.
+    await expect(db.outbox.get(deviceSeq)).resolves.toMatchObject({ attempts: 0, nextAttemptAt: null })
   })
 
   it('does nothing while the device is offline', async () => {
@@ -203,5 +209,57 @@ describe('the retry schedule across repeated failures', () => {
     }
     expect(waits).toEqual([2000, 5000, 15_000])
     await expect(db.outbox.get(deviceSeq)).resolves.toMatchObject({ attempts: 3, status: 'pending' })
+  })
+})
+
+describe('AC-SYN-15', () => {
+  it('AC-SYN-15 sync retries back off', async () => {
+    // Pending events, and POST /sync answers 503 DEPENDENCY_UNAVAILABLE every time.
+    const first = await queueArrival()
+    const second = await queueArrival()
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ code: 'DEPENDENCY_UNAVAILABLE', status: 503 }), {
+          status: 503,
+          headers: { 'content-type': 'application/problem+json' },
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    let clock = AT.getTime()
+    const engine = new SyncEngine({ database: db, transport: postSync, now: () => new Date(clock) })
+
+    // The engine keeps retrying: each flush runs the moment the previous wait is over.
+    const waits: number[] = []
+    for (let i = 0; i < 6; i += 1) {
+      await engine.flush()
+      const row = await db.outbox.get(first.deviceSeq)
+      const wait = Date.parse(row!.nextAttemptAt!) - clock
+      waits.push(wait / 1000)
+      // Nothing is due before the wait is over, so an early poke sends nothing.
+      const calls = fetchMock.mock.calls.length
+      clock += wait - 1
+      await engine.flush()
+      expect(fetchMock.mock.calls.length).toBe(calls)
+      clock += 1
+    }
+    expect(waits).toEqual([2, 5, 15, 30, 60, 60])
+
+    // Every pending event is still there, untouched, after six failed pushes.
+    await expect(db.outbox.count()).resolves.toBe(2)
+    await expect(db.outbox.get(second.deviceSeq)).resolves.toMatchObject({ status: 'pending', attempts: 6 })
+
+    // One push succeeds and only then does the outbox drain.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: unknown, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body)) as { events: { clientUuid: string }[] }
+        return new Response(
+          JSON.stringify({ data: { results: body.events.map((e) => ({ clientUuid: e.clientUuid, status: 'applied' })) } }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        )
+      }),
+    )
+    await engine.flush()
+    await expect(db.outbox.count()).resolves.toBe(0)
   })
 })

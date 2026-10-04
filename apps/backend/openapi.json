@@ -15365,6 +15365,103 @@
         ]
       }
     },
+    "/api/v1/sync/changes": {
+      "get": {
+        "description": "Revisions, reassignments, re-sequences, cancelled and deferred stops and flag decisions for the trips this device works, oldest first. Send meta.page.nextCursor back as `since`.",
+        "operationId": "syncPull",
+        "parameters": [
+          {
+            "name": "since",
+            "required": false,
+            "in": "query",
+            "description": "The meta.page.nextCursor of the previous pull. Without it the feed starts at the first change for the device",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SyncChangeDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Server changes to the device’s trips since a cursor",
+        "tags": [
+          "sync"
+        ]
+      }
+    },
     "/api/v1/orders/{id}/receipt": {
       "get": {
         "description": "Expected against delivered lines, the proof of delivery and whether the store can still confirm.",
@@ -27650,6 +27747,47 @@
           "duplicates",
           "conflicts",
           "rejected",
+          "_links"
+        ]
+      },
+      "SyncChangeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-0000000000dd"
+          },
+          "type": {
+            "type": "string",
+            "example": "trip.resequenced",
+            "description": "plan.revised, trip.reassigned, trip.resequenced, trip.cancelled, stop.deferred or load.flag_decided"
+          },
+          "occurredAt": {
+            "type": "string",
+            "example": "2026-10-02T04:35:00.000Z"
+          },
+          "tripId": {
+            "type": "string",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The event payload, with v: 1"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "occurredAt",
+          "tripId",
+          "data",
           "_links"
         ]
       },
