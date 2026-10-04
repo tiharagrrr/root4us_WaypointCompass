@@ -302,7 +302,8 @@ BetterAuth's server API, so hashes match real sign-ups, and hashes PINs with the
 Usernames are the email's local part (rusiru.w, tihara.e, nimesha.p, harini.d) and aniqa.r and dinushi.r for
 the drivers. Harini's email is harini.d@waypoint.lk. A driver's depot is her vehicle's depot. The seed also
 registers the dock tablets dock-plg-01 (PLG) and dock-kdy-01 (KDY), so a loader can sign in before A6 exists.
-Re-running the seed keeps each id and resets role, scope, PIN and password.
+Re-running the seed keeps each id and resets role, scope and password. A loader's PIN is seeded only while
+the loader has none: the seed runs on every deploy, so a PIN an admin set on A1 stays (ROO-85).
 
 After the personas, the seed gives every vehicle and outlet that has nobody a synthetic person (ROO-76), so A5's
 Driver column, A3's manager and a plan's driver choices are filled: a driver `drv.<vehicle code>` (drv.ref01) on
@@ -384,6 +385,7 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [x] AC-IDN-61 The seed gives every vehicle exactly one driver
 - [x] AC-IDN-62 The seed gives every outlet a store manager who can sign in
 - [x] AC-IDN-63 The demo account menu leaves out the seeded staff
+- [x] AC-IDN-64 The seed keeps a PIN an admin changed
 
 ```gherkin
 AC-IDN-01  Another outlet's order is not found
@@ -815,6 +817,14 @@ AC-IDN-63  The demo account menu leaves out the seeded staff
   Given DEMO_MODE=true, a dispatcher and a driver with username drv.tst63
   When the store manager calls GET /demo/users
   Then the dispatcher is listed and drv.tst63 is not
+
+AC-IDN-64  The seed keeps a PIN an admin changed
+  Given the seed has run, so Harini De Mel holds PIN 2468 at Peliyagoda and Kasun Bandara PIN 1357 at Kandy
+    And an admin has changed Harini De Mel's PIN to 9753
+    And Kasun Bandara's PIN has been cleared
+  When the seed runs again with SEED_PASSWORD=Waypoint@2026
+  Then Harini De Mel's pinHash verifies 9753 and not 2468
+    And Kasun Bandara's pinHash verifies 1357
 ```
 
 ## Non-functional
@@ -904,6 +914,8 @@ AC-IDN-63  The demo account menu leaves out the seeded staff
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
 
 ## Changelog
+- 2026-10-04 The seed no longer resets a loader's PIN: it runs on every deploy, so a PIN changed on A1 went back
+  to the seed's at the next one. A persona's PIN is now seeded only while the loader has none. AC-IDN-64 (ROO-85)
 - 2026-10-04 AC-IDN-19 has its test (`driver-account-page.test.tsx`): D12's Sign out card waits for the outbox to
   empty before calling `/api/auth/sign-out` and offers no discard; the behaviour already existed (ROO-44)
 - 2026-10-04 The seed adds a driver for every vehicle, a store manager for every outlet and Kasun Bandara as
