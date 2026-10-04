@@ -16,8 +16,6 @@ export interface LiveEndpoint {
 export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // BetterAuth: sign-in, sessions, OTP and PIN. Never mocked.
   { method: "all", path: "/api/auth/*" },
-  // Health is outside /api/v1 and has no mock.
-  { method: "all", path: "/api/health" },
   // Identity, settings, clock and deferral reasons (ROO-27).
   { method: "all", path: "/api/v1" },
   { method: "all", path: "/api/v1/me" },
