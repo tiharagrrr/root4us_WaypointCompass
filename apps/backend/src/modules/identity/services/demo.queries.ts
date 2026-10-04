@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { isUserRole, USER_ROLES, type UserRole } from '@waypoint/shared';
-import { asc, inArray, sql } from 'drizzle-orm';
+import { and, asc, inArray, notLike, or, isNull, sql } from 'drizzle-orm';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
 import { AppConfig } from '../../../config/app-config';
 import { NotFoundError } from '../../../core/errors/domain-errors';
 import { users } from '../../../db/schema';
+import { SEEDED_STAFF_PREFIXES } from '../domain/seeded-staff';
 import { ScopeDirectory, type ScopeNames } from './scope-directory';
 
 export interface DemoCastMember {
@@ -54,7 +55,18 @@ export class DemoQueries {
       })
       .from(users)
       .where(
-        sql`not coalesce(${users.banned}, false) and ${inArray(users.role, [...USER_ROLES])}`,
+        and(
+          sql`not coalesce(${users.banned}, false) and ${inArray(users.role, [...USER_ROLES])}`,
+          // The seed's synthetic staff would bury the personas in the menu.
+          or(
+            isNull(users.username),
+            and(
+              ...SEEDED_STAFF_PREFIXES.map((p) =>
+                notLike(users.username, `${p}%`),
+              ),
+            ),
+          ),
+        ),
       )
       .orderBy(asc(users.role), asc(users.name));
 

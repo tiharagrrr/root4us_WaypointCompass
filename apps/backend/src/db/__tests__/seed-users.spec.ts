@@ -1,12 +1,13 @@
 /**
  * The persona seed against a migrated database, inside a transaction that is
- * rolled back, so the reference rows it needs (PLG, KDY, OUT014, REF-07,
- * DRY-31) never stay behind. Runs when TEST_DIRECT_URL is set.
+ * rolled back, so the reference rows it needs (PLG, KDY, OUT014, OUT976,
+ * REF-07, DRY-31, TST-76) never stay behind. Runs when TEST_DIRECT_URL is set.
  */
 import { verifyPassword } from 'better-auth/crypto';
-import { inArray, or } from 'drizzle-orm';
+import { and, eq, inArray, or } from 'drizzle-orm';
 import { createDatabase, createPool, type Database } from '../client';
 import {
+  accounts,
   depots,
   devices,
   districts,
@@ -24,6 +25,7 @@ const EMAILS = [
   'tihara.e@waypoint.lk',
   'nimesha.p@waypoint.lk',
   'harini.d@waypoint.lk',
+  'kasun.b@waypoint.lk',
 ];
 const PHONES = ['+94776041932', '+94775550107'];
 
@@ -69,19 +71,21 @@ suite('seedUsers', () => {
         interStopMin: 9,
       })
       .onConflictDoNothing();
+    const outlet = {
+      brand: 'FRESH' as const,
+      districtId: 'seed-test-gampaha',
+      depotId: 'PLG',
+      dockType: 'REAR_DOCK' as const,
+      parkingConstraint: 'NORMAL' as const,
+      windowOpenMin: 330,
+      windowCloseMin: 450,
+    };
     await tx
       .insert(outlets)
-      .values({
-        id: 'OUT014',
-        name: 'Fresh Kadawatha',
-        brand: 'FRESH',
-        districtId: 'seed-test-gampaha',
-        depotId: 'PLG',
-        dockType: 'REAR_DOCK',
-        parkingConstraint: 'NORMAL',
-        windowOpenMin: 330,
-        windowCloseMin: 450,
-      })
+      .values([
+        { id: 'OUT014', name: 'Fresh Kadawatha', ...outlet },
+        { id: 'OUT976', name: 'Fresh Seed Test', ...outlet },
+      ])
       .onConflictDoNothing();
     const truck = {
       type: 'TRUCK' as const,
@@ -107,6 +111,14 @@ suite('seedUsers', () => {
           code: 'DRY-31',
           registrationNo: 'WP SEED-31',
           depotId: 'KDY',
+          temp: 'AMBIENT',
+          ...truck,
+        },
+        {
+          id: 'seed-test-tst76',
+          code: 'TST-76',
+          registrationNo: 'WP SEED-76',
+          depotId: 'PLG',
           temp: 'AMBIENT',
           ...truck,
         },
@@ -154,6 +166,7 @@ suite('seedUsers', () => {
           'Aniqa Razick',
           'Dinushi Rathnayake',
           'Harini De Mel',
+          'Kasun Bandara',
           'Nimesha Periyapperuma',
           'Rusiru Withanage',
           'Tihara Egodage',
@@ -216,6 +229,103 @@ suite('seedUsers', () => {
         { id: 'dock-kdy-01', depotId: 'KDY', isDock: true },
         { id: 'dock-plg-01', depotId: 'PLG', isDock: true },
       ]);
+    });
+  });
+  /** The drivers of the vehicle with this code; codes, not ids, are what the seed keys on. */
+  const driversOf = async (tx: Database, code: string) => {
+    const [vehicle] = await tx
+      .select({ id: vehicles.id })
+      .from(vehicles)
+      .where(eq(vehicles.code, code));
+    return tx
+      .select()
+      .from(users)
+      .where(
+        and(eq(users.role, 'driver'), eq(users.defaultVehicleId, vehicle.id)),
+      );
+  };
+
+  it('AC-IDN-61 the seed gives every vehicle exactly one driver', async () => {
+    await rolledBack(async (tx) => {
+      await referenceData(tx);
+      await seedUsers(tx, 'Waypoint@2026');
+      const [first] = await driversOf(tx, 'TST-76');
+      await seedUsers(tx, 'Waypoint@2026');
+
+      const tst76 = await driversOf(tx, 'TST-76');
+      expect(tst76).toHaveLength(1);
+      expect(tst76[0]).toMatchObject({
+        id: first.id,
+        username: 'drv.tst76',
+        depotId: 'PLG',
+        phoneNumberVerified: true,
+        email: `${first.id}@drivers.waypoint.local`,
+      });
+      expect(tst76[0].phoneNumber).toMatch(/^\+947000\d{5}$/);
+
+      const ref07 = await driversOf(tx, 'REF-07');
+      expect(ref07.map((u) => u.name)).toEqual(['Aniqa Razick']);
+
+      const fleet = await tx.select({ id: vehicles.id }).from(vehicles);
+      const driven = new Set(
+        (
+          await tx
+            .select({ vehicleId: users.defaultVehicleId })
+            .from(users)
+            .where(eq(users.role, 'driver'))
+        ).map((u) => u.vehicleId),
+      );
+      expect(fleet.filter((v) => !driven.has(v.id))).toEqual([]);
+    });
+  });
+
+  it('AC-IDN-62 the seed gives every outlet a store manager who can sign in', async () => {
+    await rolledBack(async (tx) => {
+      await referenceData(tx);
+      await seedUsers(tx, 'Waypoint@2026');
+
+      const managers = await tx
+        .select()
+        .from(users)
+        .where(
+          and(
+            eq(users.role, 'store_manager'),
+            inArray(users.outletId, ['OUT014', 'OUT976']),
+          ),
+        );
+      expect(
+        managers.filter((u) => u.outletId === 'OUT976').map((u) => u.username),
+      ).toEqual(['mgr.out976']);
+      expect(
+        managers
+          .filter((u) => u.username?.startsWith('mgr.'))
+          .map((u) => u.outletId),
+      ).toEqual(['OUT976']);
+      const manager = managers.find((u) => u.outletId === 'OUT976')!;
+      expect(manager.email).toBe('mgr.out976@waypoint.lk');
+      const [credential] = await tx
+        .select({ password: accounts.password })
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.userId, manager.id),
+            eq(accounts.providerId, 'credential'),
+          ),
+        );
+      expect(
+        await verifyPassword({
+          hash: credential.password!,
+          password: 'Waypoint@2026',
+        }),
+      ).toBe(true);
+
+      const [kasun] = (await personas(tx)).filter(
+        (u) => u.name === 'Kasun Bandara',
+      );
+      expect(kasun).toMatchObject({ role: 'loader', depotId: 'KDY' });
+      expect(
+        await verifyPassword({ hash: kasun.pinHash!, password: '1357' }),
+      ).toBe(true);
     });
   });
 });

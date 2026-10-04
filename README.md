@@ -45,12 +45,18 @@ Once the `seed` job has finished and `api` is healthy:
 | Dispatcher | Tihara Egodage | `tihara.e@waypoint.lk` / `Waypoint@2026` | Every depot (Peliyagoda by default) |
 | Store manager | Nimesha Periyapperuma | `nimesha.p@waypoint.lk` / `Waypoint@2026` | OUT014 |
 | Loader | Harini De Mel | `harini.d@waypoint.lk` / `Waypoint@2026`; dock PIN `2468` | Peliyagoda |
+| Loader | Kasun Bandara | `kasun.b@waypoint.lk` / `Waypoint@2026`; dock PIN `1357` | Kandy |
 | Driver | Aniqa Razick | phone `+94776041932`, code from the demo inbox | REF-07 |
 | Driver | Dinushi Rathnayake | phone `+94775550107`, code from the demo inbox | DRY-31 |
 
 The password is `SEED_PASSWORD` in `.env` (at least 10 characters; without it the seed skips the
 accounts). Every persona also has a username (`rusiru.w`, `tihara.e`, `nimesha.p`, `harini.d`,
-`aniqa.r`, `dinushi.r`) that works on the sign-in form in place of the email.
+`kasun.b`, `aniqa.r`, `dinushi.r`) that works on the sign-in form in place of the email.
+
+Every other vehicle and outlet gets a made-up person too: a driver `drv.<vehicle code>` (`drv.ref01`)
+on a `+947000…` phone, signing in with the code from the demo inbox, and a store manager
+`mgr.<outlet id>` (`mgr.out001@waypoint.lk`) with the seed password. The demo account menu leaves
+them out.
 
 ### Signing in
 

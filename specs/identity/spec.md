@@ -293,6 +293,7 @@ Scopes applied by every ScopePolicy, and the seeded judge accounts:
 | Dispatcher | depotId = actor.depotId, or all depots when none is set; the header's depot switch defaults to Peliyagoda | Tihara Egodage, tihara.e@waypoint.lk, all depots |
 | Store manager | outletId = actor.outletId for orders, deferrals, receipts, issues and ETAs | Nimesha Periyapperuma, nimesha.p@waypoint.lk, Fresh Kadawatha |
 | Loader | depotId = actor.depotId, trips for today and tomorrow | Harini De Mel, Peliyagoda dock, PIN 2468 |
+| Loader, Kandy | Same rule | Kasun Bandara, kasun.b@waypoint.lk, Kandy dock, PIN 1357 |
 | Driver | Trips where driverId = actor.id in the last 7 days (D10) | Aniqa Razick, +94 77 604 1932, REF-07 |
 | Driver, second story | Same rule | Dinushi Rathnayake, +94 77 555 0107, DRY-31 |
 
@@ -302,6 +303,13 @@ Usernames are the email's local part (rusiru.w, tihara.e, nimesha.p, harini.d) a
 the drivers. Harini's email is harini.d@waypoint.lk. A driver's depot is her vehicle's depot. The seed also
 registers the dock tablets dock-plg-01 (PLG) and dock-kdy-01 (KDY), so a loader can sign in before A6 exists.
 Re-running the seed keeps each id and resets role, scope, PIN and password.
+
+After the personas, the seed gives every vehicle and outlet that has nobody a synthetic person (ROO-76), so A5's
+Driver column, A3's manager and a plan's driver choices are filled: a driver `drv.<vehicle code>` (drv.ref01) on
+a +947000 phone, signing in by code, and a store manager `mgr.<outlet id>` (mgr.out001@waypoint.lk) with the
+seed password. Names are made up from a fixed list. A vehicle or outlet an admin links to someone else keeps that
+person, and a seeded driver lets go of a vehicle a persona now drives. GET /demo/users leaves the drv. and mgr.
+accounts out, so the account menu lists only the personas.
 
 | Role | Screens | Sign-in method |
 | --- | --- | --- |
@@ -373,6 +381,9 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [x] AC-IDN-58 Admin adds a deferral reason
 - [x] AC-IDN-59 Demo reset rebuilds the demo day
 - [x] AC-IDN-60 Routes match the permission matrix
+- [x] AC-IDN-61 The seed gives every vehicle exactly one driver
+- [x] AC-IDN-62 The seed gives every outlet a store manager who can sign in
+- [x] AC-IDN-63 The demo account menu leaves out the seeded staff
 
 ```gherkin
 AC-IDN-01  Another outlet's order is not found
@@ -785,6 +796,25 @@ AC-IDN-60  Routes match the permission matrix
   When the test calls every route as admin, dispatcher, store_manager, loader and driver
   Then each role gets a 2xx exactly where roles[role].authorize({ <resource>: [<action>] }) succeeds, and 403 FORBIDDEN everywhere else
     And routes marked public or any never answer 403 to a signed-in role
+
+AC-IDN-61  The seed gives every vehicle exactly one driver
+  Given vehicles REF-07 (PLG, Aniqa Razick's) and TST-76 (PLG, nobody's)
+  When pnpm --filter api db:seed runs twice with SEED_PASSWORD set
+  Then TST-76 has exactly one driver, username drv.tst76, depot PLG, a verified +947000 phone, the same id after both runs
+    And REF-07's only driver is still Aniqa Razick, with no drv.ref07 linked to it
+    And no vehicle is left without a driver
+
+AC-IDN-62  The seed gives every outlet a store manager who can sign in
+  Given outlets OUT014 (Nimesha Periyapperuma's) and OUT976 (nobody's), and Kandy with no loader
+  When the seed runs with SEED_PASSWORD=Waypoint@2026
+  Then OUT976 has store manager mgr.out976 (mgr.out976@waypoint.lk), whose credential verifies Waypoint@2026
+    And OUT014 gets no mgr.out014
+    And loader Kasun Bandara (kasun.b) is at KDY with PIN 1357
+
+AC-IDN-63  The demo account menu leaves out the seeded staff
+  Given DEMO_MODE=true, a dispatcher and a driver with username drv.tst63
+  When the store manager calls GET /demo/users
+  Then the dispatcher is listed and drv.tst63 is not
 ```
 
 ## Non-functional
@@ -876,6 +906,8 @@ AC-IDN-60  Routes match the permission matrix
 ## Changelog
 - 2026-10-04 AC-IDN-19 has its test (`driver-account-page.test.tsx`): D12's Sign out card waits for the outbox to
   empty before calling `/api/auth/sign-out` and offers no discard; the behaviour already existed (ROO-44)
+- 2026-10-04 The seed adds a driver for every vehicle, a store manager for every outlet and Kasun Bandara as
+  Kandy's loader; the demo account menu leaves the seeded staff out. AC-IDN-61 to 63 pass (ROO-76)
 - 2026-10-04 Sign-in works for every role from a real browser (ROO-68 bug bash): the cookie's Secure flag
   follows APP_URL instead of being forced; the dev server is a trusted origin by default; every signed-in
   browser registers itself through POST /me/devices so A6 can mark it as a dock tablet (the PIN route had

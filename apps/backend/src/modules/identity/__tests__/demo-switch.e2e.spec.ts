@@ -5,6 +5,7 @@ import request from 'supertest';
 import {
   bodyOf,
   browser,
+  createTestUser,
   type Problem,
   sessionCookie,
   signedInAs,
@@ -15,7 +16,9 @@ import {
   ownerDatabase,
 } from '../../../../test/create-test-app';
 import { depotFixture, outletFixture, suffix } from '../../../../test/fixtures';
+import { eq } from 'drizzle-orm';
 import type { Database } from '../../../db/client';
+import { users as schemaUsers } from '../../../db/schema';
 
 interface CastMember {
   id: string;
@@ -83,6 +86,21 @@ describeWithDb('demo user switch', () => {
     expect(users.findIndex((u) => u.role === 'store_manager')).toBeLessThan(
       users.findIndex((u) => u.role === 'dispatcher'),
     );
+  });
+
+  it('AC-IDN-63 the demo account menu leaves out the seeded staff', async () => {
+    const driver = await createTestUser(app, db, {
+      role: 'driver',
+      name: `Seeded driver ${sfx}`,
+    });
+    await db
+      .update(schemaUsers)
+      .set({ username: `drv.tst63${sfx}`.toLowerCase() })
+      .where(eq(schemaUsers.id, driver.id));
+
+    const ids = (await cast(store.cookie)).map((u) => u.id);
+    expect(ids).toContain(dispatcher.id);
+    expect(ids).not.toContain(driver.id);
   });
 
   it('refuses an unsigned caller', async () => {
