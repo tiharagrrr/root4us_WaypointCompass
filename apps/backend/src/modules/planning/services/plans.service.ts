@@ -233,29 +233,20 @@ export class PlansService {
     const tripIds = [...new Set([...saved, ...metaTrips])].sort();
 
     // Orders follow their stops: newly carried ones are planned, moved ones
-    // take their new stop, and ones off every trip go back to the queue. An
-    // order still open before the cutoff is only linked to its stop: it stays
-    // SUBMITTED, the store's to change, until the cutoff or the publish.
+    // take their new stop, and ones off every trip go back to the queue.
     const after = await this.liveStops(ctx.plan.id);
-    const statuses = await this.lifecycle.statusesOf([
-      ...new Set([...after.keys(), ...before.keys()]),
-    ]);
-    const isPlanned = (orderId: string) => statuses.get(orderId) === 'PLANNED';
     const moved = new Set<string>();
     for (const [orderId, now] of after) {
       const was = before.get(orderId);
-      if (was && was.tripId === now.tripId) continue;
-      if (isPlanned(orderId))
+      if (!was) await this.lifecycle.markPlanned(orderId, now.stopId);
+      else if (was.tripId !== now.tripId)
         await this.lifecycle.moveStop(orderId, now.stopId);
-      else if (statuses.get(orderId) === 'SUBMITTED')
-        await this.lifecycle.linkStop(orderId, now.stopId);
-      else await this.lifecycle.markPlanned(orderId, now.stopId);
+      else continue;
       moved.add(orderId);
     }
     for (const orderId of before.keys())
       if (!after.has(orderId)) {
-        if (isPlanned(orderId)) await this.lifecycle.requeue(orderId);
-        else await this.lifecycle.linkStop(orderId, null);
+        await this.lifecycle.requeue(orderId);
         moved.add(orderId);
       }
     const outletIds = [

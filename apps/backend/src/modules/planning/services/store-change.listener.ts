@@ -16,11 +16,15 @@ import {
 import { PlansService } from './plans.service';
 import { TripLifecycleService } from './trip-lifecycle.service';
 
-/** A store's own changes to an order still open before the cutoff. */
+/**
+ * Changes that make a drafted stop wrong: what is in the order, its delivery
+ * date, or the order being cancelled. Not the dispatcher's own urgent flag
+ * (order.priority_changed), and not a note: neither changes what the trip
+ * carries or when.
+ */
 const STORE_CHANGES = new Set<string>([
   ORDER_EVENTS.linesChanged,
   ORDER_EVENTS.updated,
-  ORDER_EVENTS.priorityChanged,
   ORDER_EVENTS.cancelled,
   ORDER_EVENTS.deleted,
 ]);
@@ -55,26 +59,39 @@ export class StoreChangeListener {
   }
 
   @Transactional()
-  async handle(event: DeliveredEvent): Promise<'removed' | 'not_on_a_draft'> {
-    const payload = (event.payload ?? {}) as { orderId?: unknown };
+  async handle(
+    event: DeliveredEvent,
+  ): Promise<'removed' | 'not_on_a_draft' | 'unchanged'> {
+    const payload = (event.payload ?? {}) as {
+      orderId?: unknown;
+      deliveryDate?: unknown;
+    };
     if (typeof payload.orderId !== 'string') return 'not_on_a_draft';
     const orderId = payload.orderId;
 
-    const [onDraft] = await this.txHost.tx
-      .select({ stop: stops, plan: plans })
-      .from(stops)
-      .innerJoin(trips, eq(trips.id, stops.tripId))
-      .innerJoin(plans, eq(plans.id, trips.planId))
-      .where(
-        and(
-          eq(stops.orderId, orderId),
-          eq(plans.status, 'DRAFT'),
-          notInArray(stops.status, ['CANCELLED', 'FAILED']),
-        ),
-      )
-      .limit(1);
-    if (!onDraft) return 'not_on_a_draft';
-    const { stop, plan } = onDraft;
+    const found = await this.liveDraftStop(orderId);
+    if (!found) return 'not_on_a_draft';
+    // Lock the plan, then look again: a dispatcher's save that was in flight
+    // has committed by now (it holds the same lock), so the stop and the
+    // version read below are the current ones, and any later save of theirs
+    // made on the old version is refused with 412.
+    const [plan] = await this.txHost.tx
+      .select()
+      .from(plans)
+      .where(eq(plans.id, found.planId))
+      .for('update');
+    if (!plan || plan.status !== 'DRAFT') return 'not_on_a_draft';
+    const current = await this.liveDraftStop(orderId);
+    if (!current || current.planId !== plan.id) return 'not_on_a_draft';
+    const { stop } = current;
+    // An edit that only touched the note leaves what the trip carries alone;
+    // one that moved the order to another day takes it off this day's draft.
+    if (
+      event.type === ORDER_EVENTS.updated &&
+      typeof payload.deliveryDate === 'string' &&
+      payload.deliveryDate === plan.date
+    )
+      return 'unchanged';
 
     await this.trips.cancelStop(stop.id, 'changed by the store');
     await this.orders.linkStop(orderId, null).catch(() => undefined);
@@ -117,5 +134,23 @@ export class StoreChangeListener {
       'store changed an order on a draft: back to the queue',
     );
     return 'removed';
+  }
+
+  /** The order's live stop on a DRAFT plan, if it has one. */
+  private async liveDraftStop(orderId: string) {
+    const [row] = await this.txHost.tx
+      .select({ stop: stops, planId: plans.id })
+      .from(stops)
+      .innerJoin(trips, eq(trips.id, stops.tripId))
+      .innerJoin(plans, eq(plans.id, trips.planId))
+      .where(
+        and(
+          eq(stops.orderId, orderId),
+          eq(plans.status, 'DRAFT'),
+          notInArray(stops.status, ['CANCELLED', 'FAILED']),
+        ),
+      )
+      .limit(1);
+    return row ?? null;
   }
 }

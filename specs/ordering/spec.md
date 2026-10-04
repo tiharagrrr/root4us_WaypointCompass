@@ -767,8 +767,7 @@ Every answer below is the behaviour the tests now pin; the questions they came f
   04 switch between each other in the header. What the frame draws and the order list does not carry
   (the vehicle, on time) is in docs/departures.md
 - 2026-10-04 Planning drafts from open orders too: `queueFor` includes SUBMITTED orders for the date
-  (AC-ORD-38 updated), so a dispatcher can draft a future day before its cutoff. An open order on a
-  draft trip stays SUBMITTED and only links to its stop (`OrderLifecycleService.linkStop`); a
-  store's later change (lines, priority, delivery date, cancel) takes it off the draft (planning's
+  (AC-ORD-38 updated), so a dispatcher can draft a future day before its cutoff. A draft never moves
+  an order's status, so an open order on a draft trip stays SUBMITTED; a store's later change (lines, delivery date, cancel) takes it off the draft (planning's
   StoreChangeListener). Publishing confirms any order still open before planning or deferring it
   (`confirmIfOpen`).
