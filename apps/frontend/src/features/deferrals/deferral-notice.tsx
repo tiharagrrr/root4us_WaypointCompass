@@ -68,7 +68,7 @@ export function DeferralNotice({ id, onClose }: DeferralNoticeProps) {
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="w-[460px]">
         <DialogHeader title="Deferral notice" description={deferral ? `Order #${deferral.orderNo} moved to the next run` : undefined} />
-        <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto px-5 pb-5">
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 pb-5">
           {read.isError ? (
             <ErrorState error={read.error} onRetry={() => void read.refetch()} />
           ) : !deferral ? (

@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 import { formatColombo } from '@/lib/format-colombo'
 import { isLink, type Link } from '@/lib/links'
 import { Button } from '@/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
 import { Icon } from '@/ui/icon'
 import { ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
@@ -98,7 +98,7 @@ export function ResequenceDialog({ trip, link, deferLink, version, revision, onC
           title={`Re-sequence ${trip.vehicleCode} stops`}
           description={`Reorder the ${pending.length} remaining stops. Projected arrivals update as you go. Nothing changes until you apply.`}
         />
-        <div className="flex flex-col gap-4 px-5 py-4">
+        <DialogBody className="px-5 py-4">
           <div className="overflow-hidden rounded-lg border border-border">
             <table className="w-full border-collapse">
               <thead>
@@ -189,7 +189,7 @@ export function ResequenceDialog({ trip, link, deferLink, version, revision, onC
             The driver of {trip.vehicleCode} gets the new order on the phone, and the stores on this trip see their new times.
           </p>
           {resequence.isError ? <ErrorState error={resequence.error} /> : null}
-        </div>
+        </DialogBody>
         <RevisionReasonBar revision={revision} value={reason} onChange={setReason} />
         <DialogFooter className="justify-between">
           <p className="type-mono-small m-0 uppercase text-muted-foreground">{summary}</p>

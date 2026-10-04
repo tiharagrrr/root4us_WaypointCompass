@@ -109,7 +109,7 @@ export function ReassignDialog({ trip, vehicles, drivers, repairs, link, version
     <Dialog open onOpenChange={(open) => !open && !reassign.isPending && onClose()}>
       <DialogContent className="w-[644px]">
         <DialogHeader title={`Reassign ${trip.vehicleCode} · Trip ${trip.tripNo ?? 1}`} description={because ?? 'Move this trip, with its stops, to another vehicle or driver.'} />
-        <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto px-5 py-4">
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-4">
           <section className="flex flex-col gap-1">
             <h3 className="type-label m-0 uppercase text-muted-foreground">Trip load</h3>
             <p className="type-body m-0 text-foreground">

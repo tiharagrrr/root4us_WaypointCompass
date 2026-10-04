@@ -65,7 +65,7 @@ export function SheetHeader({ title, description, className }: SheetHeaderProps)
 }
 
 export function SheetBody({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="sheet-body" className={cn('flex flex-col gap-4 overflow-y-auto p-4', className)} {...props} />
+  return <div data-slot="sheet-body" className={cn('flex min-h-0 flex-col gap-4 overflow-y-auto p-4', className)} {...props} />
 }
 
 /** Full-width stacked actions: a thumb hits a wide target, not a right-aligned pair. */

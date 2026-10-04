@@ -58,7 +58,7 @@ export function SavePresetDialog({ open, onOpenChange, order, onSaved }: SavePre
           title="Save as preset"
           description={`The ${order.totals.lines} items on this order, ready to load next time.`}
         />
-        <form noValidate onSubmit={(e) => void onSubmit(e)}>
+        <form noValidate className="flex min-h-0 flex-col" onSubmit={(e) => void onSubmit(e)}>
           <DialogBody>
             <Field label="Preset name" error={errors.name?.message}>
               {(control) => (
