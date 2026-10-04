@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { DiscoveryModule } from '@nestjs/core';
 import { AppModule } from '../app.module';
+import { ExecutionModule } from '../modules/execution';
 import { NotificationsModule } from '../modules/notifications';
 import { PlanningModule } from '../modules/planning';
 import { DemoInbox } from '../core/demo/demo-inbox';
@@ -10,6 +11,7 @@ import { QUEUES } from '../queues';
 import { AllocationProcessor } from './allocation.processor';
 import { NotificationsProcessor } from './notifications.processor';
 import { OutboxProcessor } from './outbox.processor';
+import { PositionSimulatorRunner } from './position-simulator.runner';
 import { TickerProcessor } from './ticker.processor';
 
 /**
@@ -23,6 +25,8 @@ import { TickerProcessor } from './ticker.processor';
     AppModule,
     // For EngineRunner, which the allocation processor drives.
     PlanningModule,
+    // For PositionSimulator, which moves the demo's running trips.
+    ExecutionModule,
     // For NotificationSender, which notify.send drives.
     NotificationsModule,
     DiscoveryModule,
@@ -33,6 +37,7 @@ import { TickerProcessor } from './ticker.processor';
     AllocationProcessor,
     NotificationsProcessor,
     OutboxProcessor,
+    PositionSimulatorRunner,
     DemoInbox,
     TickerService,
     TickerProcessor,

@@ -23,3 +23,71 @@
     color: inherit;
   }
 }
+
+/* 19 and 19a: the live map's markers and legend dots (frame 185:17224). Tokens only. */
+@layer components {
+  .map-marker {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    pointer-events: none;
+  }
+  .map-dot {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 9999px;
+    border: 2px solid var(--color-slate-400);
+    background: var(--color-background);
+  }
+  .map-dot-vehicle {
+    width: 16px;
+    height: 16px;
+    border: 3px solid var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-blue-50);
+  }
+  .map-dot-selected {
+    width: 20px;
+    height: 20px;
+    background: var(--color-primary);
+    border-color: var(--color-background);
+    box-shadow: 0 0 0 3px var(--color-primary);
+  }
+  .map-dot-no-signal {
+    width: 16px;
+    height: 16px;
+    border: 2px dashed var(--color-slate-400);
+  }
+  .map-dot-delivered {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+  }
+  .map-dot-upcoming {
+    border-color: var(--color-slate-400);
+  }
+  .map-dot-at-risk {
+    border-color: var(--color-status-at-risk-icon);
+  }
+  .map-dot-late {
+    border-color: var(--color-status-danger-icon);
+  }
+  .map-dot-depot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border-color: var(--color-slate-900);
+    background: var(--color-slate-900);
+  }
+  .map-tag {
+    white-space: nowrap;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 4px;
+    background: var(--color-background);
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--color-slate-800);
+  }
+}

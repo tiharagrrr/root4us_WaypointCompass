@@ -5,6 +5,7 @@
  * Delivery planning for Waypoint Group (Tech Triathlon 2026). Conventions: specs/api-conventions.md.
  * OpenAPI spec version: 1.0.0
  */
+import type { MapPointDto } from './mapPointDto.ts';
 import type { TrackingStopDtoStanding } from './trackingStopDtoStanding.ts';
 
 export interface TrackingStopDto {
@@ -14,6 +15,11 @@ export interface TrackingStopDto {
   orderNo: string;
   outletId: string;
   outletName: string;
+  /**
+     * The outlet on the map; null when it has no coordinates
+     * @nullable
+     */
+  at: MapPointDto | null;
   status: string;
   /** Window opens, minutes after midnight */
   windowOpenMin: number;

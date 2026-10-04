@@ -97,7 +97,7 @@ Progress: tick a criterion in the same PR as its passing test.
 - [x] AC-RT-04 Frames carry the outbox id and the envelope
 - [x] AC-RT-05 A reconnect replays what was missed
 - [x] AC-RT-06 A too-old id gets a resync
-- [ ] AC-RT-07 Positions are throttled and never replayed
+- [x] AC-RT-07 Positions are throttled and never replayed
 - [x] AC-RT-08 Stores never see the map
 - [x] AC-RT-09 Idle streams stay alive
 - [x] AC-RT-10 Fan-out subscribes only while a client needs it
@@ -191,7 +191,6 @@ AC-RT-13  A role change reaches the user at once
 - Replay depth is 2,000 events, kept 24 hours.
 
 ## Open questions
-- Which channels carry vehicle.position: depot:<id> only, or trip:<id> too? (ROO-37, with AC-RT-07)
 - How is comment.created routed to "everyone on that record"?
 - Which log event names does the module write for stream open and close?
 
@@ -202,3 +201,7 @@ AC-RT-13  A role change reaches the user at once
   channel mapping lives in realtime (domain/channels.ts); admins get the dispatcher's channels plus
   role:admin. useEventStream now listens for every event type the modules emit.
   AC-RT-07 waits on position ingest (ROO-37).
+- 2026-10-04 ROO-37: vehicle.position reaches depot:<id> and the trip's driver (trip:<id>), never
+  outlets. Its frame repeats the stream's cursor as its id instead of `<vehicleId>:<recordedAt>`,
+  which stays in the data: the browser sends back the last id it saw, and it must be an outbox id
+  for the replay to work. Throttling is the publisher's (one per vehicle per 5 s across instances).

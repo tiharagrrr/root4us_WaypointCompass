@@ -121,3 +121,7 @@ row for every intended difference; anything else that differs is a bug.
 | 02 Notifications | The page dims behind the panel | No dimming | A popover anchored to the bell: the dashboard stays readable and live while the panel is open |
 | 02 Notifications | No empty, loading or error frame | "No notifications yet" (or "You're all caught up" on Unread), skeleton lines, and the problem with Try again | Figma has no frame for them |
 | D12 Account | Help & settings lists Language and Call dispatcher | Help & settings lists Notifications, which opens the channel settings in a sheet | AC-NTF-03 needs a place to change preferences on the phone; Language and Call dispatcher follow with ROO-62 |
+| 19 Live runs | A bar above the map for the selected trip: vehicle, trip, standing, driver, Call driver, Trip details | No bar; a trip in the list opens 19a | The tracking read carries no driver phone yet, and 19a is one tap away |
+| 19 and 19a | Legend item "Roadworks" and roadworks pins | No roadworks | Road conditions are per district and day (road_conditions), with no place on the map to pin them |
+| 19 and 19a | A drawn basemap | OpenFreeMap's light OpenStreetMap style, with its attribution | Real roads and towns; the licence asks for the attribution |
+| 19a Trip details | Labels on a few stops | A label with the spare time on every stop still to come | Every stop's slack is what 19b and 20 are decided on |

@@ -5,7 +5,12 @@ import { Gauge, register } from 'prom-client';
 import { Observable } from 'rxjs';
 import type { DeliveredEvent } from '../../core/outbox/event-bus';
 import { MyTripsQueries } from '../execution';
-import { channelsFor, reaches, toDomainEvent } from './domain/channels';
+import {
+  channelsFor,
+  POSITION_TYPE,
+  reaches,
+  toDomainEvent,
+} from './domain/channels';
 import { PresenceService } from './presence.service';
 import { RealtimeHub } from './realtime.hub';
 
@@ -80,6 +85,16 @@ export class EventStreamService {
         return changed;
       };
       const send = (event: DeliveredEvent) => {
+        if (event.type === POSITION_TYPE) {
+          // Positions are live only and never replayed, so their frame repeats the cursor:
+          // the browser must keep an outbox id to send back as Last-Event-ID.
+          out.next({
+            id: cursor,
+            type: event.type,
+            data: toDomainEvent(event),
+          });
+          return;
+        }
         if (sent.has(event.id)) return;
         sent.add(event.id);
         cursor = event.id;
@@ -100,7 +115,7 @@ export class EventStreamService {
         )
           return out.complete();
         // Past it either way, so a reconnect does not re-read other channels' traffic.
-        cursor = event.id;
+        if (event.type !== POSITION_TYPE) cursor = event.id;
       };
 
       // Subscribe before reading the replay, so nothing falls between them.

@@ -77,6 +77,10 @@ export const PlansTrackingResponse = zod.object({
   "date": zod.string(),
   "planId": zod.string().nullable(),
   "planStatus": zod.string().nullable(),
+  "depot": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number()
+}).nullable().describe('The depot on the map'),
   "totals": zod.object({
   "trips": zod.number(),
   "onRoad": zod.number().describe('Trips in progress'),
@@ -108,12 +112,25 @@ export const PlansTrackingResponse = zod.object({
   "plannedDepartAt": zod.string().nullable(),
   "loadWeightKg": zod.number(),
   "loadVolumeM3": zod.number(),
+  "position": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "heading": zod.number().nullable(),
+  "speedKmh": zod.number().nullable(),
+  "recordedAt": zod.string()
+}).nullable().describe('Latest position while on this trip; null before the first ping'),
+  "lastSignalAt": zod.string().nullable().describe('Last ping, stop event or start, for a trip on the road'),
+  "noSignalSince": zod.string().nullable().describe('Set once a trip on the road has been silent for 10 minutes: "No signal since 04:30"'),
   "stops": zod.array(zod.object({
   "stopId": zod.string(),
   "seq": zod.number().nullable(),
   "orderNo": zod.string(),
   "outletId": zod.string(),
   "outletName": zod.string(),
+  "at": zod.object({
+  "lat": zod.number(),
+  "lng": zod.number()
+}).nullable().describe('The outlet on the map; null when it has no coordinates'),
   "status": zod.string(),
   "windowOpenMin": zod.number().describe('Window opens, minutes after midnight'),
   "windowCloseMin": zod.number().describe('Window closes, minutes after midnight'),

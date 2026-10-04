@@ -62,6 +62,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // Execution: the driver's trips, the offline bundle, the field events and
   // proof of delivery (ROO-31). /api/v1/me/* above already covers /me/trips.
   { method: "all", path: "/api/v1/trips/*" },
+  // The driver phone's GPS fixes (ROO-37).
+  { method: "post", path: "/api/v1/telematics/pings" },
   { method: "all", path: "/api/v1/stops/*" },
   { method: "all", path: "/api/v1/attachments/*" },
   // Loading: the dock's boards, the load list, checks, flags, the release
