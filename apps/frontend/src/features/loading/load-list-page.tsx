@@ -85,10 +85,14 @@ export function LoadListPage() {
     const flag = liveFlag(line.flags)
     return flag ? [{ flag, line }] : []
   })
-  const settled = lines.flatMap((line) => {
-    const flag = latestFlag(line.flags)
-    return flag && flag.status === 'RESOLVED' && flag.resolvedAt ? [{ flag, line }] : []
-  })
+  // Only a re-checked replacement says "Replacement checked": an undone or removed flag is not one,
+  // and the newest by time is the one just cleared, not the last line in the list.
+  const settled = lines
+    .flatMap((line) => {
+      const flag = latestFlag(line.flags)
+      return flag && flag.status === 'RESOLVED' && flag.decision === 'REPLACE' && flag.resolvedAt ? [{ flag, line }] : []
+    })
+    .sort((x, y) => Date.parse(x.flag.resolvedAt ?? '') - Date.parse(y.flag.resolvedAt ?? ''))
   const blocking = open[open.length - 1] ?? (cleared === settled[settled.length - 1]?.flag.id ? undefined : settled[settled.length - 1])
   const awaiting = open.filter(({ flag }) => flag.status === 'AWAITING_RECHECK' || flag.decision)
   // The reefer's temperature is read on L4, where the loader types it, so "no reading yet" cannot
