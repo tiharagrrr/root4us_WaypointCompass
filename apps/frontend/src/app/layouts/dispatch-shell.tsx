@@ -36,6 +36,7 @@ export function DispatchShell() {
       { to: '/dispatch/forecast', label: t('nav.forecast'), icon: 'forecast' },
       { to: '/dispatch/deferrals', label: t('nav.deferrals'), icon: 'deferrals' },
       { to: '/dispatch/issues', label: t('nav.issues'), icon: 'flag', deep: true },
+      { to: '/dispatch/simulation', label: t('nav.simulation'), icon: 'bolt' },
     ],
     [t],
   )

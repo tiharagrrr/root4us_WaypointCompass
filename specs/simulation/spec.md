@@ -279,3 +279,5 @@ AC-SIM-10  (stretch) The director stays inside its guardrails
 - 2026-10-04 AC-SIM-01, 02, 07, 09 and 10 implemented, AC-SIM-04 in part (ROO-55): run commands and the
   worker loop, virtual drivers through execution's field-event handler, ROAD_DELAY and FAILED_DELIVERY,
   the agentic director behind `LLM_PROVIDER` and the `simulation.aiDirector` setting, the A6 → Demo panel
+- 2026-10-04 The dispatcher reaches the run panel at /dispatch/simulation, from a Simulation entry in the
+  dispatch sidebar (ROO-55); the page says why it is blank when demo mode or the simulator is off
