@@ -471,6 +471,8 @@ export * from './stopsComplete200.ts';
 export * from './stopsFail200.ts';
 export * from './stopsGet200.ts';
 export * from './stopWindowDto.ts';
+export * from './streamsMe200.ts';
+export * from './streamsMeHeaders.ts';
 export * from './suggestFixesDto.ts';
 export * from './tempClass.ts';
 export * from './trackingDayDto.ts';

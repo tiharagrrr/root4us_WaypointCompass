@@ -155,10 +155,12 @@ export class OutboxRelay {
   }
 }
 
-function toDelivered(row: OutboxRow): DeliveredEvent {
+export function toDelivered(row: OutboxRow): DeliveredEvent {
   return {
     id: row.id,
     type: row.type,
+    aggregateType: row.aggregateType,
+    aggregateId: row.aggregateId,
     depotId: row.depotId,
     outletIds: row.outletIds,
     userIds: row.userIds,

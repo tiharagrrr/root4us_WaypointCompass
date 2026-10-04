@@ -6,12 +6,20 @@
 }
 
 {$SITE_ADDRESS::80} {
-	encode zstd gzip
+	# The SSE stream is never compressed: an encoder buffers, and frames must flush at once.
+	@compressible not path /api/v1/streams/*
+	encode @compressible zstd gzip
 
 	# Readiness passthrough for the web app's status badge.
 	handle /api/health {
 		rewrite * /health
 		reverse_proxy {$API_UPSTREAM:api:3000}
+	}
+
+	handle /api/v1/streams/* {
+		reverse_proxy {$API_UPSTREAM:api:3000} {
+			flush_interval -1
+		}
 	}
 
 	handle /api/* {
