@@ -85,7 +85,7 @@ cp .env.example .env      # Compose + shared defaults; per-app overrides:
 pnpm infra:up             # postgres, redis, Garage (S3) in Docker
 pnpm db:generate          # only after schema changes: writes apps/backend/drizzle/*.sql
 pnpm db:migrate
-pnpm db:seed
+pnpm db:seed              # reads the dataset CSVs from data/seed (git-ignored; copy them in first)
 pnpm dev                  # shared (watch) + API :3000 + web :5173
 pnpm --filter api dev:worker   # second terminal: the worker (cutoff ticker, outbox relay, jobs)
 ```
@@ -101,6 +101,8 @@ The web dev server proxies `/api` to the API, so both run on one origin, as they
 | `pnpm db:generate` | Generate a migration from `apps/backend/src/db/schema/<module>.ts`; name it with `pnpm --filter api db:generate --name=<module>_<change>` |
 | `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, the item catalog, 14 days of history and the demo day, open Drizzle Studio |
 | `pnpm db:reset-demo` | Rebuild D−1 to D+1 of the demo day on your local database (`DEMO_DAY=YYYY-MM-DD` pins D) |
+| `pnpm db:fresh` | Local only: drop every table, migrate, seed from `data/seed`, then `db:verify`. Use it after dropping new dataset files in, or when the database holds leftovers from test runs |
+| `pnpm db:verify` | Read-only: which dataset files are present, how many rows each table holds, users by role, the depots. Exits 1 when the reference data is missing |
 | `pnpm infra:up` | Start only the backing services in Docker |
 | `pnpm stack:up` / `stack:down` / `stack:reset` | Full Compose stack; reset also wipes volumes |
 

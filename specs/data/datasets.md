@@ -141,7 +141,12 @@ The dispatcher's standard handling-time allowance. One row per brand and dock ty
 ### traffic_speed.csv
 
 Typical congestion by district and hour. Loads into `traffic_speeds` (primary key district, hour,
-monsoon). The booklet documents only two columns; the district and hour column names are unknown.
+monsoon). The booklet documents only two columns; the district and hour column names are unknown, so
+the importer (`src/db/seed/conditions.ts`) finds them by name among `district`, `district_name`,
+`district_id` and `hour`, `hour_of_day`, `hod`, `time`, `hour_start`, reads the hour as a number or
+`HH:MM`, slugs the district, and fails loudly naming what it looked for. The table is cleared and
+refilled on every seed (nobody edits it), and a row for a district missing from
+`district_travel.csv` is skipped with a count.
 
 | Column | Type | Unit | Allowed values or range | Meaning | Maps to (table.column) |
 | --- | --- | --- | --- | --- | --- |
@@ -152,7 +157,9 @@ monsoon). The booklet documents only two columns; the district and hour column n
 ### road_conditions.csv
 
 Date-specific district disruptions such as roadworks, flooding or incidents. Loads into
-`road_conditions` (primary key date and district). The booklet documents only one column.
+`road_conditions` (primary key date and district). The booklet documents only one column; the
+importer finds the date among `date`, `day`, `condition_date` and the district as for
+traffic_speed.csv, insists on `YYYY-MM-DD`, and clears and refills the table on every seed.
 
 | Column | Type | Unit | Allowed values or range | Meaning | Maps to (table.column) |
 | --- | --- | --- | --- | --- | --- |

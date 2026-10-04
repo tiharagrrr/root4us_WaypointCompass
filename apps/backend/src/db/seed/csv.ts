@@ -10,20 +10,38 @@ export type Row = Record<string, string>;
  */
 const FOLDERS = ['', 'General Data', 'Training Data', 'Test Data'];
 
-/** A dataset file's rows by header name, or null when SEED_DATA_DIR doesn't have it. */
-export function readSeedCsv(dir: string, file: string): Row[] | null {
+/** Where a dataset file sits under SEED_DATA_DIR, or null when it is not there. */
+export function findSeedFile(dir: string, file: string): string | null {
   for (const folder of FOLDERS) {
     const path = resolve(dir, folder, file);
-    if (existsSync(path))
-      return parse<Row>(readFileSync(path, 'utf8'), {
-        columns: true,
-        skip_empty_lines: true,
-        trim: true,
-        bom: true,
-      });
+    if (existsSync(path)) return path;
   }
   return null;
 }
+
+/** A dataset file's rows by header name, or null when SEED_DATA_DIR doesn't have it. */
+export function readSeedCsv(dir: string, file: string): Row[] | null {
+  const path = findSeedFile(dir, file);
+  if (!path) return null;
+  return parse<Row>(readFileSync(path, 'utf8'), {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+    bom: true,
+  });
+}
+
+/** `0`/`1` or `true`/`false` to a boolean. */
+export const flag = (v: string): boolean =>
+  v === '1' || v.trim().toLowerCase() === 'true';
+
+/** A dataset name as an id: "Nuwara Eliya" becomes "nuwara-eliya"; an id stays an id. */
+export const slug = (name: string): string =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 
 /** A required cell; fails loudly, naming the file and row, when it is blank. */
 export function field(row: Row, name: string, where: string): string {
