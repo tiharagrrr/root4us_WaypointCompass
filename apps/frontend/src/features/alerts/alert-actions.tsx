@@ -5,10 +5,12 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router'
 import { getLink, isLink, type Link } from '@/lib/links'
+import { toastProblem } from '@/lib/problem-toast'
 import { Action } from '@/ui/action'
 import { Button, type ButtonVariant } from '@/ui/button'
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
 import { Field } from '@/ui/field'
+import { ErrorState } from '@/ui/states'
 import { toast } from '@/ui/toast-store'
 
 /**
@@ -63,6 +65,11 @@ export function AlertActions({ alert, emphasis = 'fix', size = 'sm', onAct }: Al
       onSuccess: () => {
         toast({ title: "You're on it", description: 'The other dispatchers can see that now.' })
         onAct?.(alert)
+        void invalidate(qc)
+      },
+      // Another dispatcher may have taken it, or closed it, a moment earlier: say so and refresh.
+      onError: (error) => {
+        toastProblem(error, "Couldn't mark this alert")
         void invalidate(qc)
       },
     },
@@ -181,6 +188,8 @@ function ResolveDialog({
         onResolved?.(alert)
         void invalidate(qc)
       },
+      // A 409 means someone resolved it first; the panel catches up either way.
+      onError: () => void invalidate(qc),
     },
   })
 
@@ -200,6 +209,7 @@ function ResolveDialog({
               />
             )}
           </Field>
+          {resolve.isError ? <ErrorState className="mt-3" error={resolve.error} /> : null}
         </DialogBody>
         <DialogFooter>
           <Button variant="outline" disabled={resolve.isPending} onClick={() => onOpenChange(false)}>
@@ -208,7 +218,7 @@ function ResolveDialog({
           <Button
             loading={resolve.isPending}
             disabled={note.trim() === ''}
-            onClick={() => void resolve.mutateAsync({ id: alert.id, data: { note } })}
+            onClick={() => resolve.mutate({ id: alert.id, data: { note } })}
           >
             Resolve
           </Button>
