@@ -115,7 +115,9 @@ export function RecordStopPage() {
     void flushAttachments({ type: 'stop', id: stop.id })
 
     const next = siblings.find((s) => s.status === 'PENDING' && s.id !== stop.id)
-    void navigate(next ? `/driver/stops/${next.id}` : '/driver')
+    // The last stop of the round ends on D7, where the driver closes the trip. Sending her back to
+    // D1 instead would leave a finished round with no way to finish it (AC-EXE-15).
+    void navigate(next ? `/driver/stops/${next.id}` : `/driver/trips/${stop.tripId}/done`)
   }
 
   return (

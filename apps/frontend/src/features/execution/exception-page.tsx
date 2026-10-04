@@ -102,7 +102,8 @@ export function ExceptionPage() {
     void flushAttachments({ type: 'stop', id: stop.id }, { kinds: { photo: 'EXCEPTION_PHOTO', signature: 'SIGNATURE' } })
 
     const next = siblings.find((s) => s.status === 'PENDING' && s.id !== stop.id)
-    void navigate(next ? `/driver/stops/${next.id}` : '/driver')
+    // An exception on the last stop still ends the round, so it lands on D7 like a delivery does.
+    void navigate(next ? `/driver/stops/${next.id}` : `/driver/trips/${stop.tripId}/done`)
   }
 
   return (

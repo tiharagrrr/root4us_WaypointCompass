@@ -46,7 +46,11 @@ export const driverRoutes: RouteObject[] = [
           },
           { path: 'trips', element: <ScreenPlaceholder code="D10" name="Trips" node="245:828" /> },
           { path: 'trips/:id', element: <ScreenPlaceholder code="D11" name="Past trip" node="245:1009" /> },
-          { path: 'trips/:id/done', element: <ScreenPlaceholder code="D7" name="Trip complete" node="185:20391" /> },
+          {
+            // D7, the end of the round (ROO-62).
+            path: 'trips/:id/done',
+            lazy: async () => ({ Component: (await import('@/features/execution/trip-complete-page')).TripCompletePage }),
+          },
           { path: 'account', element: <ScreenPlaceholder code="D12" name="Account" node="246:874" /> },
         ],
       },

@@ -122,7 +122,22 @@
     "photoOptional": "Photo (optional)",
     "sendToDispatcher": "Send to dispatcher",
     "cantRunFooter": "The dispatcher reassigns the trip or the vehicle. Don’t load until you hear back.",
-    "needReason": "A reason is required"
+    "needReason": "A reason is required",
+    "tripCompleteTitle": "Trip complete",
+    "runSummary": "Summary of the run",
+    "delivered": "Delivered",
+    "partial": "Partial",
+    "failed": "Could not deliver",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
+    "finishTrip": "Finish trip",
+    "finishNote": "Finishing stops location sharing for this trip.",
+    "stopsOpenTitle": "Stops still to record",
+    "stopsOpenBody": "Every stop needs a result before the trip can be finished.",
+    "goToNextStop": "Go to the next stop",
+    "tripFinishedTitle": "Trip finished",
+    "tripFinishedBody": "Nothing else to do. Your records go up on their own once you have signal.",
+    "backToToday": "Back to today’s trip"
   },
   "common": {
     "cancel": "Cancel",
