@@ -61,6 +61,26 @@ export class TripLinks extends LinkBuilder<
           method: 'POST',
           title: "Can't run this trip",
         },
+      // 20 and 19b (planning's endpoints): offered on the same machine and
+      // permission planning checks; planning also refuses a trip on a plan
+      // that is not published, which 19a only shows for published days.
+      reassign: can(actor, 'trip:reassign') &&
+        tripMachine.can(trip.status, 'REASSIGN') && {
+          href: `${self}/reassign`,
+          method: 'POST',
+          title: 'Reassign',
+          requires: ['If-Match', 'Idempotency-Key'],
+        },
+      resequence: can(actor, 'trip:resequence') &&
+        ['PLANNED', 'LOADING', 'RELEASED', 'IN_PROGRESS'].includes(
+          trip.status,
+        ) &&
+        trip.openStops > 1 && {
+          href: `${self}/resequence`,
+          method: 'POST',
+          title: 'Re-sequence',
+          requires: ['If-Match', 'Idempotency-Key'],
+        },
     };
   }
 

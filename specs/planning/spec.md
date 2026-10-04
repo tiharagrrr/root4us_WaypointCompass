@@ -552,8 +552,8 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-20 Other blockers stop publishing
 - [x] AC-PLN-21 A change after publishing is a revision
 - [ ] AC-PLN-22 Released trips take three changes only
-- [ ] AC-PLN-23 Reassigning a released trip
-- [ ] AC-PLN-24 Re-sequencing the stops left
+- [x] AC-PLN-23 Reassigning a released trip
+- [x] AC-PLN-24 Re-sequencing the stops left
 - [ ] AC-PLN-25 Deferring a stop mid-route
 - [ ] AC-PLN-26 Cancelling a trip before it starts
 - [x] AC-PLN-27 The store requests priority
@@ -648,6 +648,11 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Reassign and re-sequence (AC-PLN-23, AC-PLN-24; 20 and 19b, opened from 19a): `POST
+  /trips/{id}/reassign` and `/resequence` with a reason and the trip's If-Match, validated by the
+  engine (re-sequence from now for a trip on the road), each a plan revision with audit and
+  `trip.reassigned` / `trip.resequenced`. Execution's trip carries the `reassign` and `resequence`
+  links. AC-PLN-22 waits only on stop deferral (AC-PLN-25)
 - 2026-10-04 Closing the day (AC-PLN-29) and screen 21: `GET /plans/{id}/end-of-day`, `POST
   /plans/{id}/close`, audit `planning.plan.closed`, outbox `plan.closed`; TripLifecycleService gains
   `cancelTrip` and `cancelStop`, fleet's FuelLedgerService `recordActual`

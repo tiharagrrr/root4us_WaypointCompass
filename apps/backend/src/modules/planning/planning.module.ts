@@ -29,6 +29,8 @@ import { PlanWriter } from './services/plan-writer';
 import { PlanQueries } from './services/plan.queries';
 import { PlanViews } from './services/plan.views';
 import { DayCloseService } from './services/day-close.service';
+import { TripOperationsService } from './services/trip-operations.service';
+import { TripOperationsController } from './controllers/trip-operations.controller';
 import { PlansService } from './services/plans.service';
 import { PublishPolicy } from './services/publish.policy';
 import { TripLifecycleService } from './services/trip-lifecycle.service';
@@ -46,6 +48,7 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
     PlansController,
     PlanBuildingController,
     DeferralsController,
+    TripOperationsController,
   ],
   providers: [
     DeferralReasonsService,
@@ -66,6 +69,7 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
     PublishPolicy,
     PlansService,
     DayCloseService,
+    TripOperationsService,
     DeferralDecisions,
     EngineRunner,
   ],

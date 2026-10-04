@@ -37,6 +37,8 @@ export const PLANNING_EVENTS = {
   planPublished: 'plan.published',
   planRevised: 'plan.revised',
   planClosed: 'plan.closed',
+  tripReassigned: 'trip.reassigned',
+  tripResequenced: 'trip.resequenced',
   engineRunCompleted: 'plan.engine_run.completed',
   engineRunFailed: 'plan.engine_run.failed',
   deferralConfirmed: 'deferral.confirmed',
