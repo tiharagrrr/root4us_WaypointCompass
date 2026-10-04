@@ -28,6 +28,11 @@ export interface UserDto {
   banned: boolean;
   /** A loader has a dock PIN; the PIN itself is never returned */
   hasPin: boolean;
+  /**
+     * The loader PIN in clear, only while DEMO_MODE=true; otherwise null
+     * @nullable
+     */
+  demoPin: string | null;
   scopeNames: ScopeNamesDto;
   createdAt: string;
   _links: _UserDtoLinks;

@@ -266,6 +266,39 @@ suite('seedUsers', () => {
     });
   });
 
+  it('AC-IDN-68 in demo mode the seed keeps the PIN A1 shows', async () => {
+    const before = process.env.DEMO_MODE;
+    process.env.DEMO_MODE = 'true';
+    try {
+      await rolledBack(async (tx) => {
+        await referenceData(tx);
+        await seedUsers(tx, 'Waypoint@2026');
+        const harini = eq(users.email, 'harini.d@waypoint.lk');
+        const [seeded] = await tx.select().from(users).where(harini);
+        expect(seeded.demoPin).toBe('2468');
+
+        await tx
+          .update(users)
+          .set({ pinHash: await hashPassword('9753'), demoPin: '9753' })
+          .where(harini);
+        await tx
+          .update(users)
+          .set({ demoPin: null })
+          .where(eq(users.email, 'kasun.b@waypoint.lk'));
+        await seedUsers(tx, 'Waypoint@2026');
+
+        const byName = Object.fromEntries(
+          (await personas(tx)).map((u) => [u.name, u]),
+        );
+        expect(byName['Harini De Mel'].demoPin).toBe('9753');
+        expect(byName['Kasun Bandara'].demoPin).toBe('1357');
+        expect(byName['Rusiru Withanage'].demoPin).toBeNull();
+      });
+    } finally {
+      process.env.DEMO_MODE = before;
+    }
+  });
+
   /** The drivers of the vehicle with this code; codes, not ids, are what the seed keys on. */
   const driversOf = async (tx: Database, code: string) => {
     const [vehicle] = await tx

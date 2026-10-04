@@ -66,7 +66,7 @@ admin, username and phoneNumber plugin fields, then Waypoint's scope columns, in
 
 | Table | Key columns | Notes |
 | --- | --- | --- |
-| users | id (text PK), name, email (unique), emailVerified, role (text, default store_manager), banned, banReason, banExpires, username (unique), displayUsername, phoneNumber (unique), phoneNumberVerified, depotId → depots, outletId → outlets, defaultVehicleId → vehicles, pinHash, locale (default en), createdAt, updatedAt | Index users_role_depot_idx (role, depotId). Drivers get `<id>@drivers.waypoint.local` as email. depotId: dispatcher (null = all depots), loader, driver. outletId: store manager. |
+| users | id (text PK), name, email (unique), emailVerified, role (text, default store_manager), banned, banReason, banExpires, username (unique), displayUsername, phoneNumber (unique), phoneNumberVerified, depotId → depots, outletId → outlets, defaultVehicleId → vehicles, pinHash, demoPin, locale (default en), createdAt, updatedAt | Index users_role_depot_idx (role, depotId). Drivers get `<id>@drivers.waypoint.local` as email. depotId: dispatcher (null = all depots), loader, driver. outletId: store manager. |
 | loader_depots | userId → users, depotId → depots; primary key (userId, depotId) | The depots a loader may pick on L1 besides users.depotId (their home depot). Index on depotId. |
 | sessions | id, token (unique), userId → users (cascade), expiresAt, ipAddress, userAgent, impersonatedBy | Index on userId |
 | accounts | id, accountId, providerId ("credential" for email and password), userId → users (cascade), password, token columns | Index on userId |
@@ -88,6 +88,10 @@ Invariants:
   its reason.
 - Loader PINs are 4 digits, hashed with the password hasher, unique per depot (checked when set).
   pinHash is never returned (`returned: false`) and never appears in a response DTO.
+- Demo mode (`DEMO_MODE=true`) relaxes two of these so the dock can be shown without setting up a tablet: PIN
+  sign-in skips the dock-device check (the depot, the PIN and the rate limit still apply), and setting a PIN also
+  keeps it in clear in `users.demoPin`, which `UserDto.demoPin` carries to the admin on A1. With `DEMO_MODE=false`
+  demoPin is written as null and the DTO field is always null.
 - Invitation tokens are 32 random bytes, stored only as a sha256 hash, single-use, and last 72 hours.
   Accepting checks that the email or phone matches the invitation.
 - Invitation machine: PENDING → ACCEPTED; PENDING → EXPIRED → PENDING on resend; PENDING → REVOKED.
@@ -386,6 +390,10 @@ clock" means `ClockService.now()`. AC-IDN-01 to 04 carry the IDs the Build Spec 
 - [x] AC-IDN-62 The seed gives every outlet a store manager who can sign in
 - [x] AC-IDN-63 The demo account menu leaves out the seeded staff
 - [x] AC-IDN-64 The seed keeps a PIN an admin changed
+- [x] AC-IDN-65 In demo mode a PIN signs in from any device
+- [x] AC-IDN-66 In demo mode the admin sees a loader's PIN
+- [x] AC-IDN-67 Outside demo mode no response carries a PIN
+- [x] AC-IDN-68 In demo mode the seed keeps the PIN A1 shows
 
 ```gherkin
 AC-IDN-01  Another outlet's order is not found
@@ -396,7 +404,8 @@ AC-IDN-01  Another outlet's order is not found
     And the body is the same as for an order id that does not exist
 
 AC-IDN-02  PIN needs this depot's dock device
-  Given Harini De Mel is a loader at Peliyagoda (PLG) with PIN 2468
+  Given DEMO_MODE=false
+    And Harini De Mel is a loader at Peliyagoda (PLG) with PIN 2468
     And tablet T2 is a dock device for Kandy (isDockDevice true, depotId KDY)
     And phone P1 is registered with isDockDevice false
   When POST /api/auth/sign-in/pin receives { depotId: "PLG", pin: "2468" } with deviceId T2, or with deviceId P1
@@ -825,6 +834,35 @@ AC-IDN-64  The seed keeps a PIN an admin changed
   When the seed runs again with SEED_PASSWORD=Waypoint@2026
   Then Harini De Mel's pinHash verifies 9753 and not 2468
     And Kasun Bandara's pinHash verifies 1357
+
+AC-IDN-65  In demo mode a PIN signs in from any device
+  Given DEMO_MODE=true
+    And Harini De Mel is a loader at Peliyagoda (PLG) with PIN 2468
+    And device P9 is not registered
+  When POST /api/auth/sign-in/pin receives { depotId: "PLG", pin: "2468", deviceId: "P9" }
+  Then the response is 200 with Harini De Mel's session
+    And the same PIN with depotId KDY is 401 WRONG_PIN
+
+AC-IDN-66  In demo mode the admin sees a loader's PIN
+  Given DEMO_MODE=true and a Kandy loader with no PIN
+  When admin Rusiru Withanage sends PUT /users/{loader}/pin with pin "9753"
+  Then the response's data.demoPin is "9753" and it has no pinHash
+    And GET /users lists the loader with demoPin "9753"
+    And A1's edit dialog shows "Current PIN: 9753. A new one replaces it." under Dock PIN
+
+AC-IDN-67  Outside demo mode no response carries a PIN
+  Given DEMO_MODE=false and a Peliyagoda loader
+  When admin Rusiru Withanage sends PUT /users/{loader}/pin with pin "8642"
+  Then the response's data.demoPin is null and the body does not contain 8642
+    And the loader's demoPin column is null
+
+AC-IDN-68  In demo mode the seed keeps the PIN A1 shows
+  Given DEMO_MODE=true and the seed has run, so Harini De Mel's demoPin is 2468
+    And an admin has changed Harini De Mel's PIN to 9753
+    And Kasun Bandara still holds the seed's PIN 1357 but has no demoPin
+  When the seed runs again
+  Then Harini De Mel's demoPin is 9753 and Kasun Bandara's is 1357
+    And admin Rusiru Withanage's demoPin is null
 ```
 
 ## Non-functional
@@ -914,6 +952,9 @@ AC-IDN-64  The seed keeps a PIN an admin changed
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
 
 ## Changelog
+- 2026-10-04 Demo mode makes the dock easier to show: with `DEMO_MODE=true` a PIN signs in from any device (the
+  dock-device check is skipped) and A1's edit dialog shows a loader's PIN, kept in clear in the new nullable
+  `users.demoPin` (migration `identity_demo_pin`). With `DEMO_MODE=false` nothing changes. AC-IDN-65 to 68 (ROO-88)
 - 2026-10-04 The seed no longer resets a loader's PIN: it runs on every deploy, so a PIN changed on A1 went back
   to the seed's at the next one. A persona's PIN is now seeded only while the loader has none. AC-IDN-64 (ROO-85)
 - 2026-10-04 AC-IDN-19 has its test (`driver-account-page.test.tsx`): D12's Sign out card waits for the outbox to

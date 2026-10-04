@@ -116,7 +116,10 @@ export class ScopeOptionsDto {
   vehicles!: VehicleOptionDto[];
 }
 
-/** A user as an admin sees them on A1: never pinHash or the password account. */
+/**
+ * A user as an admin sees them on A1: never pinHash or the password account,
+ * and the PIN itself only while DEMO_MODE=true.
+ */
 export class UserDto {
   @ApiProperty({ example: '0192a3f4-0000-7000-8000-000000000001' })
   id!: string;
@@ -152,6 +155,15 @@ export class UserDto {
     description: 'A loader has a dock PIN; the PIN itself is never returned',
   })
   hasPin!: boolean;
+
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    example: null,
+    description:
+      'The loader PIN in clear, only while DEMO_MODE=true; otherwise null',
+  })
+  demoPin!: string | null;
 
   @ApiProperty({ type: ScopeNamesDto })
   scopeNames!: ScopeNamesDto;

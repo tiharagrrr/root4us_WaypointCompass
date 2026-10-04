@@ -168,7 +168,8 @@ export class UsersService {
   /**
    * Sets a loader's dock PIN. 409 when the user isn't a loader with a depot,
    * or when another loader at one of their depots already holds that PIN.
-   * Only the hash is stored, and neither appears in the audit row.
+   * Only the hash is stored (and the demo copy while DEMO_MODE=true), and
+   * neither appears in the audit row.
    */
   @Transactional()
   async setPin(id: string, pin: string, actor: Actor): Promise<UserRow> {
@@ -183,7 +184,7 @@ export class UsersService {
         'Another loader at this depot already uses that PIN. Choose another.',
       );
 
-    const row = await this.write(id, { pinHash: await this.pins.hash(pin) });
+    const row = await this.write(id, await this.pins.columns(pin));
     await this.recordUserEvent(IDENTITY_EVENTS.userPinSet, id, {
       after: { hasPin: true },
     });

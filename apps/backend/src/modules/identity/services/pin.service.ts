@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { TransactionHost } from '@nestjs-cls/transactional';
 import { and, eq, exists, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
+import { AppConfig } from '../../../config/app-config';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
 import { loaderDepots, users } from '../../../db/schema';
 import type { Auth } from '../auth/auth';
@@ -9,14 +10,26 @@ import { AUTH } from '../auth/auth.module';
 /**
  * Loader PINs: 4 digits, hashed with the password hasher, unique among the
  * loaders of each depot a loader works at (home depot or loader_depots), the
- * same set the PIN sign-in checks.
+ * same set the PIN sign-in checks. While DEMO_MODE=true a copy in clear is kept
+ * beside the hash (users.demoPin), so A1 can show the admin the PIN.
  */
 @Injectable()
 export class PinService {
   constructor(
     @Inject(AUTH) private readonly auth: Auth,
     private readonly txHost: TransactionHost<StampedDrizzleAdapter>,
+    private readonly config: AppConfig,
   ) {}
+
+  /** The two columns a new PIN writes: the hash, and the demo copy or null. */
+  async columns(
+    pin: string,
+  ): Promise<{ pinHash: string; demoPin: string | null }> {
+    return {
+      pinHash: await this.hash(pin),
+      demoPin: this.config.demo.enabled === true ? pin : null,
+    };
+  }
 
   async hash(pin: string): Promise<string> {
     return (await this.auth.$context).password.hash(pin);

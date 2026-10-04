@@ -2,7 +2,8 @@
  * Dock sign-in (L1, L1m): POST /api/auth/sign-in/pin { depotId, pin, deviceId }.
  *
  * Only a registered dock device of that depot may use it (403
- * NOT_A_DOCK_DEVICE otherwise). The PIN is checked against every active
+ * NOT_A_DOCK_DEVICE otherwise), except with `anyDevice` (DEMO_MODE), where
+ * the device is not looked at. The PIN is checked against every active
  * loader of the depot, home or extra (loader_depots), with the password
  * hasher; a match gets a normal session and cookie, anything else 401
  * WRONG_PIN. The route's rate limit (5 per 60 s) is set in auth.ts.
@@ -26,7 +27,7 @@ const body = z.object({
   deviceId: z.string().min(1),
 });
 
-export const loaderPin = (db: Database) =>
+export const loaderPin = (db: Database, options: { anyDevice: boolean }) =>
   ({
     id: 'loader-pin',
     endpoints: {
@@ -36,15 +37,20 @@ export const loaderPin = (db: Database) =>
         async (ctx) => {
           const { depotId, pin, deviceId } = ctx.body;
 
-          const [device] = await db
-            .select({ isDock: devices.isDockDevice, depotId: devices.depotId })
-            .from(devices)
-            .where(eq(devices.id, deviceId));
-          if (!device?.isDock || device.depotId !== depotId) {
-            throw new APIError('FORBIDDEN', {
-              code: 'NOT_A_DOCK_DEVICE',
-              message: LOADER_PIN_ERRORS.NOT_A_DOCK_DEVICE,
-            });
+          if (!options.anyDevice) {
+            const [device] = await db
+              .select({
+                isDock: devices.isDockDevice,
+                depotId: devices.depotId,
+              })
+              .from(devices)
+              .where(eq(devices.id, deviceId));
+            if (!device?.isDock || device.depotId !== depotId) {
+              throw new APIError('FORBIDDEN', {
+                code: 'NOT_A_DOCK_DEVICE',
+                message: LOADER_PIN_ERRORS.NOT_A_DOCK_DEVICE,
+              });
+            }
           }
 
           const loaders = await db

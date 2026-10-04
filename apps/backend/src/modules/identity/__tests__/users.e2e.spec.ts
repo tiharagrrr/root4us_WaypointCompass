@@ -397,4 +397,20 @@ describeWithDb('/users', () => {
       kandyLoader.id,
     );
   });
+
+  it('AC-IDN-67 outside demo mode no response carries a PIN', async () => {
+    const loader = await createTestUser(app, db, {
+      role: 'loader',
+      depotId: depot.plg,
+    });
+
+    const res = await api(rusiru.cookie)
+      .put(`/api/v1/users/${loader.id}/pin`, { pin: '8642' })
+      .expect(200);
+    expect(
+      bodyOf<{ data: Record<string, unknown> }>(res).data.demoPin,
+    ).toBeNull();
+    expect(JSON.stringify(res.body)).not.toContain('8642');
+    expect((await userRow(loader.id)).demoPin).toBeNull();
+  });
 });

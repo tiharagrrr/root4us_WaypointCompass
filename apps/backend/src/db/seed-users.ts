@@ -173,7 +173,11 @@ export async function seedUsers(db: Database, password: string): Promise<void> {
     };
 
     const [found] = await db
-      .select({ id: users.id, pinHash: users.pinHash })
+      .select({
+        id: users.id,
+        pinHash: users.pinHash,
+        demoPin: users.demoPin,
+      })
       .from(users)
       .where(
         p.phoneNumber
@@ -193,6 +197,22 @@ export async function seedUsers(db: Database, password: string): Promise<void> {
         })
       ).user.id;
 
+    // The PIN in clear for A1, only while DEMO_MODE=true: the copy the loader
+    // already has, or the seed's PIN when that is the one they hold.
+    const demoPinOf = async (
+      pin: string | undefined,
+      held: typeof found,
+    ): Promise<string | null> => {
+      if (!pin || process.env.DEMO_MODE !== 'true') return null;
+      if (!held?.pinHash) return pin;
+      if (held.demoPin) return held.demoPin;
+      const seeded = await hasher.verify({
+        hash: held.pinHash,
+        password: pin,
+      });
+      return seeded ? pin : null;
+    };
+
     await db
       .update(users)
       .set({
@@ -208,6 +228,7 @@ export async function seedUsers(db: Database, password: string): Promise<void> {
         // A PIN an admin has set since (PUT /users/{id}/pin) stays: the seed
         // runs on every deploy and would otherwise undo the change.
         pinHash: p.pin ? (found?.pinHash ?? (await hasher.hash(p.pin))) : null,
+        demoPin: await demoPinOf(p.pin, found),
         banned: false,
       })
       .where(eq(users.id, id));
