@@ -68,7 +68,11 @@ export const storeRoutes: RouteObject[] = [
             handle: handle('Receipts'),
             lazy: async () => ({ Component: (await import('@/features/receipt/receipts-page')).ReceiptsPage }),
           },
-          { path: 'history', handle: handle('Order history'), element: <ScreenPlaceholder code="M8" name="Order history" node="185:11842" /> },
+          {
+            path: 'history',
+            handle: handle('Order history'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/order-history-page')).OrderHistoryPage }),
+          },
           { path: 'catalog', handle: handle('Item catalog'), element: <ScreenPlaceholder code="M9" name="Item catalog" node="238:825" /> },
         ],
       },
