@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router'
 import { cn } from '@/lib/cn'
 import { formatColombo, toColomboDate } from '@/lib/format-colombo'
 import { getLink, isLink } from '@/lib/links'
+import { toastProblem } from '@/lib/problem-toast'
 import { useServerClock } from '@/lib/server-clock'
 import { Action } from '@/ui/action'
 import { CountBadge } from '@/ui/badge'
@@ -85,7 +86,9 @@ export function NotificationPanel({ unread, summaryLinks, onClose }: Notificatio
       qc.invalidateQueries({ queryKey: getMyNotificationsListQueryKey().slice(0, 1) }),
       qc.invalidateQueries({ queryKey: getMyNotificationsSummaryQueryKey() }),
     ])
-  const readAll = useMyNotificationsReadAll({ mutation: { onSuccess: () => void refresh() } })
+  const readAll = useMyNotificationsReadAll({
+    mutation: { onSuccess: () => void refresh(), onError: (error) => toastProblem(error, "Couldn't mark them read") },
+  })
 
   const items = list.data?.data ?? []
   const stores = items.filter((n) => FROM_STORES.has(n.eventType))
@@ -193,7 +196,9 @@ function NotificationGroups({ items, onOpened, onRead }: { items: NotificationDt
 
 function NotificationLine({ item, onOpened, onRead }: { item: NotificationDto; onOpened: () => void; onRead: () => unknown }) {
   const navigate = useNavigate()
-  const read = useMyNotificationsRead({ mutation: { onSuccess: () => void onRead() } })
+  const read = useMyNotificationsRead({
+    mutation: { onSuccess: () => void onRead(), onError: (error) => toastProblem(error, "Couldn't mark it read") },
+  })
   const readLink = getLink(item._links, 'read')
   const unread = !item.readAt
 
