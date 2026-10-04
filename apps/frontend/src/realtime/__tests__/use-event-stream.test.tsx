@@ -105,6 +105,38 @@ describe('useEventStream', () => {
     expect(predicate?.({ queryKey: ['/api/v1/orders'] } as never)).toBe(false)
   })
 
+  it('a changed setting refreshes what is computed from it, on every role\'s screens', () => {
+    mount(client)
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+
+    FakeEventSource.last?.send('settings.changed', event('settings.changed', { aggregate: { type: 'setting', id: 'ordering.cutoffMin' } }))
+
+    const predicate = invalidate.mock.calls[0]?.[0]?.predicate
+    expect(predicate?.({ queryKey: ['/api/v1/settings'] } as never)).toBe(true)
+    // The cutoff an order counts down to, the depot's cutoff in force and its day summary.
+    expect(predicate?.({ queryKey: ['/api/v1/orders', { status: 'DRAFT' }] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/depots/PLG'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/depots/PLG/days/2026-10-02'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/plans/p1/context'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/trips/t1/load-list'] } as never)).toBe(true)
+    expect(predicate?.({ queryKey: ['/api/v1/users'] } as never)).toBe(false)
+  })
+
+  it('a depot or outlet edit refreshes the orders that show its cutoff and window', () => {
+    mount(client)
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+
+    FakeEventSource.last?.send('depot.updated', event('depot.updated', { aggregate: { type: 'depot', id: 'PLG' } }))
+    FakeEventSource.last?.send('outlet.updated', event('outlet.updated', { aggregate: { type: 'outlet', id: 'OUT-FK' } }))
+
+    const depot = invalidate.mock.calls[0]?.[0]?.predicate
+    expect(depot?.({ queryKey: ['/api/v1/depots'] } as never)).toBe(true)
+    expect(depot?.({ queryKey: ['/api/v1/orders'] } as never)).toBe(true)
+    const outlet = invalidate.mock.calls[1]?.[0]?.predicate
+    expect(outlet?.({ queryKey: ['/api/v1/outlets'] } as never)).toBe(true)
+    expect(outlet?.({ queryKey: ['/api/v1/orders/o-1'] } as never)).toBe(true)
+  })
+
   it('a resync frame makes the whole cache stale', () => {
     mount(client)
     const invalidate = vi.spyOn(client, 'invalidateQueries')

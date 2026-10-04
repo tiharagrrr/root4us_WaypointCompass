@@ -13,10 +13,14 @@ export const BROADCAST = 'broadcast';
 /** Admins follow every account and device change (A1, A2). */
 export const ADMINS = 'role:admin';
 
-/** Reach every stream: the demo clock, settings and a demo reset. */
+/**
+ * Reach every stream: the demo clock, settings, a demo reset, and a depot's
+ * own settings (A4), whose cutoff override the stores it serves count down to.
+ */
 const BROADCAST_TYPES = new Set([
   'clock.changed',
   'settings.changed',
+  'depot.updated',
   'demo.reset',
 ]);
 /** What the dock follows on depot:<id>:loading. */

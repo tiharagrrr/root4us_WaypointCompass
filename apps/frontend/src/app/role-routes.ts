@@ -37,6 +37,6 @@ export const ROLE_ROUTES: RoleRoute[] = [
     role: 'store_manager',
     path: '/store',
     label: 'Store manager',
-    summary: 'Place orders before 4 PM, see ETAs and deferral notices, confirm receipt.',
+    summary: 'Place orders before the cutoff, see ETAs and deferral notices, confirm receipt.',
   },
 ]
