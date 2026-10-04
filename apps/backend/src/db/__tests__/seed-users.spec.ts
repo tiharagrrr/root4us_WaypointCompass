@@ -3,7 +3,7 @@
  * rolled back, so the reference rows it needs (PLG, KDY, OUT014, OUT976,
  * REF-07, DRY-31, TST-76) never stay behind. Runs when TEST_DIRECT_URL is set.
  */
-import { verifyPassword } from 'better-auth/crypto';
+import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { and, eq, inArray, or } from 'drizzle-orm';
 import { createDatabase, createPool, type Database } from '../client';
 import {
@@ -231,6 +231,41 @@ suite('seedUsers', () => {
       ]);
     });
   });
+
+  it('AC-IDN-64 the seed keeps a PIN an admin changed', async () => {
+    await rolledBack(async (tx) => {
+      await referenceData(tx);
+      await seedUsers(tx, 'Waypoint@2026');
+      await tx
+        .update(users)
+        .set({ pinHash: await hashPassword('9753') })
+        .where(eq(users.email, 'harini.d@waypoint.lk'));
+      await tx
+        .update(users)
+        .set({ pinHash: null })
+        .where(eq(users.email, 'kasun.b@waypoint.lk'));
+
+      await seedUsers(tx, 'Waypoint@2026');
+
+      const byName = Object.fromEntries(
+        (await personas(tx)).map((u) => [u.name, u]),
+      );
+      const harini = byName['Harini De Mel'];
+      expect(
+        await verifyPassword({ hash: harini.pinHash!, password: '9753' }),
+      ).toBe(true);
+      expect(
+        await verifyPassword({ hash: harini.pinHash!, password: '2468' }),
+      ).toBe(false);
+      expect(
+        await verifyPassword({
+          hash: byName['Kasun Bandara'].pinHash!,
+          password: '1357',
+        }),
+      ).toBe(true);
+    });
+  });
+
   /** The drivers of the vehicle with this code; codes, not ids, are what the seed keys on. */
   const driversOf = async (tx: Database, code: string) => {
     const [vehicle] = await tx

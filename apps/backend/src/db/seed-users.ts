@@ -9,9 +9,10 @@
  *
  * Accounts are created through BetterAuth's server API, so passwords hash
  * like real ones, and the PIN uses the same hasher. Idempotent: a persona that
- * already exists keeps its id and gets the seed's role, scope, PIN and
- * password again. A depot, outlet or vehicle missing from the reference data
- * leaves that scope empty with a warning.
+ * already exists keeps its id and gets the seed's role, scope and password
+ * again; a loader keeps the PIN they hold, and gets the seed's only when they
+ * have none. A depot, outlet or vehicle missing from the reference data leaves
+ * that scope empty with a warning.
  */
 import type { UserRole } from '@waypoint/shared';
 import { and, eq, inArray, like } from 'drizzle-orm';
@@ -172,7 +173,7 @@ export async function seedUsers(db: Database, password: string): Promise<void> {
     };
 
     const [found] = await db
-      .select({ id: users.id })
+      .select({ id: users.id, pinHash: users.pinHash })
       .from(users)
       .where(
         p.phoneNumber
@@ -204,7 +205,9 @@ export async function seedUsers(db: Database, password: string): Promise<void> {
         phoneNumber: p.phoneNumber ?? null,
         phoneNumberVerified: p.phoneNumber ? true : null,
         ...scope,
-        pinHash: p.pin ? await hasher.hash(p.pin) : null,
+        // A PIN an admin has set since (PUT /users/{id}/pin) stays: the seed
+        // runs on every deploy and would otherwise undo the change.
+        pinHash: p.pin ? (found?.pinHash ?? (await hasher.hash(p.pin))) : null,
         banned: false,
       })
       .where(eq(users.id, id));
