@@ -186,6 +186,18 @@ Expect `[migrate] database is up to date`. Migrating alone leaves **empty tables
 failing until the seed runs, so always run both. Set `SEED_PASSWORD` (10+ characters) first or the
 seed skips every persona account. The seed is idempotent, so re-running it is safe.
 
+The challenge CSVs are tracked in this private repo, so the image carries them and the seed finds
+them at the default path with no `SEED_DATA_DIR`
+([ADR 0004](adr/0004-datasets-in-the-private-repo.md)). When they are missing, the seed says so per
+file and carries on, which looks like a healthy deploy with empty screens:
+
+```
+[seed] outlets.csv not found in /repo/data/seed; skipping
+[seed] reference data: 0 depots, 0 districts, 0 outlets, 0 vehicles, 0 calendar days, ...
+```
+
+So read the seed's counts, not just its exit code.
+
 Re-running the migration is the simplest check: it is safe to repeat and prints
 `[migrate] database is up to date` when the schema is already present.
 
