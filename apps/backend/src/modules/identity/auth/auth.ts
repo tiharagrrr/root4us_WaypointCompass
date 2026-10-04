@@ -93,7 +93,10 @@ export function createAuth(deps: AuthDeps) {
       },
     },
     advanced: {
-      useSecureCookies: true,
+      // Secure follows the public origin. Forcing it on made every browser drop
+      // the cookie over plain http (Safari on localhost, any phone on a LAN
+      // address), so sign-in answered 200 and the next request was 401.
+      useSecureCookies: deps.appUrl.startsWith('https://'),
       defaultCookieAttributes: { httpOnly: true, sameSite: 'lax' },
       database: { generateId: () => uuidv7() },
     },

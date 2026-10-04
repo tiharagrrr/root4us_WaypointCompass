@@ -1,5 +1,6 @@
 // Figma: A6 Settings · 185:10227 (Security; the frame draws no dock-tablet rows, so they follow its list items)
 import {
+  getDeviceId,
   getDevicesListQueryKey,
   isApiProblem,
   useDevicesClearDock,
@@ -50,7 +51,12 @@ export function DockTabletsSection() {
       </SettingRow>
     )
   if (devices.data.data.length === 0)
-    return <EmptyState title="No devices yet" description="Open the app on the dock tablet once; it registers itself and appears here." />
+    return (
+      <EmptyState
+        title="No devices yet"
+        description="Sign in on the dock tablet once with an email and password; it registers itself and appears here, and you can mark it as that depot’s dock tablet."
+      />
+    )
 
   return (
     <>
@@ -106,12 +112,15 @@ function DeviceRow({ device, depots, editing, onEdit }: DeviceRowProps) {
 
   const seen = device.lastSeenAt ? `last seen ${formatColombo(device.lastSeenAt, 'EEE d MMM HH:mm')}` : 'never seen'
   const dock = getLink(device._links, 'dock')
+  // The browser the admin is using right now, so making this very tablet a dock is one click.
+  const thisDevice = device.id === getDeviceId()
   return (
     <SettingRow
       title={name}
       description={
         <>
           {device.platform} · {seen}
+          {thisDevice ? <StatusChip tone="info" className="ml-2">This device</StatusChip> : null}
           {device.isDockDevice ? <StatusChip className="ml-2">{`Dock · ${depotName ?? device.depotId}`}</StatusChip> : null}
         </>
       }

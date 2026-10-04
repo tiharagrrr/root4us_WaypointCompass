@@ -51,7 +51,11 @@ export const driverRoutes: RouteObject[] = [
             path: 'trips/:id/done',
             lazy: async () => ({ Component: (await import('@/features/execution/trip-complete-page')).TripCompletePage }),
           },
-          { path: 'account', element: <ScreenPlaceholder code="D12" name="Account" node="246:874" /> },
+          {
+            // D12 with D13's sign-out rule: it waits for the outbox to drain.
+            path: 'account',
+            lazy: async () => ({ Component: (await import('@/features/identity/driver-account-page')).DriverAccountPage }),
+          },
         ],
       },
     ],

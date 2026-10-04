@@ -268,6 +268,45 @@
     "keypad": "PIN keypad",
     "submit": "Sign in",
     "failed": "Sign-in failed. Try again.",
-    "loader": "Loader"
+    "loader": "Loader",
+    "emailInstead": "Not at a dock tablet? Sign in with your email"
+  },
+  "driverSignIn": {
+    "eyebrow": "Driver",
+    "title": "Sign in",
+    "subtitle": "Enter the phone number your admin invited. We’ll text you a code.",
+    "phone": "Phone number",
+    "phoneHint": "Sri Lankan mobile, starting with 0 or +94.",
+    "phoneRequired": "Enter your phone number",
+    "phoneInvalid": "Enter a Sri Lankan mobile number, like 077 604 1932.",
+    "sendCode": "Send me a code",
+    "codeTitle": "Enter the code",
+    "codeSubtitle": "We sent a 6-digit code to {{phone}}. It works for 5 minutes.",
+    "code": "Code from the SMS",
+    "codeRequired": "Enter the 6-digit code",
+    "submit": "Sign in",
+    "resend": "Send again",
+    "resendIn": "Send again in {{seconds}} s",
+    "changeNumber": "Use another number",
+    "demoHint": "Running the demo? The code is in the",
+    "demoInbox": "demo inbox",
+    "sendFailed": "The code was not sent. Check the number and try again.",
+    "sendLimited": "Too many codes. Wait a few minutes, then try again.",
+    "codeWrong": "That code is wrong or has expired. Check the SMS and try again.",
+    "codeLimited": "Too many tries. Ask for a new code.",
+    "emailInstead": "Not a driver? Sign in with your email"
+  },
+  "account": {
+    "title": "Account",
+    "phone": "Phone",
+    "vehicle": "Vehicle",
+    "depot": "Depot",
+    "device": "This phone",
+    "signOut": "Sign out",
+    "signOutBody": "Everything recorded on this phone has been sent. You can sign out safely.",
+    "allSynced": "All synced",
+    "pending": "{{count}} waiting",
+    "waiting": "{{count}} records are still waiting to send. Keep the phone connected; you’ll be signed out as soon as they’re through.",
+    "offlineWaiting": "No signal, and {{count}} records are waiting to send. Connect before signing out so nothing is lost."
   }
 }
