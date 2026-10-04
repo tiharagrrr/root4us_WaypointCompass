@@ -120,6 +120,31 @@ export class FuelLedgerService {
   }
 
   /**
+   * Closing the day (AC-PLN-29): each finished trip's fuel becomes an ACTUAL
+   * entry and its PLANNED fuel is reversed, so the week counts it once. With
+   * no telematics, the actual is the engine's figure for the trip as run.
+   */
+  @Transactional()
+  async recordActual(entries: readonly PlannedFuel[]): Promise<void> {
+    if (entries.length === 0) return;
+    await this.reversePlanned(
+      entries.map((e) => e.tripId),
+      'replaced by the actual',
+    );
+    await this.txHost.tx.insert(fuelLedgerEntries).values(
+      entries.map((e) => ({
+        vehicleId: e.vehicleId,
+        tripId: e.tripId,
+        ...isoWeekOf(e.date),
+        date: e.date,
+        kind: 'ACTUAL' as const,
+        km: e.km,
+        litres: e.litres,
+      })),
+    );
+  }
+
+  /**
    * Litres already used this ISO week per vehicle, for the engine's
    * `fuelUsedThisWeek`. `excludePlanId` leaves out the entries of the plan
    * being built, so a plan never counts its own fuel twice.

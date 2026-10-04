@@ -90,6 +90,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | GET | `/plans/{id}/publish-preview` | `plan:publish` | 17, 18: blockers, who gets notified, when publishing opens |
 | POST | `/plans/{id}/publish` | `plan:publish` | 409 `PLAN_LOCKED` with `opensAt` before it opens; creates revision 1 |
 | GET | `/plans/{id}/revisions` | `plan:read` | Change history with reasons |
+| GET | `/plans/{id}/end-of-day` | `plan:read` | 21: per-trip results, follow-ups, close blockers and the `close` link |
 | POST | `/plans/{id}/close` | `plan:close` | 21: unfinished stops become deferrals; actual fuel recorded |
 | GET, POST | `/depots/{id}/plans/{date}/reservations` | `plan:read`, `plan:build` | 12, 13: reserve vehicles against the forecast |
 | GET | `/deferrals`, `/deferrals/{id}` | `deferral:read` | 23 for dispatchers, M4 and M7 for stores (scoped: a store sees only its outlet's CONFIRMED or REVERSED deferrals on a published or closed plan). Offset pages, newest first, e.g. `?filter[storeResponse]=AWAITING&limit=10` |
@@ -557,7 +558,7 @@ Checklist (tick in the PR that adds the passing test):
 - [ ] AC-PLN-26 Cancelling a trip before it starts
 - [x] AC-PLN-27 The store requests priority
 - [x] AC-PLN-28 Reversing a deferral keeps the delivery
-- [ ] AC-PLN-29 Closing the day
+- [x] AC-PLN-29 Closing the day
 - [ ] AC-PLN-30 Reserving vehicles ahead
 - [ ] AC-PLN-31 A draft follows order changes
 - [ ] AC-PLN-32 Permissions and scope hold
@@ -578,6 +579,19 @@ Checklist (tick in the PR that adds the passing test):
   (05 to 09, 15, 17, 18) are snapshotted in CI with the demo clock frozen.
 - Row-level security on `deferrals` re-checks the store scope in Postgres.
 - Logs carry ids only; no names, phone numbers or notes.
+
+## Decided 2026-10-04 (closing the day)
+- Close is refused (409) while a trip is LOADING, RELEASED or IN_PROGRESS, or a sync conflict on the
+  plan's trips is OPEN: the day's record is not final until those settle.
+- At close, every stop nobody served (PENDING or ARRIVED) and every FAILED stop whose order still holds
+  it becomes a CONFIRMED deferral (source TRACKING) to the next run, and the store is told
+  (`deferral.confirmed`). The reason follows the outcome: OUTLET_CLOSED gives ACCESS_ISSUE, REFUSED
+  gives STORE_REQUEST, anything else OTHER; the note carries the driver's exception note. A PENDING
+  stop is cancelled; an ARRIVED one with no outcome is recorded FAILED.
+- Trips that never left (RESERVED, PLANNED) are cancelled. Each COMPLETED trip's planned fuel is
+  reversed and booked as ACTUAL at the engine's figures, since there is no telematics distance yet.
+- `GET /plans/{id}/end-of-day` serves 21: totals, per-trip results, follow-ups, close blockers and a
+  `close` link only when closing would be accepted.
 
 ## Decided 2026-10-04 (ROO-42)
 - A revision is the same edit list on a PUBLISHED plan, with a required `reasonCode` and an optional
@@ -634,6 +648,9 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Closing the day (AC-PLN-29) and screen 21: `GET /plans/{id}/end-of-day`, `POST
+  /plans/{id}/close`, audit `planning.plan.closed`, outbox `plan.closed`; TripLifecycleService gains
+  `cancelTrip` and `cancelStop`, fleet's FuelLedgerService `recordActual`
 - 2026-10-04 ROO-42: edits on a published plan are revisions (AC-PLN-21): reason required, revision + 1,
   a `plan_revisions` row, audit `planning.plan.revised`, outbox `plan.revised` routed to the affected
   outlets, orders following their stops, and fuel reversed and re-planned. The edit list refuses a

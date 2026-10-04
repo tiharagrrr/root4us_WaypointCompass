@@ -28,6 +28,7 @@ import { PlanEngine } from './services/plan-engine';
 import { PlanWriter } from './services/plan-writer';
 import { PlanQueries } from './services/plan.queries';
 import { PlanViews } from './services/plan.views';
+import { DayCloseService } from './services/day-close.service';
 import { PlansService } from './services/plans.service';
 import { PublishPolicy } from './services/publish.policy';
 import { TripLifecycleService } from './services/trip-lifecycle.service';
@@ -64,6 +65,7 @@ import { TripLifecycleService } from './services/trip-lifecycle.service';
     PlanQueries,
     PublishPolicy,
     PlansService,
+    DayCloseService,
     DeferralDecisions,
     EngineRunner,
   ],

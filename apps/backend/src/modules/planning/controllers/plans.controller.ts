@@ -8,9 +8,11 @@ import {
   ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
+import { EndOfDayDto } from '../dto/end-of-day.dto';
 import { PlanRevisionDto, UnplannedOrderDto } from '../dto/plan-actions.dto';
 import { PlanContextDto } from '../dto/plan-engine.dto';
 import { PlanDayParamsDto, PlanDto, TripDto } from '../dto/plan.dto';
+import { DayCloseService } from '../services/day-close.service';
 import { PlanQueries } from '../services/plan.queries';
 import { PlansService } from '../services/plans.service';
 
@@ -21,6 +23,7 @@ export class PlansController {
   constructor(
     private readonly plans: PlansService,
     private readonly queries: PlanQueries,
+    private readonly dayClose: DayCloseService,
   ) {}
 
   /** The plan, created as a DRAFT on first access (AC-PLN-08). */
@@ -69,6 +72,15 @@ export class PlansController {
   @ApiProblems(404)
   unplanned(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
     return this.queries.unplanned(id, actor);
+  }
+
+  /** 21: each trip's results, what to follow up, and whether the day can close. */
+  @Get('plans/:id/end-of-day')
+  @RequirePermission('plan:read')
+  @ApiResource(EndOfDayDto)
+  @ApiProblems(404)
+  endOfDay(@Param('id', ParseUUIDPipe) id: string, @Actor() actor: SignedIn) {
+    return this.dayClose.endOfDay(id, actor);
   }
 
   @Get('plans/:id/revisions')

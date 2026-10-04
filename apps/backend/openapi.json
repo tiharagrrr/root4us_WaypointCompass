@@ -8045,6 +8045,89 @@
         ]
       }
     },
+    "/api/v1/plans/{id}/end-of-day": {
+      "get": {
+        "operationId": "plansEndOfDay",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/EndOfDayDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "21: each trip's results, what to follow up, and whether the day can close.",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/plans/{id}/revisions": {
       "get": {
         "operationId": "plansRevisions",
@@ -9314,6 +9397,147 @@
           }
         },
         "summary": "Revision 1. 409 PLAN_LOCKED with opensAt before publishing opens, 409\nCONFLICT_STATE with the blockers when one appeared since the preview.",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/plans/{id}/close": {
+      "post": {
+        "operationId": "planBuildingClose",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/PlanDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH\n\nVERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED\n\nPRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "21: close the day (AC-PLN-29). Unserved stops become deferrals, finished\ntrips record their fuel, and the plan is CLOSED. 409 while a trip is on\nthe road or a sync conflict is open.",
         "tags": [
           "plans"
         ]
@@ -17086,6 +17310,242 @@
           "deferralId",
           "note",
           "toDate"
+        ]
+      },
+      "EndOfDayTotalsDto": {
+        "type": "object",
+        "properties": {
+          "stops": {
+            "type": "number",
+            "example": 148,
+            "description": "Live stops on the day’s trips"
+          },
+          "delivered": {
+            "type": "number",
+            "example": 144
+          },
+          "partial": {
+            "type": "number",
+            "example": 3
+          },
+          "failed": {
+            "type": "number",
+            "example": 2
+          },
+          "unserved": {
+            "type": "number",
+            "example": 0,
+            "description": "Stops nobody reached; closing the day defers them"
+          },
+          "onTimePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 93,
+            "description": "Whole percent of stops with an arrival that arrived inside the window; null before any arrival"
+          },
+          "deferred": {
+            "type": "number",
+            "example": 7,
+            "description": "Confirmed deferrals on this plan"
+          }
+        },
+        "required": [
+          "stops",
+          "delivered",
+          "partial",
+          "failed",
+          "unserved",
+          "onTimePct",
+          "deferred"
+        ]
+      },
+      "EndOfDayTripDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c101"
+          },
+          "vehicleCode": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "tripNo": {
+            "type": "number",
+            "example": 1
+          },
+          "driverName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Aniqa Razick"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "RESERVED",
+              "PLANNED",
+              "LOADING",
+              "RELEASED",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ],
+            "example": "COMPLETED"
+          },
+          "stops": {
+            "type": "number",
+            "example": 10
+          },
+          "delivered": {
+            "type": "number",
+            "example": 8
+          },
+          "partial": {
+            "type": "number",
+            "example": 1
+          },
+          "failed": {
+            "type": "number",
+            "example": 1
+          },
+          "onTimePct": {
+            "type": "number",
+            "nullable": true,
+            "example": 90
+          },
+          "openConflicts": {
+            "type": "number",
+            "example": 0,
+            "description": "Open sync conflicts (19c) on this trip"
+          }
+        },
+        "required": [
+          "tripId",
+          "vehicleCode",
+          "tripNo",
+          "driverName",
+          "status",
+          "stops",
+          "delivered",
+          "partial",
+          "failed",
+          "onTimePct",
+          "openConflicts"
+        ]
+      },
+      "EndOfDayFollowUpDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "FAILED_STOP",
+              "SHORT",
+              "ISSUE",
+              "NOT_REACHED",
+              "SYNC_CONFLICT"
+            ],
+            "type": "string",
+            "example": "FAILED_STOP"
+          },
+          "title": {
+            "type": "string",
+            "example": "Failed stop · Tech Negombo"
+          },
+          "detail": {
+            "type": "string",
+            "example": "Outlet closed on arrival."
+          },
+          "tripId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "detail",
+          "tripId",
+          "orderId"
+        ]
+      },
+      "EndOfDayDto": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "string",
+            "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
+          },
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED",
+              "CLOSED"
+            ],
+            "example": "PUBLISHED"
+          },
+          "closedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "totals": {
+            "$ref": "#/components/schemas/EndOfDayTotalsDto"
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndOfDayTripDto"
+            }
+          },
+          "followUps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EndOfDayFollowUpDto"
+            }
+          },
+          "closeBlockers": {
+            "example": [
+              "REF-03 is still on the road"
+            ],
+            "description": "Why the day cannot be closed yet; empty when it can",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            },
+            "description": "self, plan, close (POST, If-Match) when the day can be closed."
+          }
+        },
+        "required": [
+          "planId",
+          "depotId",
+          "date",
+          "status",
+          "closedAt",
+          "totals",
+          "trips",
+          "followUps",
+          "closeBlockers",
+          "_links"
         ]
       },
       "PlanRevisionDto": {
