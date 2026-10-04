@@ -91,7 +91,12 @@ export const dispatchRoutes: RouteObject[] = [
             handle: handle('End of day'),
             lazy: async () => ({ Component: (await import('@/features/planning/end-of-day-page')).EndOfDayPage }),
           },
-          { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
+          {
+            // 22 (ROO-58).
+            path: 'forecast',
+            handle: handle('Forecast'),
+            lazy: async () => ({ Component: (await import('@/features/forecasting/forecast-page')).ForecastPage }),
+          },
           {
             // Store issues: no frame; the alerts panel's "Open the issue" lands on a row here.
             path: 'issues',

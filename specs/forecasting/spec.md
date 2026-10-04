@@ -1,7 +1,7 @@
 ---
 module: forecasting
 owner: Tihara
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: ["22", "12"]
 depends-on: [master-data, ordering]   # core is implied
 ---
@@ -23,7 +23,7 @@ In:
 Out:
 - Reservations, `reserve()` and filling reserved trips: planning and `packages/engine`.
 - Vehicles and their status: fleet. Order history: ordering (read only). The calendar: master-data.
-- The chart on 22: web (Recharts), built by Tihara.
+- The chart on 22: web, drawn from Compass tokens (no chart library).
 
 ## Model
 Schema file: `apps/backend/src/db/schema/forecasting.ts` (owner Tihara).
@@ -41,8 +41,8 @@ Paths omit `/api/v1`.
 
 | Method | Path | Permission | Notes |
 | --- | --- | --- | --- |
-| GET | `/depots/{id}/forecasts?weeks=10` | `forecast:read` | 22: volume by week against fleet capacity; 12 reads it too |
-| POST | `/forecasts/import` | `forecast:manage` | Loads the Datathon forecast CSV |
+| GET | `/depots/{id}/forecasts?weeks=10&brand=` | `forecast:read` | 22: volume by week against fleet capacity; 12 reads it too. `weeks` is 1 to 26 (default 10); `brand` narrows the volume to one brand. Built |
+| POST | `/forecasts/import` | `forecast:manage` | Loads the Datathon forecast CSV. Not built |
 
 ## Services and helpers
 - `ForecastService`: the baseline from history by ISO week with the calendar's festival ramp, or the
@@ -50,11 +50,33 @@ Paths omit `/api/v1`.
   volume for a date: the weekly forecast split by that district's share over the last 8 same
   weekdays. Planning's `ReservationService` passes these groups to the engine's
   `reserve(input, forecastGroups)`.
-- `CapacityService`: weekly fleet capacity per depot.
+- `CapacityService`: weekly fleet capacity per depot. Built as part of `ForecastQueries` and the pure
+  `domain/weekly-forecast.ts`; see "How 22's numbers are worked out" below.
 - Import: each CSV row is validated with drizzle-zod `createInsertSchema(demandForecasts)` before
   insert, so a bad row names its column instead of failing in Postgres. Column names are in
   `specs/data/datasets.md`; agents never open `data/seed/`.
 - Helpers: `isoWeekOf(date)` from `packages/shared`.
+
+### How 22's numbers are worked out
+Set while building ROO-58 so the screen could ship; each is the owner's to confirm or change.
+
+- **Which weeks.** `weeks=10` is the ten ISO weeks after the one holding today's business date: on
+  Thu 1 Oct 2026 (week 40) that is weeks 41 to 50, W1 starting Mon 5 Oct, as frame 22 shows.
+- **Which source.** Per brand and week: the DATATHON row when there is one, else a stored BASELINE
+  row, else the baseline worked out on request. A brand with none of the three is left out of the
+  week's `brands`; a week with no brands has no forecast.
+- **The baseline.** The brand's mean volume per day that had orders, over the 56 days before today
+  (by `requestedDate`; drafts and cancelled orders are not demand), summed over the week's operating
+  days, each weighted `1 + 0.25 × festivalRamp`. The 0.25 is a placeholder for the ramp's real shape.
+  It is computed on request and not stored.
+- **Fleet capacity.** In m³: the summed `volumeCapM3` of the depot's ACTIVE vehicles × the trips a
+  vehicle may run a day (`MAX_TRIPS_PER_VEHICLE_PER_DAY`, 2) × the week's operating days. Chilled
+  capacity is the same over the ACTIVE reefers. `capacity_plans` is not read yet.
+- **The flag.** `overCapacity` is true when the week's total volume passes its capacity or its
+  chilled volume passes its chilled capacity. `gapVolumeM3` and `chilledGapVolumeM3` are the
+  excess; `extraReefers` and `extraVehicles` are how many average vehicles would close it.
+- **Tables read.** `orders`, `vehicles` and `users` (driver count) are read directly, not through
+  their modules, so `depends-on` is unchanged.
 
 ## Events
 Emits:
@@ -132,12 +154,12 @@ AC-FC-06  Permissions and scope hold
 ```
 
 Checklist (tick in the PR that adds the passing test):
-- [ ] AC-FC-01 Ten weeks against capacity
+- [x] AC-FC-01 Ten weeks against capacity
 - [ ] AC-FC-02 Importing the Datathon forecast
 - [ ] AC-FC-03 A bad import row is named
 - [ ] AC-FC-04 The baseline comes from history
 - [ ] AC-FC-05 Expected demand for plan ahead
-- [ ] AC-FC-06 Permissions and scope hold
+- [ ] AC-FC-06 Permissions and scope hold (the GET's half is tested; the import's 403 waits for the import)
 
 ## Non-functional
 - The dataset guardrail: the forecast CSV is read by the importer (from `SEED_DATA_DIR` or an admin
@@ -152,6 +174,8 @@ Checklist (tick in the PR that adds the passing test):
 - Boundaries: Step 2 lets forecasting import neither audit (the import must be audited) nor fleet
   (capacity needs vehicles), and does not let planning import forecasting (plan ahead needs expected
   demand). Add the imports, or use a read model? Decides: Nimesha with Tihara.
+- The answers ROO-58 built with are under "How 22's numbers are worked out"; the questions below
+  stay open until Tihara confirms or changes them.
 - AC-FC-01: how weekly fleet capacity is defined (unit, which vehicles and statuses count, trips per
   week) and the field that flags a week over capacity. Decides: Tihara.
 - AC-FC-01, 04: which ten weeks `weeks=10` covers (from the current ISO week?), and which source
@@ -163,5 +187,6 @@ Checklist (tick in the PR that adds the passing test):
   Tihara.
 
 ## Changelog
+- 2026-10-04 AC-FC-01 implemented (ROO-58): `GET /depots/{id}/forecasts` and screen 22. The weeks covered, the source order, the baseline, fleet capacity and the over-capacity flag are written down under "How 22's numbers are worked out"; the matching open questions stay open for the owner to confirm. The chart uses no chart library
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `capacity_plans` for the vehicles and drivers a depot plans per ISO week (merged from the Supabase draft)

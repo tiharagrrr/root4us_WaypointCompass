@@ -10,6 +10,7 @@ export * from './depots/depots.zod.ts';
 export * from './devices/devices.zod.ts';
 export * from './districts/districts.zod.ts';
 export * from './execution/execution.zod.ts';
+export * from './forecasts/forecasts.zod.ts';
 export * from './health/health.zod.ts';
 export * from './invitations/invitations.zod.ts';
 export * from './issues/issues.zod.ts';

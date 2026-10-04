@@ -12204,6 +12204,116 @@
         ]
       }
     },
+    "/api/v1/depots/{id}/forecasts": {
+      "get": {
+        "operationId": "depotForecastsList",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "weeks",
+            "required": false,
+            "in": "query",
+            "description": "How many ISO weeks after the current one",
+            "schema": {
+              "minimum": 1,
+              "maximum": 26,
+              "default": 10,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "brand",
+            "required": false,
+            "in": "query",
+            "description": "One brand’s volume; every brand when left out",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "FRESH",
+                "STYLE",
+                "TECH"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DepotForecastDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A depot’s forecast volume by week against fleet capacity",
+        "tags": [
+          "forecasts"
+        ]
+      }
+    },
     "/api/v1/depots/{depotId}/loading/runs": {
       "get": {
         "operationId": "loadingBoardRuns",
@@ -25445,6 +25555,243 @@
         },
         "required": [
           "stopIds"
+        ]
+      },
+      "ForecastFleetDto": {
+        "type": "object",
+        "properties": {
+          "vehicles": {
+            "type": "number",
+            "example": 17,
+            "description": "Active vehicles at the depot"
+          },
+          "reefers": {
+            "type": "number",
+            "example": 8,
+            "description": "Active reefers among them"
+          },
+          "drivers": {
+            "type": "number",
+            "example": 17,
+            "description": "Active drivers at the depot"
+          },
+          "volumeCapM3": {
+            "type": "number",
+            "example": 208,
+            "description": "Summed load volume of the active vehicles, m³, one trip each"
+          },
+          "reeferVolumeCapM3": {
+            "type": "number",
+            "example": 96,
+            "description": "The same for the reefers alone"
+          }
+        },
+        "required": [
+          "vehicles",
+          "reefers",
+          "drivers",
+          "volumeCapM3",
+          "reeferVolumeCapM3"
+        ]
+      },
+      "ForecastBrandDto": {
+        "type": "object",
+        "properties": {
+          "brand": {
+            "enum": [
+              "FRESH",
+              "STYLE",
+              "TECH"
+            ],
+            "type": "string",
+            "example": "FRESH"
+          },
+          "totalVolumeM3": {
+            "type": "number",
+            "example": 71.4
+          },
+          "chilledVolumeM3": {
+            "type": "number",
+            "example": 49,
+            "description": "0 for Style and Tech"
+          },
+          "source": {
+            "enum": [
+              "BASELINE",
+              "DATATHON"
+            ],
+            "type": "string",
+            "example": "DATATHON",
+            "description": "DATATHON when imported; BASELINE when worked out from order history"
+          }
+        },
+        "required": [
+          "brand",
+          "totalVolumeM3",
+          "chilledVolumeM3",
+          "source"
+        ]
+      },
+      "ForecastWeekDto": {
+        "type": "object",
+        "properties": {
+          "isoYear": {
+            "type": "number",
+            "example": 2026
+          },
+          "isoWeek": {
+            "type": "number",
+            "example": 44
+          },
+          "weekStart": {
+            "type": "string",
+            "example": "2026-10-26",
+            "description": "The week’s Monday"
+          },
+          "operatingDays": {
+            "type": "number",
+            "example": 6
+          },
+          "totalVolumeM3": {
+            "type": "number",
+            "example": 111
+          },
+          "chilledVolumeM3": {
+            "type": "number",
+            "example": 49
+          },
+          "ambientVolumeM3": {
+            "type": "number",
+            "example": 62
+          },
+          "capacityM3": {
+            "type": "number",
+            "example": 104,
+            "description": "What the active fleet can move in the week: each vehicle’s volume, for the trips it may run a day, on each operating day"
+          },
+          "chilledCapacityM3": {
+            "type": "number",
+            "example": 48,
+            "description": "The same over the reefers"
+          },
+          "overCapacity": {
+            "type": "boolean",
+            "example": true,
+            "description": "The volume passes the capacity, in total or in chilled"
+          },
+          "gapVolumeM3": {
+            "type": "number",
+            "example": 7,
+            "description": "Volume past capacityM3, or 0"
+          },
+          "chilledGapVolumeM3": {
+            "type": "number",
+            "example": 1
+          },
+          "extraReefers": {
+            "type": "number",
+            "nullable": true,
+            "example": 1,
+            "description": "More reefers needed to carry the chilled gap; null with no fleet to size them by"
+          },
+          "extraVehicles": {
+            "type": "number",
+            "nullable": true,
+            "example": 0,
+            "description": "More vehicles needed once those reefers are added"
+          },
+          "payday": {
+            "type": "boolean",
+            "example": true,
+            "description": "A payday falls in the week"
+          },
+          "festivals": {
+            "example": [
+              "Deepavali"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "monsoon": {
+            "type": "boolean",
+            "example": false
+          },
+          "brands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastBrandDto"
+            }
+          }
+        },
+        "required": [
+          "isoYear",
+          "isoWeek",
+          "weekStart",
+          "operatingDays",
+          "totalVolumeM3",
+          "chilledVolumeM3",
+          "ambientVolumeM3",
+          "capacityM3",
+          "chilledCapacityM3",
+          "overCapacity",
+          "gapVolumeM3",
+          "chilledGapVolumeM3",
+          "extraReefers",
+          "extraVehicles",
+          "payday",
+          "festivals",
+          "monsoon",
+          "brands"
+        ]
+      },
+      "DepotForecastDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "brand": {
+            "nullable": true,
+            "enum": [
+              "FRESH",
+              "STYLE",
+              "TECH"
+            ],
+            "type": "string",
+            "example": null,
+            "description": "The brand asked for; null for every brand"
+          },
+          "fleet": {
+            "$ref": "#/components/schemas/ForecastFleetDto"
+          },
+          "gapWeeks": {
+            "type": "number",
+            "example": 3,
+            "description": "Weeks flagged over capacity"
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ForecastWeekDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "depotId",
+          "brand",
+          "fleet",
+          "gapWeeks",
+          "weeks",
+          "_links"
         ]
       },
       "LoadProgressDto": {
