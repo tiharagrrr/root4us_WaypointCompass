@@ -80,6 +80,8 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // detail, thread, resolve, reopen and photos (ROO-48).
   { method: "all", path: "/api/v1/issues" },
   { method: "all", path: "/api/v1/issues/*" },
+  // Audit: the order timeline (ROO-23).
+  { method: "get", path: "/api/v1/timelines/*" },
   // Planning: plans, the wizard, edits, decisions, publish and engine runs
   // (ROO-29), and the deferral reads and responses for 23, M4 and M7.
   { method: "all", path: "/api/v1/depots/:id/plans/*" },

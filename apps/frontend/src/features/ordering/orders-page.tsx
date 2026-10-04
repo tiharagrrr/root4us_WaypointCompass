@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router'
 import { HeaderActions } from '@/app/layouts/header-actions'
 import { usePageHeader } from '@/app/layouts/header-slot'
 import { cn } from '@/lib/cn'
+import { getLink } from '@/lib/links'
 import { toColomboDate } from '@/lib/format-colombo'
 import { serverNow } from '@/lib/server-clock'
 import { Button } from '@/ui/button'
@@ -19,6 +20,7 @@ import { SegmentedControl } from '@/ui/segmented-control'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
+import { OrderTimelineDialog } from '@/features/audit/order-timeline-dialog'
 import { DeferralNotice } from '@/features/deferrals/deferral-notice'
 import { brandWord } from './order-copy'
 import { dayLabel } from './order-format'
@@ -107,6 +109,7 @@ export function OrdersPage() {
 function OrderCard({ order }: { order: OrderDto }) {
   const navigate = useNavigate()
   const at = STEP_OF[order.status] ?? 0
+  const [timeline, setTimeline] = useState(false)
   return (
     <article aria-label={order.orderNo} className="flex flex-col gap-3 rounded-lg border border-border bg-background px-4 py-3.5">
       <header className="flex items-start gap-2.5">
@@ -140,12 +143,20 @@ function OrderCard({ order }: { order: OrderDto }) {
         <p className="type-body-small m-0 text-muted-foreground">
           Window {dayLabel(order.deliveryDate)} · {order.deliveryWindow.open}–{order.deliveryWindow.close}
         </p>
-        {order.status === 'DELIVERED' || order.status === 'PARTIAL' ? (
-          <Button variant="default" size="sm" onClick={() => void navigate(`/store/orders/${order.id}/receipt`)}>
-            Confirm receipt
-          </Button>
-        ) : null}
+        <span className="flex items-center gap-2">
+          {getLink(order._links, 'timeline') ? (
+            <Button variant="ghost" size="sm" onClick={() => setTimeline(true)}>
+              Timeline
+            </Button>
+          ) : null}
+          {order.status === 'DELIVERED' || order.status === 'PARTIAL' ? (
+            <Button variant="default" size="sm" onClick={() => void navigate(`/store/orders/${order.id}/receipt`)}>
+              Confirm receipt
+            </Button>
+          ) : null}
+        </span>
       </div>
+      {timeline ? <OrderTimelineDialog orderId={order.id} orderNo={order.orderNo} onClose={() => setTimeline(false)} /> : null}
     </article>
   )
 }
