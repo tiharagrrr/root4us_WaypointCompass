@@ -3,6 +3,7 @@ import {
   useDeferralsList,
   useMeGet,
   useOrdersList,
+  usePlansOrderEta,
   useReceivingRosterGet,
   type DeferralDto,
   type OrderDto,
@@ -12,13 +13,15 @@ import { useNavigate } from 'react-router'
 import { HeaderActions } from '@/app/layouts/header-actions'
 import { usePageHeader } from '@/app/layouts/header-slot'
 import { cn } from '@/lib/cn'
-import { toColomboDate } from '@/lib/format-colombo'
+import { getLink } from '@/lib/links'
+import { formatColombo, toColomboDate } from '@/lib/format-colombo'
 import { serverNow } from '@/lib/server-clock'
 import { Button } from '@/ui/button'
 import { SegmentedControl } from '@/ui/segmented-control'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip } from '@/ui/status-chip'
+import { OrderTimelineDialog } from '@/features/audit/order-timeline-dialog'
 import { DeferralNotice } from '@/features/deferrals/deferral-notice'
 import { brandWord } from './order-copy'
 import { dayLabel } from './order-format'
@@ -38,6 +41,9 @@ const STEP_OF: Record<string, number> = {
   DELIVERED: 4,
   PARTIAL: 4,
 }
+
+/** On a trip and still to arrive: the statuses an ETA exists for. */
+const EXPECTED = new Set(['PLANNED', 'LOADED', 'IN_TRANSIT'])
 
 const kind = (o: OrderDto) => `${brandWord(o.brand)} · ${o.tempClass === 'CHILLED' ? 'Chilled' : 'Dry'}`
 
@@ -105,7 +111,12 @@ export function OrdersPage() {
 }
 
 function OrderCard({ order }: { order: OrderDto }) {
+  const navigate = useNavigate()
   const at = STEP_OF[order.status] ?? 0
+  const [timeline, setTimeline] = useState(false)
+  // The store's ETA, never the map (AC-EXE-22): planned until the trip leaves, then projected from now.
+  const eta = usePlansOrderEta(order.id, { query: { enabled: EXPECTED.has(order.status), refetchInterval: 60_000 } }).data?.data
+  const late = eta?.standing === 'LATE'
   return (
     <article aria-label={order.orderNo} className="flex flex-col gap-3 rounded-lg border border-border bg-background px-4 py-3.5">
       <header className="flex items-start gap-2.5">
@@ -119,7 +130,9 @@ function OrderCard({ order }: { order: OrderDto }) {
         <span className="flex-1" />
         <span className="flex flex-col items-end">
           <span className="type-label uppercase text-muted-foreground">ETA</span>
-          <span className="font-mono text-[14px] font-bold text-foreground">–</span>
+          <span className={cn('font-mono text-[14px] font-bold', late ? 'text-destructive-foreground' : 'text-foreground')}>
+            {eta?.etaAt ? formatColombo(eta.etaAt, 'HH:mm') : '–'}
+          </span>
         </span>
       </header>
       <ol className="m-0 grid list-none grid-cols-5 gap-1 p-0">
@@ -135,9 +148,24 @@ function OrderCard({ order }: { order: OrderDto }) {
           </li>
         ))}
       </ol>
-      <p className="type-body-small m-0 text-muted-foreground">
-        Window {dayLabel(order.deliveryDate)} · {order.deliveryWindow.open}–{order.deliveryWindow.close}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="type-body-small m-0 text-muted-foreground">
+          Window {dayLabel(order.deliveryDate)} · {order.deliveryWindow.open}–{order.deliveryWindow.close}
+        </p>
+        <span className="flex items-center gap-2">
+          {getLink(order._links, 'timeline') ? (
+            <Button variant="ghost" size="sm" onClick={() => setTimeline(true)}>
+              Timeline
+            </Button>
+          ) : null}
+          {order.status === 'DELIVERED' || order.status === 'PARTIAL' ? (
+            <Button variant="default" size="sm" onClick={() => void navigate(`/store/orders/${order.id}/receipt`)}>
+              Confirm receipt
+            </Button>
+          ) : null}
+        </span>
+      </div>
+      {timeline ? <OrderTimelineDialog orderId={order.id} orderNo={order.orderNo} onClose={() => setTimeline(false)} /> : null}
     </article>
   )
 }

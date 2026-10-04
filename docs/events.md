@@ -23,6 +23,7 @@ Envelope as consumers receive it (`DeliveredEvent`): `id`, `type`, `depotId`, `o
 | --- | --- | --- |
 | `alerts` | alerts | the raise and resolve types in `ALERT_RAISED_BY` / `ALERT_RESOLVED_BY` (`alerts.constants.ts`): `eta.updated`, `stop.failed`, `stop.completed`, `load.flag_raised`, `issue.reported`, `trip.cant_run`, `vehicle.offline`, `deferral.store_responded`, `sync.conflict_detected`, ... |
 | `loading` | loading | `plan.published`, `plan.revised`, `trip.reassigned` (`LOAD_CONSUMES`) |
+| `receipt` | receipt | `stop.completed` (`RECEIPT_CONSUMES`): a receipt the store confirmed before the driver's record synced stops waiting and its order moves on |
 | `planning` | planning | `vehicle.status_changed`: a breakdown flags the vehicle's published trips for repair (ROO-56) |
 
 Still to register: notifications (ROO-26), webhooks (ROO-36), planning (`order.cancelled`,
@@ -38,6 +39,7 @@ payloads in `events/<module>.events.ts`. The spec's Events section says who cons
 | loading | `LOAD_EVENTS`: `load.list_updated`, `load.flag_raised`, `load.flag_decided`, `load.flag_resolved`, `load.line_checked`, `trip.released`, ... |
 | execution | `EXECUTION_EVENTS`: `trip.downloaded`, `trip.started`, `stop.arrived`, `stop.completed`, `stop.failed`, `trip.completed`, `trip.cant_run` |
 | alerts | `ALERT_EVENTS`: `alert.raised`, `alert.acknowledged`, `alert.resolved` |
+| receipt | `RECEIPT_EVENTS`: `receipt.confirmed`, `issue.reported`, `issue.commented`, `issue.resolved`, `issue.reopened` |
 | planning | `plan.published`, `plan.revised`, `plan.closed`, `deferral.*`, `trip.reassigned`, `trip.resequenced`, `stop.deferred`, and `trip.cant_run` for a trip whose vehicle broke down (the same payload execution sends when a driver reports it) |
 | fleet | `FLEET_EVENTS`: `vehicle.status_changed` |
 | identity, master-data | user, invitation, settings, depot and outlet changes |

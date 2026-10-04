@@ -161,6 +161,45 @@ export const PlansTrackingResponse = zod.object({
 })
 })
 
+/**
+ * When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.
+ * @summary An order's ETA
+ */
+export const PlansOrderEtaParams = zod.object({
+  "id": zod.string()
+})
+
+export const PlansOrderEtaResponse = zod.object({
+  "data": zod.object({
+  "orderId": zod.string(),
+  "orderNo": zod.string(),
+  "stopId": zod.string().nullable().describe('The stop the order is on; null until it is planned'),
+  "tripStatus": zod.string().nullable(),
+  "stopStatus": zod.string().nullable(),
+  "plannedArrivalAt": zod.string().nullable(),
+  "etaAt": zod.string().nullable().describe('When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip'),
+  "spareMin": zod.number().nullable().describe('Minutes between the ETA and the window closing; negative is late'),
+  "standing": zod.union([zod.literal('DELIVERED'),zod.literal('PARTIAL'),zod.literal('FAILED'),zod.literal('NEXT'),zod.literal('AT_RISK'),zod.literal('LATE'),zod.literal('PLANNED'),zod.literal(null)]).nullable(),
+  "completedAt": zod.string().nullable(),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
 export const PlansGetParams = zod.object({
   "id": zod.string()
 })

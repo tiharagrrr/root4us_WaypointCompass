@@ -106,7 +106,7 @@ time and the stop or trip version the device saw (baseVersion).
 | POST | /telematics/pings | stop:record or a device token | Up to 200 pings → `{ accepted, duplicates, rejected }` |
 | GET | /depots/{id}/tracking | tracking:read | 19: trips in progress with position, next stop, ETA, late risk, last signal |
 | GET | /trips/{id}/tracking | tracking:read | 19a: planned, ETA and actual per stop, breadcrumb, events |
-| GET | /orders/{id}/eta | tracking:read | M3: the store's ETA for today's delivery |
+| GET | /orders/{id}/eta | tracking:read | M3: the store's ETA for today's delivery. Served by planning, next to `/depots/{id}/tracking`, because the projection lives there (ROO-46) |
 | GET | /plans/{id}/end-of-day | plan:read | 21: per-trip results before planning's close |
 
 Driver writes carry a clientUuid and no If-Match or Idempotency-Key (Step 4). Pings dedupe on
@@ -243,6 +243,8 @@ Scope (`ScopePolicy`; out of scope is 404, a missing permission is 403):
 - [ ] AC-EXE-21 Late risk crosses 0.5 at 10 minutes
 - [ ] AC-EXE-22 A store sees her ETA, never the map
 - [x] AC-EXE-23 The dispatcher tracks running trips
+- [x] AC-EXE-22 A store sees her ETA, never the map
+- [ ] AC-EXE-23 The dispatcher tracks running trips
 - [ ] AC-EXE-24 Re-sequence stops
 - [ ] AC-EXE-25 Reassign a trip the driver can't run
 - [ ] AC-EXE-26 End of day waits for every trip
@@ -548,6 +550,10 @@ say so in the spec if you change one.
 - Does ISSUE_REPORTED from D5 create a receipt issue row, and through which call? (Harini)
 
 ## Changelog
+- 2026-10-04 AC-EXE-22 passes: `GET /orders/{id}/eta` is served by planning's `TrackingQueries.orderEta`
+  (the planned arrival until the trip leaves, the engine's projection from now after that, no vehicle or
+  position), and M3 shows it. Its test sits in planning's live-day suite. The stored ETA, pings, eta.updated
+  and late risk (AC-EXE-17 to 21) are still open
 - 2026-10-04 D7 built (ROO-62): the round now has an ending. Recording the last stop — a delivery
   on D4 or an exception on D5 — lands on D7 instead of D1, and D1 offers the way back to it for a
   driver who closed the app, so a finished round can always be closed. `TRIP_COMPLETED` was already

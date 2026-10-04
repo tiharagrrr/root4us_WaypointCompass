@@ -3096,6 +3096,100 @@
         ]
       }
     },
+    "/api/v1/timelines/order/{id}": {
+      "get": {
+        "description": "The order merged with its stops, trip, deferrals, load lines, receipt and issues, by occurredAt. syncedLate marks an offline event recorded more than 5 minutes after it happened.",
+        "operationId": "timelinesOrder",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TimelineEntryDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's timeline, oldest first",
+        "tags": [
+          "audit"
+        ]
+      }
+    },
     "/api/v1/calendar": {
       "get": {
         "operationId": "calendarList",
@@ -7906,6 +8000,90 @@
           }
         },
         "summary": "01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/orders/{id}/eta": {
+      "get": {
+        "description": "When the delivery is expected: the planned arrival, or the projection from now once the trip is on the road. Carries no vehicle position.",
+        "operationId": "plansOrderEta",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/OrderEtaDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's ETA",
         "tags": [
           "plans"
         ]
@@ -14366,6 +14544,1305 @@
         ]
       }
     },
+    "/api/v1/orders/{id}/receipt": {
+      "get": {
+        "description": "Expected against delivered lines, the proof of delivery and whether the store can still confirm.",
+        "operationId": "receiptsGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReceiptDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An order's receipt",
+        "tags": [
+          "receipt"
+        ]
+      },
+      "post": {
+        "description": "Compares what arrived with what the driver delivered and opens an issue for each line that is wrong. Before the driver’s record syncs, a confirmation after the ETA is kept as awaitingDriverSync.",
+        "operationId": "receiptsConfirm",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "W/\"<version>\" from the ETag of the resource you loaded",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmReceiptDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/ReceiptDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm the receipt",
+        "tags": [
+          "receipt"
+        ]
+      }
+    },
+    "/api/v1/issues": {
+      "get": {
+        "operationId": "issuesList",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Page size",
+            "schema": {
+              "minimum": 1,
+              "maximum": 1000,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Tables: rows to skip",
+            "schema": {
+              "minimum": 0,
+              "example": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Feeds: meta.page.nextCursor of the previous page",
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated fields, \"-\" for descending",
+            "schema": {
+              "maxLength": 200,
+              "example": "-submittedAt",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Search text",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated related resources",
+            "schema": {
+              "maxLength": 200,
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[status]",
+            "required": false,
+            "in": "query",
+            "description": "one of OPEN, IN_PROGRESS, RESOLVED; comma-separated for any of. Also filter[status][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[type]",
+            "required": false,
+            "in": "query",
+            "description": "one of MISSING, DAMAGED, SHORT, TEMPERATURE, LATE, OTHER; comma-separated for any of. Also filter[type][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[outletId]",
+            "required": false,
+            "in": "query",
+            "description": "text of up to 200 characters; comma-separated for any of. Also filter[outletId][op] with op in eq, ne, contains, null.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter[orderId]",
+            "required": false,
+            "in": "query",
+            "description": "a UUID; comma-separated for any of. Also filter[orderId][op] with op in eq, ne, null.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/IssueDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List issues",
+        "tags": [
+          "issues"
+        ]
+      },
+      "post": {
+        "operationId": "issuesCreate",
+        "parameters": [
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The order’s version, W/\"<n>\". Required for a store manager; a driver reports without it.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "One per button press; a repeat replays the first response",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIssueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssueDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED\n\nCONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "VERSION_MISMATCH",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PLAN_RULE_VIOLATION or IDEMPOTENCY_KEY_REUSED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "PRECONDITION_REQUIRED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Report an issue",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}": {
+      "get": {
+        "operationId": "issuesGet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssueDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "One issue",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/resolve": {
+      "post": {
+        "operationId": "issuesResolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveIssueDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssueDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Resolve an issue",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/reopen": {
+      "post": {
+        "operationId": "issuesReopen",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssueDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Reopen a resolved issue (within 48 hours)",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/comments": {
+      "get": {
+        "operationId": "issuesComments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "_links"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommentDto"
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/OffsetPageMetaDto"
+                    },
+                    "_links": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "$ref": "#/components/schemas/LinkDto"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "An issue's thread, oldest first",
+        "tags": [
+          "issues"
+        ]
+      },
+      "post": {
+        "description": "Plain text up to 1,000 characters. The store and the dispatcher post.",
+        "operationId": "issuesComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/CommentDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Comment on an issue",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/attachments/presign": {
+      "post": {
+        "operationId": "issuesPresign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignIssuePhotoDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssuePhotoUploadDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Somewhere to put an issue photo (valid 10 minutes)",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/attachments/{attachmentId}/complete": {
+      "post": {
+        "operationId": "issuesCompletePhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssuePhotoUploadDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "CONFLICT_STATE, CUTOFF_PASSED or PLAN_LOCKED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Confirm the photo is in the store",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
+    "/api/v1/issues/{id}/attachments/{attachmentId}": {
+      "get": {
+        "operationId": "issuesPhoto",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/IssuePhotoLinkDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A link to an issue photo (valid 5 minutes)",
+        "tags": [
+          "issues"
+        ]
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "operationId": "alertsList",
@@ -17042,6 +18519,116 @@
           "mode"
         ]
       },
+      "TimelineEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "seq": {
+            "type": "number",
+            "description": "Position in the audit chain",
+            "example": 4211
+          },
+          "action": {
+            "type": "string",
+            "description": "<module>.<entity>.<verb>",
+            "example": "ordering.order.submitted"
+          },
+          "entityType": {
+            "type": "string",
+            "description": "The entity the step was recorded on",
+            "example": "order"
+          },
+          "entityId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "actorId": {
+            "type": "string",
+            "nullable": true,
+            "example": "usr_nimesha"
+          },
+          "actorName": {
+            "type": "string",
+            "nullable": true,
+            "description": "Null for a step the system took",
+            "example": "Nimesha Periyapperuma"
+          },
+          "actorRole": {
+            "type": "string",
+            "nullable": true,
+            "example": "store_manager"
+          },
+          "deviceId": {
+            "type": "string",
+            "nullable": true,
+            "example": "dev_7f3a"
+          },
+          "source": {
+            "type": "string",
+            "description": "WEB, PWA, OFFLINE_SYNC, ENGINE, SYSTEM, SIMULATION or WEBHOOK",
+            "example": "WEB"
+          },
+          "status": {
+            "type": "string",
+            "nullable": true,
+            "description": "The status the entity moved to, when the step set one",
+            "example": "SUBMITTED"
+          },
+          "reasonCode": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "reasonNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "occurredAt": {
+            "type": "string",
+            "description": "When it happened: device or business time",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "When the server recorded it",
+            "example": "2026-10-01T14:02:11+05:30"
+          },
+          "syncedLate": {
+            "type": "boolean",
+            "description": "True when recordedAt trails occurredAt by more than 5 minutes: an offline event that synced late",
+            "example": false
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "action",
+          "entityType",
+          "entityId",
+          "actorId",
+          "actorName",
+          "actorRole",
+          "deviceId",
+          "source",
+          "status",
+          "reasonCode",
+          "reasonNote",
+          "occurredAt",
+          "recordedAt",
+          "syncedLate",
+          "_links"
+        ]
+      },
       "CalendarDayDto": {
         "type": "object",
         "properties": {
@@ -19409,6 +20996,90 @@
           "depot",
           "totals",
           "trips",
+          "_links"
+        ]
+      },
+      "OrderEtaDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000o001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "stopId": {
+            "type": "string",
+            "nullable": true,
+            "description": "The stop the order is on; null until it is planned",
+            "example": "0192a3f4-0000-7000-8000-00000000s001"
+          },
+          "tripStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "IN_PROGRESS"
+          },
+          "stopStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PENDING"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:54:00+05:30",
+            "description": "When the delivery is expected: projected from now while the trip is on the road, the planned arrival before that, null once the stop is done or when the order is on no trip"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 6,
+            "description": "Minutes between the ETA and the window closing; negative is late"
+          },
+          "standing": {
+            "nullable": true,
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
+            ],
+            "type": "string",
+            "example": "NEXT"
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T05:52:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "orderId",
+          "orderNo",
+          "stopId",
+          "tripStatus",
+          "stopStatus",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "standing",
+          "completedAt",
           "_links"
         ]
       },
@@ -24066,6 +25737,721 @@
           "duplicates",
           "conflicts",
           "rejected",
+          "_links"
+        ]
+      },
+      "ReceiptLineDto": {
+        "type": "object",
+        "properties": {
+          "orderLineId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "itemId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000b001"
+          },
+          "sku": {
+            "type": "string",
+            "example": "FR-1102"
+          },
+          "name": {
+            "type": "string",
+            "example": "Basmati rice 5 kg"
+          },
+          "packLabel": {
+            "type": "string",
+            "example": "Bag ×4"
+          },
+          "qtyExpected": {
+            "type": "number",
+            "description": "Packs on the order",
+            "example": 12
+          },
+          "qtyDelivered": {
+            "type": "number",
+            "nullable": true,
+            "description": "Packs the driver recorded; null until the driver's record syncs",
+            "example": 12
+          },
+          "qtyReceived": {
+            "type": "number",
+            "nullable": true,
+            "description": "Packs the store says arrived; null until it confirms",
+            "example": null
+          },
+          "condition": {
+            "nullable": true,
+            "enum": [
+              "ok",
+              "damaged",
+              "short",
+              "missing",
+              "temperature"
+            ],
+            "type": "string",
+            "example": null
+          }
+        },
+        "required": [
+          "orderLineId",
+          "itemId",
+          "sku",
+          "name",
+          "packLabel",
+          "qtyExpected",
+          "qtyDelivered",
+          "qtyReceived",
+          "condition"
+        ]
+      },
+      "ProofFileDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000e001"
+          },
+          "href": {
+            "type": "string",
+            "example": "/api/v1/attachments/0192a3f4-0000-7000-8000-00000000e001"
+          }
+        },
+        "required": [
+          "id",
+          "href"
+        ]
+      },
+      "ProofOfDeliveryDto": {
+        "type": "object",
+        "properties": {
+          "receiverName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Chathura (store staff)"
+          },
+          "deliveredAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:22:00+05:30"
+          },
+          "signature": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProofFileDto"
+              }
+            ]
+          },
+          "photo": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProofFileDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "receiverName",
+          "deliveredAt",
+          "signature",
+          "photo"
+        ]
+      },
+      "ReceiptDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The order id: an order has one receipt",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "orderId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "receiptId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "CONFIRMED",
+              "CONFIRMED_WITH_ISSUES"
+            ],
+            "type": "string",
+            "example": "PENDING"
+          },
+          "orderStatus": {
+            "example": "DELIVERED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OrderStatus"
+              }
+            ]
+          },
+          "stopStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "DELIVERED"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:10:00+05:30"
+          },
+          "awaitingDriverSync": {
+            "type": "boolean",
+            "description": "True when the store confirmed before the driver's record arrived",
+            "example": false
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "confirmedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "confirmedById": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "version": {
+            "type": "number",
+            "description": "The order's version, for If-Match",
+            "example": 8
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiptLineDto"
+            }
+          },
+          "proof": {
+            "$ref": "#/components/schemas/ProofOfDeliveryDto"
+          },
+          "issueIds": {
+            "description": "Issues raised with this receipt",
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "orderId",
+          "orderNo",
+          "receiptId",
+          "status",
+          "orderStatus",
+          "stopStatus",
+          "etaAt",
+          "awaitingDriverSync",
+          "note",
+          "confirmedAt",
+          "confirmedById",
+          "version",
+          "lines",
+          "proof",
+          "issueIds",
+          "_links"
+        ]
+      },
+      "ConfirmReceiptLineDto": {
+        "type": "object",
+        "properties": {
+          "orderLineId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "qtyReceived": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "Packs that arrived",
+            "example": 12
+          },
+          "condition": {
+            "enum": [
+              "ok",
+              "damaged",
+              "short",
+              "missing",
+              "temperature"
+            ],
+            "type": "string",
+            "example": "ok"
+          },
+          "qtyAffected": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "Packs the problem touches; the shortfall when left out",
+            "example": 2
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "What went wrong on this line",
+            "example": "Two cases missing"
+          }
+        },
+        "required": [
+          "orderLineId",
+          "qtyReceived",
+          "condition"
+        ]
+      },
+      "ConfirmReceiptDto": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "minItems": 1,
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfirmReceiptLineDto"
+            }
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "example": "2 trays short"
+          }
+        },
+        "required": [
+          "lines"
+        ]
+      },
+      "IssueType": {
+        "type": "string",
+        "enum": [
+          "MISSING",
+          "DAMAGED",
+          "SHORT",
+          "TEMPERATURE",
+          "LATE",
+          "OTHER"
+        ]
+      },
+      "IssueStatus": {
+        "type": "string",
+        "enum": [
+          "OPEN",
+          "IN_PROGRESS",
+          "RESOLVED"
+        ]
+      },
+      "IssuePhotoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000f001"
+          },
+          "href": {
+            "type": "string",
+            "example": "/api/v1/issues/0192a3f4-0000-7000-8000-00000000d001/attachments/0192a3f4-0000-7000-8000-00000000f001"
+          }
+        },
+        "required": [
+          "id",
+          "href"
+        ]
+      },
+      "IssueDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "orderId": {
+            "type": "string",
+            "nullable": true,
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "orderNo": {
+            "type": "string",
+            "nullable": true,
+            "example": "WF-0171"
+          },
+          "stopId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "receiptId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "orderLineId": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "type": {
+            "example": "DAMAGED",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueType"
+              }
+            ]
+          },
+          "qtyAffected": {
+            "type": "number",
+            "nullable": true,
+            "example": 3
+          },
+          "description": {
+            "type": "string",
+            "example": "3 trays damaged"
+          },
+          "status": {
+            "example": "OPEN",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/IssueStatus"
+              }
+            ]
+          },
+          "resolution": {
+            "nullable": true,
+            "enum": [
+              "CREDIT_ISSUED",
+              "CREDIT_REQUESTED",
+              "REDELIVERY",
+              "NO_ACTION"
+            ],
+            "type": "string",
+            "example": null
+          },
+          "resolutionNote": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "raisedById": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000u001"
+          },
+          "raisedByRole": {
+            "type": "string",
+            "example": "store_manager"
+          },
+          "resolvedById": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-02T10:30:00+05:30"
+          },
+          "resolvedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IssuePhotoDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "outletId",
+          "orderId",
+          "orderNo",
+          "stopId",
+          "receiptId",
+          "orderLineId",
+          "type",
+          "qtyAffected",
+          "description",
+          "status",
+          "resolution",
+          "resolutionNote",
+          "raisedById",
+          "raisedByRole",
+          "resolvedById",
+          "createdAt",
+          "resolvedAt",
+          "photos",
+          "_links"
+        ]
+      },
+      "CreateIssueDto": {
+        "type": "object",
+        "properties": {
+          "orderId": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0192a3f4-0000-7000-8000-00000000a001"
+          },
+          "stopId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "A driver can name the stop instead",
+            "example": "0192a3f4-0000-7000-8000-00000000s001"
+          },
+          "orderLineId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The line the problem is about",
+            "example": "0192a3f4-0000-7000-8000-00000000c001"
+          },
+          "type": {
+            "enum": [
+              "MISSING",
+              "DAMAGED",
+              "SHORT",
+              "TEMPERATURE",
+              "LATE",
+              "OTHER"
+            ],
+            "type": "string",
+            "example": "DAMAGED"
+          },
+          "qtyAffected": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "Packs the problem touches",
+            "example": 3
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "example": "3 trays damaged"
+          }
+        },
+        "required": [
+          "type",
+          "description"
+        ]
+      },
+      "ResolveIssueDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "enum": [
+              "CREDIT_ISSUED",
+              "CREDIT_REQUESTED",
+              "REDELIVERY",
+              "NO_ACTION"
+            ],
+            "type": "string",
+            "example": "CREDIT_ISSUED"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "example": "Credit note sent"
+          }
+        },
+        "required": [
+          "resolution"
+        ]
+      },
+      "CommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000g001"
+          },
+          "issueId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d001"
+          },
+          "authorId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000u001"
+          },
+          "authorRole": {
+            "type": "string",
+            "example": "dispatcher"
+          },
+          "authorName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Tihara Egodage"
+          },
+          "body": {
+            "type": "string",
+            "example": "Credit on the way"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-10-02T10:45:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "issueId",
+          "authorId",
+          "authorRole",
+          "authorName",
+          "body",
+          "createdAt",
+          "_links"
+        ]
+      },
+      "CreateCommentDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000,
+            "description": "Plain text, up to 1000 characters",
+            "example": "Credit on the way"
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "IssuePhotoUploadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000f001"
+          },
+          "uploaded": {
+            "type": "boolean",
+            "example": false
+          },
+          "uploadUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://s3.local/waypoint/issue/…"
+          },
+          "uploadExpiresAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T10:40:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "uploaded",
+          "uploadUrl",
+          "uploadExpiresAt",
+          "_links"
+        ]
+      },
+      "PresignIssuePhotoDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 100,
+            "example": "image/jpeg"
+          },
+          "bytes": {
+            "type": "number",
+            "minimum": 1,
+            "example": 48120
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "example": "c1f4…"
+          },
+          "clientUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Made on the device, so a retry returns the same photo",
+            "example": "0192a3f4-0000-7000-8000-00000000h001"
+          }
+        },
+        "required": [
+          "contentType",
+          "bytes",
+          "clientUuid"
+        ]
+      },
+      "IssuePhotoLinkDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000f001"
+          },
+          "url": {
+            "type": "string",
+            "example": "https://s3.local/waypoint/issue/…"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-10-02T10:50:00+05:30"
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "expiresAt",
           "_links"
         ]
       },
