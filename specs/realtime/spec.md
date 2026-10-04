@@ -1,9 +1,9 @@
 ---
 module: realtime
 owner: Nimesha
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: []            # no frame of its own; every live screen reads /streams/me through useEventStream
-depends-on: [identity]
+depends-on: [identity, execution]
 ---
 
 # Realtime
@@ -14,21 +14,26 @@ browser reconnects on its own and the server replays what was missed, so no scre
 instance needs sticky sessions.
 
 ## Scope
-In: `GET /streams/me`, channel selection from role and scope, replay from Redis Streams,
+In: `GET /streams/me`, channel selection from role and scope, replay from outbox_events,
 reference-counted Redis pub/sub fan-out, heartbeats, the resync signal, the `sse_connections`
 metric.
 Out: producing events (every module, through the outbox; audit-and-events skill); the outbox relay
-in the worker, which publishes and appends to the replay streams; location ingest, positions, ETA and
+in the worker, which publishes on Redis; location ingest, positions, ETA and
 signal watch (execution, `POST /telematics/pings`); notification rows (notifications); the web
 client `apps/frontend/src/realtime/use-event-stream.ts`.
 
 ## Model
-No tables and no schema file. Redis holds the state:
-- one Redis Stream per channel for replay (`XADD ... MAXLEN ~ 2000`, kept 24 hours);
-- one pub/sub channel per SSE channel for live fan-out.
+No tables and no schema file. The relay publishes every event on one Redis pub/sub channel,
+`waypoint:events`; each API instance holds one subscriber to it while a stream is open and filters
+per stream by channel. A reconnect replays from `outbox_events` (published rows after
+Last-Event-ID, the id published within 24 hours, at most 2,000 rows), so there is no second copy
+to keep or trim.
 
-Invariants: a frame's id is the outbox event id, so a replay is exact; position frames use
-`<vehicleId>:<recordedAt>` and are never kept in the replay streams.
+Invariants: a frame's id is the outbox event id, so a replay is exact. Control frames (`ready`,
+`heartbeat`, `resync`) repeat the stream's cursor as their id (the last event sent, or the newest
+published one when the stream opened), because Nest would otherwise number them and the browser
+would send that number back. Position frames use `<vehicleId>:<recordedAt>` and are never
+replayed.
 
 ## Endpoints
 | Method | Path | Permission | Notes |
@@ -39,16 +44,20 @@ Invariants: a frame's id is the outbox event id, so a replay is exact; position 
 - `modules/realtime/streams.controller.ts`: `StreamsController` with `@Sse('me')`, merging
   `hub.replay(channels, lastEventId)`, `hub.live(channels)` and a 15-second heartbeat, closed when
   the request closes.
-- `RealtimeHub`: `replay()` returns the missed events, or one `resync` event when the id is too
-  old; `live()` subscribes to Redis pub/sub, reference-counted per instance.
+- `EventStreamService.stream(actor, lastEventId)`: subscribes to the live feed first, holds what
+  arrives while it reads the replay, then sends replay and live in order, never one id twice.
+- `RealtimeHub`: `replay()` returns the missed events, or a resync when the id is unknown, older
+  than 24 hours or more than 2,000 events back; `live()` shares one Redis subscriber per instance,
+  opened by the first stream and closed by the last.
 - `channelsFor(actor)`:
 
   | Role | Channels |
   | --- | --- |
-  | Dispatcher | `depot:<id>`, or every depot when unscoped |
+  | Dispatcher | `depot:<id>`, or `depot:*` (every depot) when unscoped |
+  | Admin | the dispatcher's, plus `role:admin` (every `identity.*` event, for A1 and A2) |
   | Store manager | `outlet:<id>` |
-  | Loader | `depot:<id>:loading` |
-  | Driver | `trip:<id>` for each of their trips |
+  | Loader | `depot:<id>:loading` (`load.*`, `plan.*` and `trip.*` events of the depot) |
+  | Driver | `trip:<id>` for each trip in the driver scope (7 days back, tomorrow ahead), read again on `plan.published`, `plan.revised`, `trip.reassigned` and `trip.released` |
   | Everyone | `user:<id>` and `broadcast` (clock and settings changes) |
 
 - Frame: `id` is the outbox id, `event` is the type, `data` is the DomainEvent JSON (v, type,
@@ -63,10 +72,12 @@ Consumes:
   every 5 seconds per channel;
 - `clock.changed` and `settings.changed` on `broadcast`;
 - `identity.user.role_changed` and `identity.user.deactivated` on `user:<id>`, so the client
-  refreshes `/me`.
+  refreshes `/me`. These and `scope_changed` revoke the user's sessions, so after sending one the
+  stream ends; its reconnect is a 401 and the client signs in again with the new scope.
 
 ## Log events
-- Metric `sse_connections` gauge by role.
+- Metric `waypoint_sse_connections{role}` gauge on /metrics, per instance.
+- `realtime.stream.opened` and `realtime.stream.closed` with the role.
 - Never logged: cookies, tokens or event bodies.
 - Event names follow `<module>.<entity>.<past-tense verb>`; the list is still open.
 
@@ -80,19 +91,19 @@ Consumes:
 
 Progress: tick a criterion in the same PR as its passing test.
 
-- [ ] AC-RT-01 A dispatcher's stream covers her depots
-- [ ] AC-RT-02 A store manager sees only her outlet
-- [ ] AC-RT-03 Loaders and drivers get their own channels
-- [ ] AC-RT-04 Frames carry the outbox id and the envelope
-- [ ] AC-RT-05 A reconnect replays what was missed
-- [ ] AC-RT-06 A too-old id gets a resync
+- [x] AC-RT-01 A dispatcher's stream covers her depots
+- [x] AC-RT-02 A store manager sees only her outlet
+- [x] AC-RT-03 Loaders and drivers get their own channels
+- [x] AC-RT-04 Frames carry the outbox id and the envelope
+- [x] AC-RT-05 A reconnect replays what was missed
+- [x] AC-RT-06 A too-old id gets a resync
 - [ ] AC-RT-07 Positions are throttled and never replayed
-- [ ] AC-RT-08 Stores never see the map
-- [ ] AC-RT-09 Idle streams stay alive
-- [ ] AC-RT-10 Fan-out subscribes only while a client needs it
-- [ ] AC-RT-11 Clock changes reach everyone
-- [ ] AC-RT-12 No session, no stream
-- [ ] AC-RT-13 A role change reaches the user at once
+- [x] AC-RT-08 Stores never see the map
+- [x] AC-RT-09 Idle streams stay alive
+- [x] AC-RT-10 Fan-out subscribes only while a client needs it
+- [x] AC-RT-11 Clock changes reach everyone
+- [x] AC-RT-12 No session, no stream
+- [x] AC-RT-13 A role change reaches the user at once
 ```gherkin
 AC-RT-01  A dispatcher's stream covers her depots
   Given dispatcher Tihara Egodage with no depot set (all depots)
@@ -176,19 +187,18 @@ AC-RT-13  A role change reaches the user at once
   `outbox:nudge` after commit (about 100 ms) and also polls every 500 ms.
 - Nothing on a screen polls; each client holds one stream.
 - Instances scale out with no shared state and no sticky sessions.
-- Caddy uses `flush_interval -1` and no compression on the streams route.
-- Replay depth is about 2,000 events per channel, kept 24 hours.
+- Caddy uses `flush_interval -1` and no compression on the streams route (deploy/caddy/Caddyfile).
+- Replay depth is 2,000 events, kept 24 hours.
 
 ## Open questions
-- What are the Redis key names for the replay streams and pub/sub channels?
-- Does the mapping from routing to channels live in the relay (core) or in realtime?
-- How do routing fields map onto depot:<id>:loading and trip:<id>?
-- Which channels carry vehicle.position: depot:<id> only, or trip:<id> too?
-- Does an admin get any channel beyond user:<id> and broadcast?
-- Which trips put a driver on trip:<id>: today's, or the 7 days of the driver scope?
-- Does a role or scope change close the open stream so its channels are recomputed?
+- Which channels carry vehicle.position: depot:<id> only, or trip:<id> too? (ROO-37, with AC-RT-07)
 - How is comment.created routed to "everyone on that record"?
 - Which log event names does the module write for stream open and close?
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 ROO-25: GET /streams/me built. Replay reads outbox_events instead of per-channel
+  Redis Streams; one shared subscriber per instance instead of a pub/sub channel per SSE channel;
+  channel mapping lives in realtime (domain/channels.ts); admins get the dispatcher's channels plus
+  role:admin. useEventStream now listens for every event type the modules emit.
+  AC-RT-07 waits on position ingest (ROO-37).

@@ -25,12 +25,20 @@ import {
   outlets,
   parkingEnum,
   roadClassEnum,
+  roadConditions,
   serviceAllowances,
+  trafficSpeeds,
   vehicles,
   vehicleTempEnum,
   vehicleTypeEnum,
 } from '../schema';
-import { readSeedCsv, toMinutes, type Row } from './csv';
+import {
+  CONDITION_FILES,
+  knownDistrictsOnly,
+  parseRoadConditions,
+  parseTrafficSpeeds,
+} from './conditions';
+import { flag, readSeedCsv, slug, toMinutes, type Row } from './csv';
 
 /** Dataset depot name -> depot id. */
 const DEPOT_IDS: Record<string, string> = { Peliyagoda: 'PLG', Kandy: 'KDY' };
@@ -58,16 +66,9 @@ function readCsv(dir: string, file: string): Row[] | null {
 }
 
 const num = (v: string) => Number(v);
-const flag = (v: string) => v === '1' || v.toLowerCase() === 'true';
 const blankToNull = (v: string | undefined) => (v ? v : null);
 const depotId = (name: string) =>
   DEPOT_IDS[name] ?? name.slice(0, 3).toUpperCase();
-const slug = (name: string) =>
-  name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
 const title = (brand: string) => brand[0] + brand.slice(1).toLowerCase();
 
 /** Dataset value -> enum value: `van_only` becomes `VAN_ONLY`. */
@@ -110,6 +111,10 @@ export async function seedReferenceData(db: Database, dir: string) {
   const calendarRows = readCsv(dir, 'calendar.csv');
   const travelRows = readCsv(dir, 'district_travel.csv');
   const allowanceRows = readCsv(dir, 'service_allowance.csv');
+  const trafficRows = readCsv(dir, CONDITION_FILES.traffic);
+  const roadRows = readCsv(dir, CONDITION_FILES.road);
+  /** Both files key on the district; a row for one the reference data lacks is skipped. */
+  const skipped = { traffic: 0, road: 0 };
 
   const depotNames = new Set<string>([
     ...(outletRows ?? []).map((r) => r.depot),
@@ -177,6 +182,35 @@ export async function seedReferenceData(db: Database, dir: string) {
           target: districts.id,
           set: excludedSet(districts, ['id', 'centroidLat', 'centroidLng']),
         });
+    }
+
+    // Traffic speeds and road conditions are the dataset and nothing else (no admin edits them),
+    // so each table becomes exactly its file: cleared, then filled.
+    if (trafficRows || roadRows) {
+      const known = new Set(
+        (await tx.select({ id: districts.id }).from(districts)).map(
+          (d) => d.id,
+        ),
+      );
+      if (trafficRows) {
+        const parsed = knownDistrictsOnly(
+          parseTrafficSpeeds(trafficRows),
+          known,
+        );
+        skipped.traffic = parsed.skipped;
+        await tx.delete(trafficSpeeds);
+        for (let i = 0; i < parsed.rows.length; i += 1000)
+          await tx.insert(trafficSpeeds).values(parsed.rows.slice(i, i + 1000));
+      }
+      if (roadRows) {
+        const parsed = knownDistrictsOnly(parseRoadConditions(roadRows), known);
+        skipped.road = parsed.skipped;
+        await tx.delete(roadConditions);
+        for (let i = 0; i < parsed.rows.length; i += 1000)
+          await tx
+            .insert(roadConditions)
+            .values(parsed.rows.slice(i, i + 1000));
+      }
     }
 
     if (outletRows?.length) {
@@ -365,6 +399,13 @@ export async function seedReferenceData(db: Database, dir: string) {
   console.log(
     `[seed] reference data: ${depotNames.size} depots, ${travelRows?.length ?? 0} districts, ` +
       `${outletRows?.length ?? 0} outlets, ${vehicleRows?.length ?? 0} vehicles, ` +
-      `${calendarRows?.length ?? 0} calendar days, ${allowanceRows?.length ?? 0} service allowances`,
+      `${calendarRows?.length ?? 0} calendar days, ${allowanceRows?.length ?? 0} service allowances, ` +
+      `${(trafficRows?.length ?? 0) - skipped.traffic} traffic speeds, ` +
+      `${(roadRows?.length ?? 0) - skipped.road} road conditions`,
   );
+  for (const [what, n] of Object.entries(skipped))
+    if (n)
+      console.warn(
+        `[seed] ${n} ${what} rows name a district that is not in district_travel.csv; skipped`,
+      );
 }

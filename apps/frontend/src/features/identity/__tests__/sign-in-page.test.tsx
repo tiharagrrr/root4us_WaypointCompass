@@ -14,7 +14,7 @@ describe('A0 Sign in', () => {
     signIn.email.mockResolvedValue({ data: null, error: { status: 401, message: 'Invalid email or password' } })
     renderScreen(<SignInPage />, '/sign-in')
 
-    await userEvent.type(screen.getByLabelText('Email or phone'), 'tihara.e@waypoint.lk')
+    await userEvent.type(screen.getByLabelText('Email or username'), 'tihara.e@waypoint.lk')
     await userEvent.type(screen.getByLabelText('Password'), 'not-her-password')
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
 
@@ -26,7 +26,7 @@ describe('A0 Sign in', () => {
     signIn.username.mockResolvedValue({ data: null, error: { status: 429, message: 'Too many requests' } })
     renderScreen(<SignInPage />, '/sign-in')
 
-    await userEvent.type(screen.getByLabelText('Email or phone'), 'tihara.e')
+    await userEvent.type(screen.getByLabelText('Email or username'), 'tihara.e')
     await userEvent.type(screen.getByLabelText('Password'), 'whatever-1234')
     await userEvent.click(screen.getByRole('button', { name: 'Sign in' }))
 

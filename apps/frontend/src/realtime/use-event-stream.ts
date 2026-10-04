@@ -12,8 +12,24 @@ import { eventBus, isDomainEvent, type DomainEvent } from './event-bus'
 const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'order.submitted': (e) => ['/api/v1/orders', `/api/v1/depots/${String(e.routing.depotId)}/days`],
   'order.cancelled': () => ['/api/v1/orders'],
+  // M1 to M3 and 02's depot day follow a store's edits as they are saved.
+  'order.created': (e) => ['/api/v1/orders', `/api/v1/depots/${String(e.routing.depotId)}/days`],
+  'order.updated': (e) => [`/api/v1/orders/${e.aggregate.id}`, '/api/v1/depots'],
+  'order.lines_changed': (e) => [`/api/v1/orders/${e.aggregate.id}`, '/api/v1/depots'],
+  'order.priority_changed': (e) => [`/api/v1/orders/${e.aggregate.id}`, '/api/v1/depots'],
+  'order.backordered': () => ['/api/v1/orders', '/api/v1/depots'],
+  'order.deleted': () => ['/api/v1/orders', '/api/v1/depots'],
+  'order.cutoff_reminder': () => ['/api/v1/orders'],
+  'order.cutoff_closed': () => ['/api/v1/orders', '/api/v1/depots'],
+  'order_template.created': () => ['/api/v1/order-templates'],
+  'order_template.deleted': () => ['/api/v1/order-templates'],
+  'receiving_roster.replaced': () => ['/api/v1/outlets'],
   'order.rolled_to_next_run': () => ['/api/v1/orders'],
   'plan.published': (e) => [`/api/v1/plans/${e.aggregate.id}`, '/api/v1/me/trips', '/api/v1/depots'],
+  // Another dispatcher's edit or engine run on the same plan (06, 07).
+  'plan.edited': (e) => [`/api/v1/plans/${e.aggregate.id}`],
+  'plan.engine_run.completed': () => ['/api/v1/plans'],
+  'plan.engine_run.failed': () => ['/api/v1/plans'],
   'plan.revised': (e) => [`/api/v1/plans/${e.aggregate.id}`, '/api/v1/me/trips', '/api/v1/depots'],
   'load.flag_raised': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`, '/api/v1/depots'],
   // The dock's list is rebuilt by a plan revision; the banner on L2 comes off the same event.
@@ -23,13 +39,28 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'load.flag_resolved': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`],
   'load.flag_decided': (e) => [`/api/v1/trips/${String(e.data.tripId)}/load-list`, '/api/v1/depots'],
   'trip.released': (e) => [`/api/v1/trips/${e.aggregate.id}`, '/api/v1/depots'],
-  'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders'],
+  // The live day (01, 19, 19a) lives under /depots/{id}/tracking.
+  'stop.completed': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, '/api/v1/orders', '/api/v1/depots'],
   'eta.updated': (e) => [`/api/v1/trips/${String(e.data.tripId)}`, `/api/v1/orders/${String(e.data.orderId)}/eta`],
   'alert.raised': () => ['/api/v1/alerts'],
   // So another dispatcher's 01 shows who is on it without a reload (AC-ALR-08).
   'alert.acknowledged': () => ['/api/v1/alerts'],
   'alert.resolved': () => ['/api/v1/alerts'],
   'deferral.decided': () => ['/api/v1/deferrals', '/api/v1/orders'],
+  // 21 follows the day as trips finish, and every screen sees the plan lock when it closes.
+  'trip.completed': () => ['/api/v1/plans', '/api/v1/depots'],
+  'trip.started': () => ['/api/v1/depots'],
+  'stop.arrived': () => ['/api/v1/depots'],
+  // 19a, 19b and 20 follow another dispatcher's change to the same trip.
+  'trip.reassigned': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
+  'trip.resequenced': (e) => ['/api/v1/plans', `/api/v1/trips/${e.aggregate.id}`],
+  'stop.deferred': (e) => ['/api/v1/plans', '/api/v1/deferrals', `/api/v1/trips/${String(e.data.tripId)}`],
+  // A breakdown: 01, 19 and 20 show the trip can't run and the vehicle's status.
+  'trip.cant_run': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/trips'],
+  'trip.downloaded': () => ['/api/v1/depots'],
+  'vehicle.status_changed': () => ['/api/v1/vehicles', '/api/v1/depots', '/api/v1/plans'],
+  'stop.failed': () => ['/api/v1/plans', '/api/v1/depots'],
+  'plan.closed': () => ['/api/v1/plans', '/api/v1/depots', '/api/v1/deferrals', '/api/v1/orders'],
   // 23, M4 and M7 follow a deferral as it is confirmed, answered, replied to or reversed.
   'deferral.confirmed': () => ['/api/v1/deferrals', '/api/v1/orders'],
   'deferral.store_responded': () => ['/api/v1/deferrals'],
@@ -39,6 +70,13 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'settings.changed': () => ['/api/v1/settings'],
   'identity.user.role_changed': () => ['/api/v1/me'],
   'identity.user.deactivated': () => ['/api/v1/me'],
+  'identity.user.scope_changed': () => ['/api/v1/me'],
+  'identity.user.reactivated': () => ['/api/v1/users'],
+  'identity.user.invited': () => ['/api/v1/users', '/api/v1/invitations'],
+  'identity.user.joined': () => ['/api/v1/users', '/api/v1/invitations'],
+  'identity.user.pin_set': () => ['/api/v1/users'],
+  'identity.invitation.revoked': () => ['/api/v1/invitations'],
+  'identity.device.dock_changed': () => ['/api/v1/devices', '/api/v1/me'],
 }
 
 /** Positions move constantly; frame 19 reads them off the bus instead of refetching. */

@@ -548,11 +548,18 @@ say so in the spec if you change one.
 - Does ISSUE_REPORTED from D5 create a receipt issue row, and through which call? (Harini)
 
 ## Changelog
+- 2026-10-04 D7 built (ROO-62): the round now has an ending. Recording the last stop — a delivery
+  on D4 or an exception on D5 — lands on D7 instead of D1, and D1 offers the way back to it for a
+  driver who closed the app, so a finished round can always be closed. `TRIP_COMPLETED` was already
+  in the device event union and in `applyOptimistic`, and `cachedTripLinks` already withheld
+  `complete` while a stop was open, so this is the screen and the routes to it only. AC-EXE-15 now
+  has a screen test beside its API one. D6, D10 to D14 are still placeholders
 - 2026-10-03 D1, D2, D3, D4, D5, D8 and D9 built on the offline bundle writer (ROO-32): the phone
   saves the bundle into Dexie and records it with TRIP_DOWNLOADED, and every driver write after that
   is a queued event, never a POST. AC-EXE-05 now passes end to end; AC-EXE-02 and AC-EXE-06 to
   AC-EXE-14 have screen tests beside their API ones. D6, D7, D10 to D14 are still placeholders, and
-  what the frames show but the bundle does not carry is listed in docs/departures.md
+  what the frames show but the bundle does not carry is listed in docs/departures.md (D7 landed the
+  next day, see above)
 - 2026-10-02 AC-EXE-01 to AC-EXE-04 and AC-EXE-06 to AC-EXE-16 built and passing (ROO-31): my trips,
   the offline bundle, `StopEventService`, the online shortcuts and proof of delivery. Ten decisions
   recorded above; AC-EXE-16 answers 200 with a link rather than 302

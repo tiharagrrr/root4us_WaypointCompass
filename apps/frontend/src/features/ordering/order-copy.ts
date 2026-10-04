@@ -52,3 +52,27 @@ export const otherClassSentence = (tempClass: TempClass): string => {
 
 /** "Fresh" from FRESH, as M1a's "Waypoint Fresh range" reads. */
 export const brandWord = (brand: string): string => brand.charAt(0) + brand.slice(1).toLowerCase()
+
+/**
+ * A district id is the slug of the dataset's name ("gampaha"), so 03's group headers capitalise it
+ * rather than joining master-data for a name the queue never otherwise needs.
+ */
+export const districtLabel = (districtId: string): string =>
+  districtId
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+
+/**
+ * Why a dispatcher cancels an order on 03. `POST /orders/{id}/cancel` takes a free-form
+ * `reasonCode` matching ^[A-Z][A-Z0-9_]*$ (specs/ordering/spec.md, Endpoints); these are the ones
+ * the queue offers, so the audit trail reads the same from every dispatcher.
+ */
+export const CANCEL_REASONS = [
+  { code: 'OUTLET_CLOSED', label: 'Outlet closed' },
+  { code: 'DUPLICATE_ORDER', label: 'Duplicate order' },
+  { code: 'STORE_REQUEST', label: 'Store asked us to' },
+  { code: 'STOCK_UNAVAILABLE', label: 'Stock unavailable' },
+  { code: 'OTHER', label: 'Other' },
+] as const

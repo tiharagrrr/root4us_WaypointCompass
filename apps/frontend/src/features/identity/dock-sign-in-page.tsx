@@ -3,7 +3,7 @@ import { getDeviceId, getMeGetQueryOptions } from '@compass/api-client'
 import { DEPOTS, DEPOT_NAMES, type Depot } from '@waypoint/shared/domain'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { queryClient } from '@/app/query-client'
 import { Button } from '@/ui/button'
 import { PinKeypad } from '@/ui/pin-keypad'
@@ -13,7 +13,8 @@ import { authClient } from './auth-client'
 
 /** What L1 says for each refusal POST /api/auth/sign-in/pin gives. */
 const REFUSALS: Record<string, string> = {
-  NOT_A_DOCK_DEVICE: 'This tablet is not registered as a dock device for that depot. Ask your admin to add it.',
+  NOT_A_DOCK_DEVICE:
+    'This tablet is not registered as a dock device for that depot. Ask your admin to add it. To register it, sign in here once with an email and password; the admin then marks it under Settings › Dock tablets.',
   WRONG_PIN: 'That PIN is not one of this depot’s loaders. Try again.',
 }
 
@@ -124,6 +125,9 @@ export function DockSignInPage() {
             >
               {t('dockSignIn.submit')}
             </Button>
+            <Link to="/sign-in" className="type-body self-center font-medium text-primary">
+              {t('dockSignIn.emailInstead')}
+            </Link>
           </div>
         </div>
       </div>

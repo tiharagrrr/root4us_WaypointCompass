@@ -54,7 +54,12 @@ export function TodaysTripPage() {
 
   // Once the bundle is on the phone the cached status decides, so the screen behaves the same with
   // or without signal; before that the server's own link does.
-  const startLink = cached ? cachedTripLinks(cached).start : getLink(summary?._links, 'start')
+  const openStops = stops.filter((stop) => stop.status === 'PENDING' || stop.status === 'ARRIVED').length
+  const tripLinks = cached ? cachedTripLinks(cached, openStops) : {}
+  const startLink = cached ? tripLinks.start : getLink(summary?._links, 'start')
+  // A driver who closed the app after her last stop comes back here, so D1 has to offer the way to
+  // D7 as well — otherwise a finished round has no ending (AC-EXE-15).
+  const completeLink = tripLinks.complete
 
   const start = async () => {
     await enqueue({ kind: 'driver', type: 'TRIP_STARTED', tripId, baseVersion: cached?.version })
@@ -103,18 +108,31 @@ export function TodaysTripPage() {
       </section>
 
       <footer className="sticky bottom-0 -mx-4 mt-auto flex flex-col gap-2 border-t border-border bg-background px-4 pt-[13px] pb-2">
-        <Action
-          link={startLink}
-          onAction={start}
-          variant="primary"
-          className="h-[52px] w-full text-[16px]"
-          // D2: a trip the phone does not fully hold cannot be started, or the driver leaves the
-          // depot with half a round on board.
-          disabled={bundle.state !== 'saved'}
-        >
-          {t('driver.startTrip')}
-        </Action>
-        <p className="type-caption m-0 text-center text-muted-foreground">{t('driver.startNote')}</p>
+        {completeLink ? (
+          <Action
+            link={completeLink}
+            onAction={() => void navigate(`/driver/trips/${tripId}/done`)}
+            variant="primary"
+            className="h-[52px] w-full text-[16px]"
+          >
+            {t('driver.finishTrip')}
+          </Action>
+        ) : (
+          <>
+            <Action
+              link={startLink}
+              onAction={start}
+              variant="primary"
+              className="h-[52px] w-full text-[16px]"
+              // D2: a trip the phone does not fully hold cannot be started, or the driver leaves the
+              // depot with half a round on board.
+              disabled={bundle.state !== 'saved'}
+            >
+              {t('driver.startTrip')}
+            </Action>
+            <p className="type-caption m-0 text-center text-muted-foreground">{t('driver.startNote')}</p>
+          </>
+        )}
         <Button
           variant="ghost"
           className="h-11 w-full text-[15px] text-slate-700"

@@ -37,6 +37,7 @@ import {
   PlanVehicleOptionDto,
 } from '../dto/plan-engine.dto';
 import { PlanDto } from '../dto/plan.dto';
+import { DayCloseService } from '../services/day-close.service';
 import { DeferralDecisions } from '../services/deferral-decisions.service';
 import { EngineRunner } from '../services/engine-runner.service';
 import { PlanQueries, toRunDto } from '../services/plan.queries';
@@ -60,6 +61,7 @@ export class PlanBuildingController {
     private readonly queries: PlanQueries,
     private readonly decisions: DeferralDecisions,
     private readonly runner: EngineRunner,
+    private readonly dayClose: DayCloseService,
   ) {}
 
   /** 202 with the run; it finishes in the worker and reports over SSE (AC-PLN-09). */
@@ -208,5 +210,25 @@ export class PlanBuildingController {
   ) {
     const ctx = await this.plans.publish(id, version, actor);
     return this.queries.view(ctx, actor);
+  }
+
+  /**
+   * 21: close the day (AC-PLN-29). Unserved stops become deferrals, finished
+   * trips record their fuel, and the plan is CLOSED. 409 while a trip is on
+   * the road or a sync conflict is open.
+   */
+  @Post('close')
+  @HttpCode(200)
+  @RequirePermission('plan:close')
+  @UseIdempotency()
+  @ApiResource(PlanDto)
+  @ApiProblems(409, 412, 428)
+  async close(
+    @Param('id', ParseUUIDPipe) id: string,
+    @IfMatch() version: number,
+    @Actor() actor: SignedIn,
+  ) {
+    const plan = await this.dayClose.close(id, version, actor);
+    return this.queries.view(await this.plans.contextFor(plan), actor);
   }
 }

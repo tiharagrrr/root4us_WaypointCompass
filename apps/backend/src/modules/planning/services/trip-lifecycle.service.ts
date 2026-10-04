@@ -212,10 +212,33 @@ export class TripLifecycleService {
     });
   }
 
+  /**
+   * Closing the day (AC-PLN-29): a trip that never left the depot is
+   * cancelled, freeing its slot; its stops are cancelled by the caller.
+   */
+  @Transactional()
+  async cancelTrip(id: string, reason: string): Promise<TripRow> {
+    return this.moveTrip(id, 'CANCEL', { tripNo: null, cancelReason: reason });
+  }
+
+  /** Closing the day: a stop nobody reached is cancelled (PENDING → CANCELLED). */
+  @Transactional()
+  async cancelStop(stopId: string, reason: string): Promise<StopRow> {
+    return this.moveStop(stopId, 'CANCEL', {
+      seq: null,
+      cancelledReason: reason,
+    });
+  }
+
   private async moveTrip(
     id: string,
     event:
-      'START_LOADING' | 'RELEASE' | 'START' | 'COMPLETE' | 'REASSIGN_VEHICLE',
+      | 'START_LOADING'
+      | 'RELEASE'
+      | 'START'
+      | 'COMPLETE'
+      | 'REASSIGN_VEHICLE'
+      | 'CANCEL',
     changes: Partial<typeof trips.$inferInsert>,
   ): Promise<TripRow> {
     const before = await this.loadTrip(id);
@@ -262,7 +285,7 @@ export class TripLifecycleService {
 
   private async moveStop(
     stopId: string,
-    event: 'ARRIVE' | 'DELIVER' | 'PARTIAL' | 'FAIL',
+    event: 'ARRIVE' | 'DELIVER' | 'PARTIAL' | 'FAIL' | 'CANCEL',
     changes: Partial<typeof stops.$inferInsert>,
   ): Promise<StopRow> {
     const before = await this.loadStop(stopId);

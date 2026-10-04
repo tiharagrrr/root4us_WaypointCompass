@@ -105,6 +105,7 @@ export class OrderLinks extends LinkBuilder<
       status: o.status,
       tempClass: o.tempClass,
       brand: o.brand,
+      districtId: o.districtId,
       requestedDate: o.requestedDate,
       deliveryDate: o.deliveryDate,
       afterCutoff: o.afterCutoff,

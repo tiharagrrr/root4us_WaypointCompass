@@ -88,7 +88,7 @@ export class PlanDto {
 }
 
 /** One stop on a trip, in stop order. */
-export class StopDto {
+export class PlanStopDto {
   @ApiProperty({ example: '0192a3f4-0000-7000-8000-00000000c001' })
   id!: string;
 
@@ -246,8 +246,8 @@ export class TripDto {
   @ApiProperty({ example: 3 })
   version!: number;
 
-  @ApiProperty({ type: [StopDto] })
-  stops!: StopDto[];
+  @ApiProperty({ type: [PlanStopDto] })
+  stops!: PlanStopDto[];
 
   @ApiProperty({
     type: [ViolationDto],

@@ -25,5 +25,8 @@ export * from './receiving-roster/receiving-roster.ts';
 export * from './reference-data/reference-data.ts';
 export * from './root/root.ts';
 export * from './settings/settings.ts';
+export * from './streams/streams.ts';
+export * from './sync/sync.ts';
+export * from './trips/trips.ts';
 export * from './users/users.ts';
 export * from './vehicles/vehicles.ts';

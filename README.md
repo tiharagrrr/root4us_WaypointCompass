@@ -2,7 +2,7 @@
 
 > Tech-Triathlon 2026 · root4us_waypointcompass
 
-Waypoint Compass connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots (Peliyagoda, Kandy). One responsive web app serves four roles: **Dispatcher, Loader, Driver and Store manager**. The driver and loader flows work offline and sync when signal returns.
+Waypoint Compass connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots (Peliyagoda, Kandy). One responsive web app serves five roles: **Admin, Dispatcher, Loader, Driver and Store manager**. The driver and loader flows work offline and sync when signal returns.
 
 | | |
 | --- | --- |
@@ -20,6 +20,9 @@ Requirements: Docker with Compose v2.
 ```bash
 git clone <repo-url> && cd <repo>
 cp .env.example .env      # optional: defaults work as-is
+# Copy the dataset CSVs (outlets, vehicles, calendar, district_travel, service_allowance,
+# traffic_speed, road_conditions, deliveries_train, task2b_peak_day_*) into data/seed.
+# They are confidential, so the repository does not carry them; the seed reads them from there.
 docker compose up --build
 ```
 
@@ -27,7 +30,7 @@ Once the `seed` job has finished and `api` is healthy:
 
 | What | URL |
 | --- | --- |
-| Web app (all four roles) | http://localhost:8080 |
+| Web app (all five roles) | http://localhost:8080 |
 | API docs (Swagger) | http://localhost:3000/api/docs |
 | API health | http://localhost:8080/api/health |
 | Object storage health (Garage) | http://localhost:9001/health |
@@ -46,17 +49,35 @@ Once the `seed` job has finished and `api` is healthy:
 | Driver | Dinushi Rathnayake | phone `+94775550107`, code from the demo inbox | DRY-31 |
 
 The password is `SEED_PASSWORD` in `.env` (at least 10 characters; without it the seed skips the
-accounts). Driver codes go to `/api/v1/demo/inbox` when `DEMO_MODE=true`, and the worker sends them.
-Signing in from the Vite dev server needs `TRUSTED_ORIGINS=http://localhost:5173` in `.env`.
+accounts). Every persona also has a username (`rusiru.w`, `tihara.e`, `nimesha.p`, `harini.d`,
+`aniqa.r`, `dinushi.r`) that works on the sign-in form in place of the email.
+
+### Signing in
+
+The start page at `/` offers the three ways in:
+
+- **Email or username and password** (`/sign-in`): admin, dispatcher, store manager, and any
+  persona in a pinch.
+- **Driver** (`/sign-in/driver`): phone number, then the 6-digit code. With `DEMO_MODE=true` the
+  SMS is not sent; read the code at http://localhost:8080/demo/inbox (the worker must be running).
+- **Loader** (`/sign-in/dock`): depot and 4-digit PIN, only on a registered dock tablet. A fresh
+  browser is not one yet: sign in on it once with an email (Harini's or the admin's), then as admin
+  open Settings › Dock tablets, find the row marked "This device" and choose "Use as dock tablet"
+  for Peliyagoda. From then on the PIN works there and "Switch user" returns to the keypad.
+
+Testing on a phone over your network: open the app by the machine's address (for example
+`http://192.168.1.20:8080`) and set `APP_URL` to that address, or add it to `TRUSTED_ORIGINS`, or
+sign-in is refused as a wrong origin. Under `pnpm dev` the Vite origin `http://localhost:5173` is
+trusted automatically.
 
 ## Judge walkthrough
 
 > Seeded demo day D: the day after the demo clock's date, at Peliyagoda, from scenario S1 (the seed prints D, its order count and the fleet it checks them against). Every S1 order is CONFIRMED on D; outlets skipped on the run before wait as DEFERRED with a deferral on D−1; the S1 workshop vehicles are out; Fresh Kadawatha has a draft dry order for D+1. Kandy has an ordinary day on D (its orders from the last day of the delivery history, whole fleet in service), and both depots have 14 closed operating days of history before D−1. Set `DEMO_CLOCK` to test the 4 PM cutoff at any time of day, and run `pnpm db:reset-demo` (or POST /demo/reset as admin in demo mode) to start the day again.
 
-1. **Store manager** (phone or desktop): sign in as `storemanager`, place an order before the cutoff and see it confirmed. _…_
-2. **Dispatcher** (desktop): sign in as `dispatcher`, close the cutoff, run allocation, review deferred orders and their reasons, then publish the plan. _…_
-3. **Loader** (phone width): sign in as `loader`, open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle. _…_
-4. **Driver** (phone width): sign in as `driver`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync. _…_
+1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`, place an order before the cutoff and see it confirmed. _…_
+2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`, close the cutoff, run allocation, review deferred orders and their reasons, then publish the plan. _…_
+3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle. _…_
+4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync. _…_
 5. **Dispatcher**: see live progress, the synced events (device time vs. sync time), and the outlet deferral history. _…_
 6. **Store manager**: see the ETA and deferral notice, confirm receipt, and report an issue. _…_
 7. **Order timeline**: open any order to see every step with who, when, device and reason. _…_
@@ -85,7 +106,7 @@ cp .env.example .env      # Compose + shared defaults; per-app overrides:
 pnpm infra:up             # postgres, redis, Garage (S3) in Docker
 pnpm db:generate          # only after schema changes: writes apps/backend/drizzle/*.sql
 pnpm db:migrate
-pnpm db:seed
+pnpm db:seed              # reads the dataset CSVs from data/seed (git-ignored; copy them in first)
 pnpm dev                  # shared (watch) + API :3000 + web :5173
 pnpm --filter api dev:worker   # second terminal: the worker (cutoff ticker, outbox relay, jobs)
 ```
@@ -101,6 +122,8 @@ The web dev server proxies `/api` to the API, so both run on one origin, as they
 | `pnpm db:generate` | Generate a migration from `apps/backend/src/db/schema/<module>.ts`; name it with `pnpm --filter api db:generate --name=<module>_<change>` |
 | `pnpm db:migrate` / `db:seed` / `db:studio` | Apply migrations, load datasets, the item catalog, 14 days of history and the demo day, open Drizzle Studio |
 | `pnpm db:reset-demo` | Rebuild D−1 to D+1 of the demo day on your local database (`DEMO_DAY=YYYY-MM-DD` pins D) |
+| `pnpm db:fresh` | Local only: drop every table, migrate, seed from `data/seed`, then `db:verify`. Use it after dropping new dataset files in, or when the database holds leftovers from test runs |
+| `pnpm db:verify` | Read-only: which dataset files are present, how many rows each table holds, users by role, the depots. Exits 1 when the reference data is missing |
 | `pnpm infra:up` | Start only the backing services in Docker |
 | `pnpm stack:up` / `stack:down` / `stack:reset` | Full Compose stack; reset also wipes volumes |
 

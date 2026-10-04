@@ -27,6 +27,8 @@
     "db:seed": "tsx src/db/seed.ts",
     "db:reset-demo": "tsx src/db/reset-demo.ts",
     "db:reset": "tsx src/db/reset.ts && pnpm db:migrate && pnpm db:seed",
+    "db:verify": "tsx src/db/verify-seed.ts",
+    "db:fresh": "pnpm db:reset && pnpm db:verify",
     "db:studio": "drizzle-kit studio",
     "start:worker": "node dist/worker",
     "dev:worker": "nest start --watch --entryFile worker",

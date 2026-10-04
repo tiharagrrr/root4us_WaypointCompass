@@ -26,7 +26,12 @@ export const dispatchRoutes: RouteObject[] = [
             // 01 is shared: alerts builds the banner and the exception panel (ROO-50).
             lazy: async () => ({ Component: (await import('@/features/alerts/dashboard-page')).DashboardPage }),
           },
-          { path: 'orders', handle: handle('Order queue'), element: <ScreenPlaceholder code="03" name="Order queue" node="185:12856" /> },
+          {
+            // 03 (ROO-35).
+            path: 'orders',
+            handle: handle('Order queue'),
+            lazy: async () => ({ Component: (await import('@/features/ordering/order-queue-page')).OrderQueuePage }),
+          },
           { path: 'past-orders', handle: handle('Past orders'), element: <ScreenPlaceholder code="04" name="Past orders" node="488:8916" /> },
           {
             path: 'plan',
@@ -76,9 +81,10 @@ export const dispatchRoutes: RouteObject[] = [
             lazy: async () => ({ Component: (await import('@/features/alerts/trip-details-page')).TripDetailsPage }),
           },
           {
+            // 21 (ROO-61).
             path: 'end-of-day',
             handle: handle('End of day'),
-            element: <ScreenPlaceholder code="21" name="End-of-day summary" node="185:18295" />,
+            lazy: async () => ({ Component: (await import('@/features/planning/end-of-day-page')).EndOfDayPage }),
           },
           { path: 'forecast', handle: handle('Forecast'), element: <ScreenPlaceholder code="22" name="Forecast" node="185:18562" /> },
           {

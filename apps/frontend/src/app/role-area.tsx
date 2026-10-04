@@ -3,6 +3,7 @@ import type { UserRole } from '@waypoint/shared/domain'
 import type { ReactNode } from 'react'
 import { Navigate, Outlet } from 'react-router'
 import { ROLE_HOME } from '@/features/identity/role-home'
+import { useRegisterDevice } from '@/features/identity/use-register-device'
 
 export interface RoleAreaProps {
   /** The roles this area belongs to. */
@@ -19,6 +20,8 @@ export interface RoleAreaProps {
 export function RoleArea({ allow, children }: RoleAreaProps) {
   const me = useMeGet()
   const role = me.data?.data.role
+  // Every signed-in browser registers itself once, so A6 can make it a dock tablet.
+  useRegisterDevice(me.data?.data.id)
 
   // Nothing is known yet: the shell would only flash before the redirect.
   if (me.isPending) return null
