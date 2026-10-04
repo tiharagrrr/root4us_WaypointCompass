@@ -58,7 +58,7 @@ replayed.
   | Store manager | `outlet:<id>` |
   | Loader | `depot:<id>:loading` (`load.*`, `plan.*` and `trip.*` events of the depot) |
   | Driver | `trip:<id>` for each trip in the driver scope (7 days back, tomorrow ahead), read again on `plan.published`, `plan.revised`, `trip.reassigned` and `trip.released` |
-  | Everyone | `user:<id>` and `broadcast` (clock and settings changes) |
+  | Everyone | `user:<id>` and `broadcast` (clock, settings and depot settings changes) |
 
 - Frame: `id` is the outbox id, `event` is the type, `data` is the DomainEvent JSON (v, type,
   aggregate, routing, data, occurredAt). Keep-alive: `retry: 3000` and a heartbeat every 15 s.
@@ -70,7 +70,7 @@ Consumes:
 - every outbox event, routed by its depotId, outletIds and userIds;
 - `vehicle.position` straight from the ping pipeline (not the outbox), at most once per vehicle
   every 5 seconds per channel;
-- `clock.changed` and `settings.changed` on `broadcast`;
+- `clock.changed`, `settings.changed` and `depot.updated` on `broadcast`;
 - `identity.user.role_changed` and `identity.user.deactivated` on `user:<id>`, so the client
   refreshes `/me`. These and `scope_changed` revoke the user's sessions, so after sending one the
   stream ends; its reconnect is a 401 and the client signs in again with the new scope.
@@ -104,6 +104,7 @@ Progress: tick a criterion in the same PR as its passing test.
 - [x] AC-RT-11 Clock changes reach everyone
 - [x] AC-RT-12 No session, no stream
 - [x] AC-RT-13 A role change reaches the user at once
+- [x] AC-RT-14 A cutoff change reaches every role
 ```gherkin
 AC-RT-01  A dispatcher's stream covers her depots
   Given dispatcher Tihara Egodage with no depot set (all depots)
@@ -180,6 +181,12 @@ AC-RT-13  A role change reaches the user at once
   When the admin changes her role
   Then identity.user.role_changed arrives on user:<her id>
     And the client refreshes /me
+
+AC-RT-14  A cutoff change reaches every role
+  Given open streams for all five roles
+  When the admin sets ordering.cutoffMin on A6, or Peliyagoda's cutoff override on A4
+  Then every stream receives settings.changed, or depot.updated, on broadcast
+    And the client refetches orders, depots, plans and trips, so M1 counts down to the new cutoff
 ```
 
 ## Non-functional
@@ -196,6 +203,9 @@ AC-RT-13  A role change reaches the user at once
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 AC-RT-14: `depot.updated` joins `broadcast`, and the web refetches orders, depots, plans
+  and trips on `settings.changed` (it refetched only `/settings`, so a store kept counting down to the
+  old cutoff until a reload). 05 and 09 read the depot's `effectiveCutoffMin` instead of 16:00
 - 2026-10-04 ROO-25: GET /streams/me built. Replay reads outbox_events instead of per-channel
   Redis Streams; one shared subscriber per instance instead of a pub/sub channel per SSE channel;
   channel mapping lives in realtime (domain/channels.ts); admins get the dispatcher's channels plus

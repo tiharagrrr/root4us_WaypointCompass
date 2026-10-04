@@ -81,10 +81,13 @@ export const CHECKS: readonly { label: string; rules: readonly string[] }[] = [
 /** Business date to "Tue 29 Sep". */
 export const dayLabel = (date: string): string => formatColombo(instantAt(date, 720), 'EEE d MMM')
 
-/** What a day's chip says: the plan's state for the open day, otherwise whether orders still come in. */
-export function dayStatus(date: string, now: Date, planStatus?: string): string {
-  if (planStatus) return planStatus
-  return now.getTime() < cutoffFor(date, 960).getTime() ? 'ORDERS OPEN' : 'NOT STARTED'
+/**
+ * What another day's chip says: whether orders still come in. `cutoffMin` is the depot's cutoff in
+ * force (`effectiveCutoffMin`); until it has loaded the chip says nothing rather than guess.
+ */
+export function dayStatus(date: string, now: Date, cutoffMin: number | undefined): string {
+  if (cutoffMin === undefined) return ''
+  return now.getTime() < cutoffFor(date, cutoffMin).getTime() ? 'ORDERS OPEN' : 'NOT STARTED'
 }
 
 /** A vehicle 06 lets the dispatcher pick: in service, with a trip slot left. */

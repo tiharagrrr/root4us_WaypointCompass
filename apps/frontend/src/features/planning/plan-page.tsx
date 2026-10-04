@@ -1,5 +1,6 @@
 // Figma: 05 Plan · empty · 265:2134 and 09 Plan · vehicles · 268:2245 (one route, by whether the
 // day has trips yet)
+import { useDepotsGet } from '@compass/api-client'
 import { DEPOT_NAMES } from '@waypoint/shared/domain'
 import { addDays, cutoffFor } from '@waypoint/shared'
 import { useState } from 'react'
@@ -48,10 +49,16 @@ export function PlanPage() {
   const trips = day.trips.data?.data ?? []
   const status = !plan ? '' : plan.status === 'DRAFT' ? (trips.length ? 'DRAFT' : 'NOT STARTED') : plan.status
   const shown = valid ? date : tomorrow
-  const closed = now.getTime() >= cutoffFor(shown, 960).getTime()
+  // The depot's cutoff in force: its own override, then the admin's setting (A4, A6).
+  const cutoff = useDepotsGet(depot).data?.data
+  const orders = !cutoff
+    ? ''
+    : now.getTime() >= cutoffFor(shown, cutoff.effectiveCutoffMin).getTime()
+      ? `CUTOFF CLOSED ${cutoff.effectiveCutoff}`
+      : 'ORDERS OPEN'
   const dayWord = shown === tomorrow ? 'tomorrow' : dayLabel(shown)
   usePageHeader({
-    eyebrow: `PLAN · ${dayLabel(shown).toUpperCase()} · ${trips.length ? status : closed ? 'CUTOFF CLOSED 16:00' : 'ORDERS OPEN'}`,
+    eyebrow: ['PLAN', dayLabel(shown).toUpperCase(), trips.length ? status : orders].filter(Boolean).join(' · '),
     title: `Plan · ${shown === tomorrow ? 'Tomorrow' : dayLabel(shown)}`,
   })
 

@@ -73,7 +73,13 @@ const INVALIDATES: Record<string, (event: DomainEvent) => readonly string[]> = {
   'notification.created': () => ['/api/v1/me/notifications'],
   'notification.read': () => ['/api/v1/me/notifications'],
   'clock.changed': () => ['/api/v1/clock'],
-  'settings.changed': () => ['/api/v1/settings'],
+  // A setting is read into other resources: the cutoff into an order's editableUntil and a depot's
+  // day, the planning rules into a plan's context, the release temperature into a load list.
+  'settings.changed': () => ['/api/v1/settings', '/api/v1/orders', '/api/v1/depots', '/api/v1/plans', '/api/v1/trips'],
+  // A4's cutoff override and docks, and A3's delivery windows, show on orders and plans too.
+  'depot.updated': () => ['/api/v1/depots', '/api/v1/orders'],
+  'depot.waves_updated': () => ['/api/v1/depots'],
+  'outlet.updated': () => ['/api/v1/outlets', '/api/v1/orders'],
   'identity.user.role_changed': () => ['/api/v1/me'],
   'identity.user.deactivated': () => ['/api/v1/me'],
   'identity.user.scope_changed': () => ['/api/v1/me'],

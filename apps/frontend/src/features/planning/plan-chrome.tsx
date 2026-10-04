@@ -1,8 +1,10 @@
 // Figma: 05 Plan · empty · 265:2134, the day strip (290:2783) and the stepper (265:2188) that 05
 // to 09 share.
+import { useDepotsGet } from '@compass/api-client'
 import { addDays } from '@waypoint/shared'
 import { useRef } from 'react'
 import { useNavigate } from 'react-router'
+import { useDepot } from '@/app/layouts/depot-context'
 import { cn } from '@/lib/cn'
 import { Icon } from '@/ui/icon'
 import { dayLabel, dayStatus } from './plan-copy'
@@ -18,6 +20,8 @@ export interface DayStripProps {
 /** "Plan for" and five days from tomorrow, plus a date picker for any other day. */
 export function DayStrip({ date, tomorrow, now, status }: DayStripProps) {
   const navigate = useNavigate()
+  const { depot } = useDepot()
+  const cutoffMin = useDepotsGet(depot).data?.data.effectiveCutoffMin
   const picker = useRef<HTMLInputElement>(null)
   const days = Array.from({ length: 5 }, (_, i) => addDays(tomorrow, i))
   if (!days.includes(date)) days.push(date)
@@ -44,7 +48,7 @@ export function DayStrip({ date, tomorrow, now, status }: DayStripProps) {
               {dayLabel(day)}
               {day === tomorrow ? ' · Tomorrow' : ''}
             </span>
-            <span className="type-mono-small uppercase text-muted-foreground">{active ? status : dayStatus(day, now)}</span>
+            <span className="type-mono-small uppercase text-muted-foreground">{active ? status : dayStatus(day, now, cutoffMin)}</span>
           </button>
         )
       })}

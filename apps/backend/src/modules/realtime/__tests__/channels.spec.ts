@@ -130,6 +130,24 @@ describe('realtime channels', () => {
       );
   });
 
+  it('AC-RT-14 A cutoff change reaches every role', () => {
+    const changes = [
+      event({ type: 'settings.changed', depotId: null }),
+      event({ type: 'depot.updated', depotId: 'PLG' }),
+    ];
+    for (const change of changes)
+      for (const role of [
+        'admin',
+        'dispatcher',
+        'store_manager',
+        'loader',
+        'driver',
+      ] as const)
+        expect(
+          reaches(channelsFor(actor({ role, depotId: 'PLG' })), change),
+        ).toBe(true);
+  });
+
   it('AC-RT-13 A role change reaches the user at once', () => {
     const changed = event({
       type: 'identity.user.role_changed',
