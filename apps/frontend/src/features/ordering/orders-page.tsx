@@ -105,6 +105,7 @@ export function OrdersPage() {
 }
 
 function OrderCard({ order }: { order: OrderDto }) {
+  const navigate = useNavigate()
   const at = STEP_OF[order.status] ?? 0
   return (
     <article aria-label={order.orderNo} className="flex flex-col gap-3 rounded-lg border border-border bg-background px-4 py-3.5">
@@ -135,9 +136,16 @@ function OrderCard({ order }: { order: OrderDto }) {
           </li>
         ))}
       </ol>
-      <p className="type-body-small m-0 text-muted-foreground">
-        Window {dayLabel(order.deliveryDate)} · {order.deliveryWindow.open}–{order.deliveryWindow.close}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="type-body-small m-0 text-muted-foreground">
+          Window {dayLabel(order.deliveryDate)} · {order.deliveryWindow.open}–{order.deliveryWindow.close}
+        </p>
+        {order.status === 'DELIVERED' || order.status === 'PARTIAL' ? (
+          <Button variant="default" size="sm" onClick={() => void navigate(`/store/orders/${order.id}/receipt`)}>
+            Confirm receipt
+          </Button>
+        ) : null}
+      </div>
     </article>
   )
 }
