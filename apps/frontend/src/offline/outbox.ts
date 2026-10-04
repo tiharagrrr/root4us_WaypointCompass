@@ -1,3 +1,4 @@
+import { getDeviceId } from '@compass/api-client'
 import { serverNow } from '@/lib/server-clock'
 import { applyOptimistic } from './apply-optimistic'
 import { db, META_KEYS, type CompassDb, type OutboxRow } from './db'
@@ -69,11 +70,15 @@ export const pendingCount = (database: CompassDb = db): Promise<number> =>
 export const conflictCount = (database: CompassDb = db): Promise<number> =>
   database.outbox.where('status').equals('conflict').count()
 
-/** This device's stable id, made once and kept, so the server can tell two phones apart. */
+/**
+ * This device's stable id, kept in Dexie so the server can tell two phones apart. It starts from
+ * the id the API client already sends as x-device-id (and the dock PIN sign-in posts), so one
+ * phone is one device on A6 and in the audit rows, not two.
+ */
 export async function deviceId(database: CompassDb = db): Promise<string> {
   const row = await database.meta.get(META_KEYS.deviceId)
   if (typeof row?.value === 'string') return row.value
-  const made = uuidv7()
+  const made = getDeviceId()
   await database.meta.put({ key: META_KEYS.deviceId, value: made })
   return made
 }

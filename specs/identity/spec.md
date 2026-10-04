@@ -103,7 +103,8 @@ BetterAuth configuration:
 | basePath | /api/auth |
 | Password | emailAndPassword enabled, minPasswordLength 10, reset through `authMessages.enqueue('password-reset', ...)` |
 | Session | expiresIn 7 days, updateAge 1 day, no cookie cache: a cached session outlives its deleted row, and a role or scope change must sign the user out at once (AC-IDN-04) |
-| Cookie | HttpOnly, Secure, SameSite=Lax, one origin (no CORS, no token in localStorage) |
+| Cookie | HttpOnly, SameSite=Lax, Secure when APP_URL is https (forcing Secure made browsers drop the cookie over plain http: Safari on localhost, any phone on a LAN address), one origin (no CORS, no token in localStorage) |
+| trustedOrigins | TRUSTED_ORIGINS plus, outside production, the Vite dev server (http://localhost:5173, http://127.0.0.1:5173), so a fresh checkout signs in without configuration |
 | phoneNumber | otpLength 6, expiresIn 300 s, allowedAttempts 5, `authMessages.enqueueOtp` (SMS provider) |
 | admin | `admin({ ac, roles, defaultRole: 'store_manager' })` |
 | Rate limits | global 100 per 60 s; /sign-in/email 10 per 60 s; /sign-in/pin 5 per 60 s; /sign-in/demo 20 per 60 s; /phone-number/send-otp 3 per 300 s |
@@ -872,6 +873,15 @@ AC-IDN-60  Routes match the permission matrix
 - Step 3 and Step 4 examples label 2026-10-01 "Wed" and 2026-10-02 "Thu"; the calendar and the Overview make them Thu and Fri. This spec uses ISO dates and the calendar's weekdays. Decides: Nimesha.
 
 ## Changelog
+- 2026-10-04 Sign-in works for every role from a real browser (ROO-68 bug bash): the cookie's Secure flag
+  follows APP_URL instead of being forced; the dev server is a trusted origin by default; every signed-in
+  browser registers itself through POST /me/devices so A6 can mark it as a dock tablet (the PIN route had
+  nothing to accept before); a 401 under /dock or /driver returns to L1 or D0a, not A0; A0 reads "Email or
+  username", maps 403 and links to the other sign-ins; the start page offers the three ways in and sends a
+  signed-in person to their role's home; D0a and D0b are built (`driver-sign-in-page.tsx`); `/demo/inbox` is a
+  page; D12 is a first account screen with D13's rule (sign-out waits for an empty outbox); the offline
+  outbox uses the same device id the API client sends. AC-IDN-15 and 17 have screen tests against a mocked
+  auth client; the e2e criteria for sign-in stay open
 - 2026-10-03 AC-IDN-59 passes: the S1 demo day registers its builder (ROO-22)
 - 2026-09-30 created from the Build Spec
 - 2026-09-30 Model: `loader_depots` for loaders who work at more than one depot (merged from the Supabase draft)
