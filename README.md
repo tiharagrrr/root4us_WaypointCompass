@@ -74,19 +74,19 @@ trusted automatically.
 
 > Seeded demo day D: the day after the demo clock's date, at Peliyagoda, from scenario S1 (the seed prints D, its order count and the fleet it checks them against). Every S1 order is CONFIRMED on D; outlets skipped on the run before wait as DEFERRED with a deferral on D−1; the S1 workshop vehicles are out; Fresh Kadawatha has a draft dry order for D+1. Kandy has an ordinary day on D (its orders from the last day of the delivery history, whole fleet in service), and both depots have 14 closed operating days of history before D−1. Set `DEMO_CLOCK` to test the 4 PM cutoff at any time of day, and run `pnpm db:reset-demo` (or POST /demo/reset as admin in demo mode) to start the day again.
 
-1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`, place an order before the cutoff and see it confirmed. _…_
-2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`, close the cutoff, run allocation, review deferred orders and their reasons, then publish the plan. _…_
-3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle. _…_
-4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync. _…_
-5. **Dispatcher**: see live progress, the synced events (device time vs. sync time), and the outlet deferral history. _…_
-6. **Store manager**: see the ETA and deferral notice, confirm receipt, and report an issue. _…_
-7. **Order timeline**: open any order to see every step with who, when, device and reason. _…_
+1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`. **New order** opens the outlet's dry and chilled orders for the next run; add items and submit before the 4 PM cutoff. **Orders** shows the order's progress, and **Timeline** on its card shows who did what and when.
+2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`. **Order queue** lists the day's orders (mark one urgent, or cancel one with a reason). **Plan** opens the demo day: close the cutoff, run the allocation, review the deferred orders and their reasons, fix or override what the checks flag, then confirm and publish.
+3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle.
+4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync.
+5. **Dispatcher**: **Dashboard** and **Tracking** show live progress, projected arrivals and late risk; a trip opens its stops with planned, projected and actual times. **Deferrals** holds the outlet deferral history with repeat skips, **Issues** what stores reported, and the end-of-day summary closes the day.
+6. **Store manager**: **Orders** shows the ETA of an order that is on a trip, and a deferred order opens its notice with the reason. **Receipts** lists deliveries to confirm; confirm one line by line against the driver's proof, or report an issue and follow its thread.
+7. **Order timeline**: **Timeline** on any order (the store's Orders and Receipts, the dispatcher's Order queue) lists every step with who, when, device and reason; a delivery recorded offline keeps its device time and is marked Synced late.
+
+Not built yet, shown as placeholders: Order history (M8), Item catalog (M9), Past orders (04), Plan ahead (12, 13), Forecast (22) and the admin's Outlets, Depots and Vehicles (A3 to A5). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
 
 ## Departures from the Designathon submission
 
-| Screen / flow | Designed (Day 5) | Built | Why |
-| --- | --- | --- | --- |
-| _…_ | | | |
+Every deliberate difference from the Figma frames is logged, screen by screen, with the reason, in [docs/departures.md](docs/departures.md).
 
 ---
 
