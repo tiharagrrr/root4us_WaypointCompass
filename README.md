@@ -82,7 +82,7 @@ trusted automatically.
 6. **Store manager**: **Orders** shows the ETA of an order that is on a trip, and a deferred order opens its notice with the reason. **Receipts** lists deliveries to confirm; confirm one line by line against the driver's proof, or report an issue and follow its thread.
 7. **Order timeline**: **Timeline** on any order (the store's Orders and Receipts, the dispatcher's Order queue) lists every step with who, when, device and reason; a delivery recorded offline keeps its device time and is marked Synced late.
 
-Not built yet, shown as placeholders: Item catalog (M9), Past orders (04), Plan ahead (12, 13), Forecast (22) and the admin's Outlets, Depots and Vehicles (A3 to A5). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
+Not built yet, shown as placeholders: Past orders (04), Plan ahead (12, 13), Forecast (22) and the admin's Outlets, Depots and Vehicles (A3 to A5). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
 
 ## Departures from the Designathon submission
 
