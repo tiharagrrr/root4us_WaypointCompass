@@ -39,9 +39,15 @@ export interface DesktopShellProps {
   headerStatus?: ReactNode
   /** Left of the page actions: the dispatcher's depot switch. */
   headerLead?: ReactNode
+  /** Where the person is working (the store manager's outlet), kept after every page's eyebrow. */
+  place?: string
 }
 
-export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, headerLead }: DesktopShellProps) {
+/** "ORDERS" becomes "ORDERS · FRESH KADAWATHA", unless the page's eyebrow already names the place. */
+const withPlace = (eyebrow: string, place: string | undefined): string =>
+  !place || eyebrow.toLowerCase().includes(place.toLowerCase()) ? eyebrow : `${eyebrow} · ${place}`
+
+export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, headerLead, place }: DesktopShellProps) {
   useEventStream()
   const handle = useRouteHandle()
   const [actionsSlot, setActionsSlot] = useState<HTMLDivElement | null>(null)
@@ -104,7 +110,10 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
         <div className="flex min-w-0 flex-1 flex-col">
           {wide ? null : (
             <div className="flex flex-col gap-2 border-b border-border px-4 pb-2 pt-3">
-              <Wordmark />
+              <div className="flex items-center justify-between gap-3">
+                <Wordmark />
+                <p className="m-0 truncate font-mono text-[10px] leading-auto tracking-[0.4px] text-slate-400">{navLabel}</p>
+              </div>
               <nav aria-label={navLabel} className="-mx-1 flex gap-1 overflow-x-auto px-1">
                 {links(true)}
               </nav>
@@ -112,7 +121,7 @@ export function DesktopShell({ navLabel, nav, eyebrow, title, headerStatus, head
           )}
           <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-slate-200 px-4 pb-[17px] pt-4 md:px-6">
             <div className="flex min-w-0 flex-col gap-1">
-              <p className="type-label m-0 uppercase text-muted-foreground">{pageHeader?.eyebrow ?? handle.eyebrow ?? eyebrow}</p>
+              <p className="type-label m-0 uppercase text-muted-foreground">{withPlace(pageHeader?.eyebrow ?? handle.eyebrow ?? eyebrow, place)}</p>
               <h1 className="type-page-title m-0 truncate text-foreground">{pageHeader?.title ?? handle.title ?? title}</h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">
