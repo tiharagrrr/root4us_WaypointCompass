@@ -28,7 +28,11 @@ pnpm-debug.log*
 !.vscode/extensions.json
 !.vscode/settings.json
 
-# Datathon: competition data is confidential and must not be published
+# Competition datasets are confidential and must not be published. data/seed holds the CSVs the
+# seed reads; only its README and .gitkeep are tracked.
+data/seed/*
+!data/seed/.gitkeep
+!data/seed/README.md
 datathon/data/*
 !datathon/data/.gitkeep
 datathon/.venv/
