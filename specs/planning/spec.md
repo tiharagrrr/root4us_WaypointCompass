@@ -548,6 +548,12 @@ AC-PLN-38  Re-sequencing shows its projected arrivals first
   When Tihara previews a new order on 19b (POST /trips/{id}/resequence/preview) at 05:00 and again at 07:20
   Then the first preview lists each stop's projected arrival and minutes spare, with no violations
     And the second lists a WINDOW_OUTLET violation, and neither preview changes the stops or the trip's version
+
+AC-PLN-40  A trip takes its vehicle's driver
+  Given Peliyagoda's driver Aniqa has REF-07 as her vehicle (users.defaultVehicleId) and REF-03 has no driver
+  When Tihara's edit adds REF-07 trip 1 and REF-03 trip 1, each with an order
+  Then REF-07 trip 1's driverId is Aniqa and REF-03 trip 1 has no driver
+    And GET /plans/{id}/publish-preview lists one NO_DRIVER blocker, for REF-03 trip 1
 ```
 
 Checklist (tick in the PR that adds the passing test):
@@ -590,6 +596,7 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-37 The dispatcher picks a driver for a reassign
 - [x] AC-PLN-38 Re-sequencing shows its projected arrivals first
 - [x] AC-PLN-39 The live day shows progress, projected arrivals and late risk
+- [x] AC-PLN-40 A trip takes its vehicle's driver
 
 ## Non-functional
 - Engine speed: an S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms
@@ -680,6 +687,9 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Trip drivers (AC-PLN-40, ROO-76): the plan writer gives every trip its vehicle's driver
+  (the depot's driver whose `defaultVehicleId` is the vehicle) on each save; a vehicle with no driver of
+  its own keeps whoever SET_DRIVER put on the trip, and still blocks publishing when there is nobody
 - 2026-10-04 The live day (AC-PLN-39, ROO-46 and 01's KPI row and Today's runs from ROO-38): `GET
   /depots/{id}/tracking` with stops planned, projected by the engine from now, and actual, a standing
   per stop and trip, and the day's totals; 01, 19 and 19a read it

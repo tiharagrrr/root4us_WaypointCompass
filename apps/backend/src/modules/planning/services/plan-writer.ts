@@ -11,7 +11,7 @@ import { instantAt } from '@waypoint/shared';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { ClockService } from '../../../core/clock/clock.service';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
-import { deferrals, stops, trips } from '../../../db/schema';
+import { deferrals, stops, trips, users } from '../../../db/schema';
 import type { PlanContext, StopRow, TripRow } from './plan-context.builder';
 
 export interface SaveOptions {
@@ -34,6 +34,9 @@ export interface SaveOptions {
  *   `(tripId, seq)` is unique.
  * - Any live deferral of an order that is now on a trip is cancelled: the
  *   order is planned after all (AC-PLN-17).
+ * - A trip's driver is its vehicle's driver: the driver at the plan's depot
+ *   whose defaultVehicleId is the vehicle (AC-PLN-40). A vehicle with no
+ *   driver of its own keeps whoever was set on the trip.
  *
  * Runs in the caller's transaction; the caller audits and bumps the plan.
  */
@@ -66,6 +69,10 @@ export class PlanWriter {
     const wanted = new Map(scheduled.map((t) => [t.key, t]));
     const touched = new Set<string>();
     const now = this.clock.realNow();
+    const defaultDriver = await this.defaultDrivers(
+      plan.depotId,
+      scheduled.map((t) => t.vehicleId),
+    );
 
     // 1. Trips the plan no longer has, or whose brand or district changed
     //    (stops are keyed on both), go first, with every stop on them.
@@ -126,6 +133,8 @@ export class PlanWriter {
           .update(trips)
           .set({
             ...values,
+            driverId:
+              defaultDriver.get(next.vehicleId) ?? existing.driverId ?? null,
             locked,
             status:
               existing.status === 'RESERVED' && next.orderIds.length > 0
@@ -143,6 +152,7 @@ export class PlanWriter {
             planId: plan.id,
             depotId: plan.depotId,
             vehicleId: next.vehicleId,
+            driverId: defaultDriver.get(next.vehicleId) ?? null,
             tripNo: next.tripNo,
             brand: next.brand,
             districtId: next.districtId,
@@ -181,6 +191,28 @@ export class PlanWriter {
         );
 
     return [...touched].sort();
+  }
+
+  /** Each vehicle's driver at the depot, by vehicle id. */
+  private async defaultDrivers(
+    depotId: string,
+    vehicleIds: readonly string[],
+  ): Promise<Map<string, string>> {
+    if (vehicleIds.length === 0) return new Map();
+    const rows = await this.txHost.tx
+      .select({ id: users.id, vehicleId: users.defaultVehicleId })
+      .from(users)
+      .where(
+        and(
+          eq(users.role, 'driver'),
+          eq(users.depotId, depotId),
+          sql`coalesce(${users.banned}, false) = false`,
+          inArray(users.defaultVehicleId, [...new Set(vehicleIds)]),
+        ),
+      );
+    const byVehicle = new Map<string, string>();
+    for (const r of rows) if (r.vehicleId) byVehicle.set(r.vehicleId, r.id);
+    return byVehicle;
   }
 
   /** What a trip row stores from the engine's measured, scheduled trip. */

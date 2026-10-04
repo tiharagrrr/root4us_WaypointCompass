@@ -159,4 +159,5 @@ export const META_KEYS = {
   lastBundleAt: 'lastBundleAt',
   changeCursor: 'changeCursor',
   checkedByName: 'checkedByName',
+  dockLoaders: 'dockLoaders',
 } as const

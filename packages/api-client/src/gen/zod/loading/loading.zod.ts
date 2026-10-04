@@ -115,6 +115,36 @@ export const LoadingBoardTripsResponse = zod.object({
 })
 
 /**
+ * @summary The depot's dock loader names
+ */
+export const LoadingBoardLoadersParams = zod.object({
+  "depotId": zod.string()
+})
+
+export const LoadingBoardLoadersResponse = zod.object({
+  "data": zod.object({
+  "depotId": zod.string(),
+  "names": zod.array(zod.string()).describe('The depot\'s loader names, as the admin lists them in A6'),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
  * @summary A trip's load list, last stop first
  */
 export const TripLoadingLoadListParams = zod.object({

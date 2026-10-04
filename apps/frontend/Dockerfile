@@ -5,6 +5,9 @@ FROM node:22-alpine AS build
 RUN npm install -g pnpm@11.1.2
 WORKDIR /repo
 COPY package.json pnpm-workspace.yaml pnpm-lock.yam[l] ./
+# The root prepare script builds the packages on install, before their sources are
+# copied; the build step below builds them instead.
+RUN npm pkg delete scripts.prepare
 COPY packages/shared/package.json packages/shared/
 COPY packages/engine/package.json packages/engine/
 COPY packages/ui-tokens/package.json packages/ui-tokens/

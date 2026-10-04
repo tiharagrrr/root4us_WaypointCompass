@@ -35,6 +35,7 @@ import type {
   LoadFlagsUndo200,
   LoadLinesGet200,
   LoadLinesUndo200,
+  LoadingBoardLoaders200,
   LoadingBoardRuns200,
   LoadingBoardRunsParams,
   LoadingBoardTrips200,
@@ -294,6 +295,106 @@ export function useLoadingBoardTrips<TData = Awaited<ReturnType<typeof loadingBo
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getLoadingBoardTripsQueryOptions(depotId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getLoadingBoardLoadersUrl = (depotId: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/loading/loaders`
+}
+
+/**
+ * @summary The depot's dock loader names
+ */
+export const loadingBoardLoaders = async (depotId: string, options?: Parameters<typeof compassFetch>[1]): Promise<LoadingBoardLoaders200> => {
+
+  return compassFetch<LoadingBoardLoaders200>(getLoadingBoardLoadersUrl(depotId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLoadingBoardLoadersQueryKey = (depotId: string,) => {
+    return [
+    `/api/v1/depots/${depotId}/loading/loaders`
+    ] as const;
+    }
+
+
+export const getLoadingBoardLoadersQueryOptions = <TData = Awaited<ReturnType<typeof loadingBoardLoaders>>, TError = ErrorType<ProblemDto>>(depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLoadingBoardLoadersQueryKey(depotId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof loadingBoardLoaders>>> = ({ signal }) => loadingBoardLoaders(depotId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: depotId !== null && depotId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type LoadingBoardLoadersQueryResult = NonNullable<Awaited<ReturnType<typeof loadingBoardLoaders>>>
+export type LoadingBoardLoadersQueryError = ErrorType<ProblemDto>
+
+
+export function useLoadingBoardLoaders<TData = Awaited<ReturnType<typeof loadingBoardLoaders>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof loadingBoardLoaders>>,
+          TError,
+          Awaited<ReturnType<typeof loadingBoardLoaders>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLoadingBoardLoaders<TData = Awaited<ReturnType<typeof loadingBoardLoaders>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof loadingBoardLoaders>>,
+          TError,
+          Awaited<ReturnType<typeof loadingBoardLoaders>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLoadingBoardLoaders<TData = Awaited<ReturnType<typeof loadingBoardLoaders>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary The depot's dock loader names
+ */
+
+export function useLoadingBoardLoaders<TData = Awaited<ReturnType<typeof loadingBoardLoaders>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof loadingBoardLoaders>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getLoadingBoardLoadersQueryOptions(depotId,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

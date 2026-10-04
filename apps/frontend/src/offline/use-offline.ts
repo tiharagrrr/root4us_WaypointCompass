@@ -73,10 +73,31 @@ export const useCachedLoadFlags = (tripId: string | undefined) =>
   )
 
 /** The name typed on a shared dock tablet, remembered between taps (AC-LOD-03). */
-export const useCheckedByName = (): [string | null, (name: string) => Promise<void>] => {
+export const useCheckedByName = (): [string | null, (name: string | null) => Promise<void>] => {
   const row = useLiveQuery(() => db.meta.get(META_KEYS.checkedByName), [], undefined)
-  const set = async (name: string) => {
-    await db.meta.put({ key: META_KEYS.checkedByName, value: name })
+  /** null clears it, so each item is signed on its own again. */
+  const set = async (name: string | null) => {
+    if (name === null) await db.meta.delete(META_KEYS.checkedByName)
+    else await db.meta.put({ key: META_KEYS.checkedByName, value: name })
   }
   return [typeof row?.value === 'string' ? row.value : null, set]
+}
+
+/** The depot's loader roster from A6, kept on the tablet so Checked by works offline (AC-LOD-20). */
+export const useDockLoaders = (): [string[], (names: readonly string[]) => Promise<void>] => {
+  const row = useLiveQuery(() => db.meta.get(META_KEYS.dockLoaders), [], undefined)
+  const set = async (names: readonly string[]) => {
+    await db.meta.put({ key: META_KEYS.dockLoaders, value: JSON.stringify(names) })
+  }
+  return [parseNames(row?.value), set]
+}
+
+const parseNames = (value: unknown): string[] => {
+  if (typeof value !== 'string') return []
+  try {
+    const parsed: unknown = JSON.parse(value)
+    return Array.isArray(parsed) ? parsed.filter((n): n is string => typeof n === 'string') : []
+  } catch {
+    return []
+  }
 }

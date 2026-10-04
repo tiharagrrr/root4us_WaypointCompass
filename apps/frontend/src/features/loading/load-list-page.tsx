@@ -54,10 +54,9 @@ export function LoadListPage() {
       void enqueue({ kind: 'loader', type: 'LOAD_LINE_CHECKED', tripId: id, loadLineId: line.id, qtyLoaded: line.qtyExpected, checkedByName })
     })
   }
+  // Taking a tick back asks nobody: the line goes back to unchecked and loses its name.
   const undo = (line: LoadLineView) => {
-    checkedBy.withName((checkedByName) => {
-      void enqueue({ kind: 'loader', type: 'LOAD_CHECK_UNDONE', tripId: id, loadLineId: line.id, checkedByName })
-    })
+    void enqueue({ kind: 'loader', type: 'LOAD_CHECK_UNDONE', tripId: id, loadLineId: line.id, checkedByName: checkedBy.name ?? undefined })
   }
 
   const recheck = (flag: Parameters<typeof liveFlag>[0][number], line: LoadLineView | undefined) => {

@@ -178,10 +178,17 @@
     "offlineWithPending": "No signal. {{count}} records are waiting to send.",
     "checkedByName": "Checked by {{name}}",
     "checkedByUnset": "Who is checking?",
+    "checkedByLine": "by {{name}}",
     "checkedBy": {
       "title": "Who is checking?",
       "description": "Four loaders share this tablet, so every tick, flag and release carries the name of whoever looked in the crate.",
+      "itemTitle": "Who checked this item?",
+      "itemDescription": "No name is set for this tablet, so each item is signed by whoever checked it.",
+      "useForAll": "Use this name for every item on this tablet",
       "label": "Your name",
+      "placeholder": "Type or pick your name",
+      "tabletPlaceholder": "Leave empty to ask for a name on each item",
+      "newName": "Not on the depot's list: “{{name}}” is saved as typed",
       "save": "Save"
     },
     "flag": {

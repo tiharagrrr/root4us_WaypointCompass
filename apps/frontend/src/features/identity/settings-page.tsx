@@ -19,6 +19,7 @@ import { ErrorState } from '@/ui/states'
 import { Switch } from '@/ui/switch'
 import { toast } from '@/ui/toast-store'
 import { DeferralReasonsField } from './deferral-reasons-field'
+import { DockLoadersSection } from './dock-loaders-section'
 import { DockTabletsSection } from './dock-tablets-section'
 import { SettingRow } from './setting-row'
 import { TimeTravelSection } from './time-travel-section'
@@ -41,7 +42,7 @@ interface Section {
   title: string
   description: string
   rows: SettingRowSpec[]
-  extra?: 'reasons' | 'dock' | 'demo'
+  extra?: 'reasons' | 'loaders' | 'dock' | 'demo'
 }
 
 /** A6's sections. Copy from the frame where it draws the row; the rest follows its voice. */
@@ -76,6 +77,7 @@ const SECTIONS: Section[] = [
       { key: 'store.mustAcknowledgeDeferral', title: 'Store must acknowledge', description: 'Deferrals stay open until the store responds.', kind: 'switch' },
     ],
   },
+  { id: 'dock-loaders', title: 'Dock loaders', description: 'Who shares each depot’s dock tablet. Loaders pick their name from this list when they check items.', rows: [], extra: 'loaders' },
   {
     id: 'notifications',
     title: 'Notifications',
@@ -238,6 +240,7 @@ export function SettingsPage() {
                     </SettingRow>
                   )
                 })}
+                {section.extra === 'loaders' ? <DockLoadersSection /> : null}
                 {section.extra === 'dock' ? <DockTabletsSection /> : null}
                 {section.extra === 'demo' && clock.data ? <TimeTravelSection clock={clock.data.data} /> : null}
               </section>

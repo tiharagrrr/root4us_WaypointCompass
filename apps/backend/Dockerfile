@@ -6,6 +6,9 @@ FROM node:22-alpine AS base
 RUN npm install -g pnpm@11.1.2
 WORKDIR /repo
 COPY package.json pnpm-workspace.yaml pnpm-lock.yam[l] ./
+# The root prepare script builds the packages on install; here the sources are not
+# copied yet and --prod leaves out tsup, so the build stage below builds them instead.
+RUN npm pkg delete scripts.prepare
 COPY packages/shared/package.json packages/shared/
 COPY packages/engine/package.json packages/engine/
 COPY apps/backend/package.json apps/backend/

@@ -109,6 +109,9 @@ export function LoadLineCard({ line, frozen = false, onCheck, onUndo, footer }: 
           )}
         >
           {name}
+          {checked && line.checkedByName ? (
+            <span className="type-body-small block font-normal text-muted-foreground">{t('loading.checkedByLine', { name: line.checkedByName })}</span>
+          ) : null}
         </p>
         {flag ? (
           awaiting ? (
