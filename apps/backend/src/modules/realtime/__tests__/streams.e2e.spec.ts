@@ -241,9 +241,15 @@ describeWithDb('realtime streams', () => {
     await until(() => stream.frames.some((f) => f.event === 'ready'));
     expect(hub.subscribed).toBe(true);
     expect(hub.connections).toBe(1);
+    const gauge = async () =>
+      (await request(app.getHttpServer()).get('/metrics')).text.match(
+        /waypoint_sse_connections\{role="dispatcher"\} (\d+)/,
+      )?.[1];
+    expect(await gauge()).toBe('1');
 
     await stream.close();
     await until(() => hub.connections === 0);
     expect(hub.subscribed).toBe(false);
+    expect(await gauge()).toBe('0');
   });
 });

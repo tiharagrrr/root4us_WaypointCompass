@@ -53,7 +53,8 @@ replayed.
 
   | Role | Channels |
   | --- | --- |
-  | Dispatcher, admin | `depot:<id>`, or `depot:*` (every depot) when unscoped |
+  | Dispatcher | `depot:<id>`, or `depot:*` (every depot) when unscoped |
+  | Admin | the dispatcher's, plus `role:admin` (every `identity.*` event, for A1 and A2) |
   | Store manager | `outlet:<id>` |
   | Loader | `depot:<id>:loading` (`load.*`, `plan.*` and `trip.*` events of the depot) |
   | Driver | `trip:<id>` for each trip in the driver scope (7 days back, tomorrow ahead), read again on `plan.published`, `plan.revised`, `trip.reassigned` and `trip.released` |
@@ -75,8 +76,7 @@ Consumes:
   stream ends; its reconnect is a 401 and the client signs in again with the new scope.
 
 ## Log events
-- Metric `sse_connections` gauge by role (not exported yet; `RealtimeHub.connections` holds the
-  count per instance).
+- Metric `waypoint_sse_connections{role}` gauge on /metrics, per instance.
 - `realtime.stream.opened` and `realtime.stream.closed` with the role.
 - Never logged: cookies, tokens or event bodies.
 - Event names follow `<module>.<entity>.<past-tense verb>`; the list is still open.
@@ -199,5 +199,6 @@ AC-RT-13  A role change reaches the user at once
 - 2026-09-30 created from the Build Spec
 - 2026-10-04 ROO-25: GET /streams/me built. Replay reads outbox_events instead of per-channel
   Redis Streams; one shared subscriber per instance instead of a pub/sub channel per SSE channel;
-  channel mapping lives in realtime (domain/channels.ts); admins share the dispatcher's channels.
+  channel mapping lives in realtime (domain/channels.ts); admins get the dispatcher's channels plus
+  role:admin. useEventStream now listens for every event type the modules emit.
   AC-RT-07 waits on position ingest (ROO-37).

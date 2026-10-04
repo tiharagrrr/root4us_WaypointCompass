@@ -1,6 +1,7 @@
 import { Injectable, type MessageEvent } from '@nestjs/common';
 import type { Actor } from '@waypoint/shared';
 import { PinoLogger } from 'nestjs-pino';
+import { Gauge, register } from 'prom-client';
 import { Observable } from 'rxjs';
 import type { DeliveredEvent } from '../../core/outbox/event-bus';
 import { MyTripsQueries } from '../execution';
@@ -24,6 +25,15 @@ const ACCESS_ENDED = new Set([
   'identity.user.scope_changed',
   'identity.user.deactivated',
 ]);
+/** Open streams by role, scraped from /metrics (spec: sse_connections). */
+const CONNECTIONS_METRIC = 'waypoint_sse_connections';
+const connections =
+  (register.getSingleMetric(CONNECTIONS_METRIC) as Gauge<'role'> | undefined) ??
+  new Gauge({
+    name: CONNECTIONS_METRIC,
+    help: 'Open SSE streams on this instance',
+    labelNames: ['role'],
+  });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -116,6 +126,7 @@ export class EventStreamService {
       });
       const beat = setInterval(() => control('heartbeat'), HEARTBEAT_MS);
 
+      connections.inc({ role: actor.role });
       this.log.info(
         { event: 'realtime.stream.opened', role: actor.role },
         'stream opened',
@@ -123,6 +134,7 @@ export class EventStreamService {
       return () => {
         clearInterval(beat);
         live.unsubscribe();
+        connections.dec({ role: actor.role });
         this.log.info(
           { event: 'realtime.stream.closed', role: actor.role },
           'stream closed',

@@ -141,6 +141,11 @@ describe('realtime channels', () => {
       actor({ id: 'harini', role: 'loader', depotId: 'PLG' }),
     );
     expect(reaches(harini, changed)).toBe(true);
+    // A1 follows it too, though the event names no depot.
+    expect(reaches(channelsFor(actor({ role: 'admin' })), changed)).toBe(true);
+    expect(reaches(channelsFor(actor({ role: 'dispatcher' })), changed)).toBe(
+      false,
+    );
     expect(
       reaches(
         channelsFor(actor({ id: 'other', role: 'loader', depotId: 'PLG' })),

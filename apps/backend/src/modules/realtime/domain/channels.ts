@@ -10,6 +10,8 @@ import type { DeliveredEvent } from '../../../core/outbox/event-bus';
 /** Every depot, for an admin or a dispatcher with no depot set. */
 export const ALL_DEPOTS = 'depot:*';
 export const BROADCAST = 'broadcast';
+/** Admins follow every account and device change (A1, A2). */
+export const ADMINS = 'role:admin';
 
 /** Reach every stream: the demo clock, settings and a demo reset. */
 const BROADCAST_TYPES = new Set([
@@ -26,6 +28,11 @@ export function channelsFor(actor: Actor, tripIds: readonly string[] = []) {
   const own = [`user:${actor.id}`, BROADCAST];
   switch (actor.role) {
     case 'admin':
+      return new Set([
+        actor.depotId ? `depot:${actor.depotId}` : ALL_DEPOTS,
+        ADMINS,
+        ...own,
+      ]);
     case 'dispatcher':
       return new Set([
         actor.depotId ? `depot:${actor.depotId}` : ALL_DEPOTS,
@@ -71,6 +78,7 @@ export function channelsOf(event: DeliveredEvent): string[] {
   if (event.aggregateType === 'user' && event.aggregateId)
     out.push(`user:${event.aggregateId}`);
   for (const id of tripIdsOf(event)) out.push(`trip:${id}`);
+  if (event.type.startsWith('identity.')) out.push(ADMINS);
   return out;
 }
 
