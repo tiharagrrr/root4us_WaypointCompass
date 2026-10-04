@@ -54,11 +54,27 @@ Project `rare-heart`, environment `production`: `@waypoint/frontend` (public URL
 frontend's origin; Caddy proxies `/api` to the API over Railway's private network, so the API
 needs no CORS and no public domain.
 
-Each service's config comes from its own `railway.json`, which Railway only reads when the
-service's **config-as-code path** is set to it (`apps/backend/railway.json`,
-`apps/frontend/railway.json`). With that path unset the file is ignored and Railway falls back to
-Railpack autodetect, which for this workspace starts `vite preview` on loopback — the edge then
-answers `502` with `x-railway-fallback: true`.
+**`apps/backend/railway.json` and `apps/frontend/railway.json` are inert, and can no longer be
+switched on.** Railway reads config-as-code only from the repo root or a per-service config path;
+neither is set here, and the path can no longer be set at all — Railway now rejects it with
+*"Config as Code (railway.json / railway.toml) is deprecated"*. Existing config-as-code files stop
+being read entirely on **2026-12-01**. The live config is therefore whatever is set in the
+dashboard, and the two `railway.json` files only document intent.
+
+The replacement is Infrastructure as Code in [`.railway/railway.ts`](../.railway/railway.ts),
+generated with `railway config pull` and applied with `railway config plan` / `railway config apply`
+(both need `railway` installed at the repo root).
+
+> **Never run `railway config migrate --apply` in this repo.** It merges the two inert `railway.json`
+> files into `.railway/railway.ts` naming the services `backend` and `frontend` — which match
+> nothing live — and omits `Postgres`, `Redis`, both volumes and the bucket. A whole-project apply
+> deletes resources omitted from the file, so it would create two stray services and plan to destroy
+> the databases. Use `railway config pull`, which imports live state with the real service names and
+> renders variables as `preserve()`.
+
+Where a service has no start command at all, Railway falls back to Railpack autodetect, which for
+this workspace starts `vite preview` on loopback — the edge then answers `502` with
+`x-railway-fallback: true`.
 
 | Service | Variable | Value |
 | --- | --- | --- |
@@ -81,18 +97,101 @@ Pass service and project **IDs**, not names: `@waypoint/api` and `@waypoint/fron
 resolve, and `railway environment edit --service-config` silently reports
 `{"committed":false,"message":"No changes to apply"}` while changing nothing.
 
-### Migrations and seed
+### The three database roles (once per environment, before the first migration)
 
-`deploy.preDeployCommand` runs `node dist/db/migrate.js` before each release, so a fresh database
-gets its schema on the next deploy. Without it the tables never exist and sign-in fails with
-`relation "users" does not exist` surfaced as a `500` from `/api/auth/sign-in/email`.
+`compass_owner`, `compass_app` and `compass_readonly` are **not** created by migrations — `rls.ts`
+declares them with `pgRole(...).existing()`, and
+[`deploy/db/roles.sql`](../deploy/db/roles.sql) creates them once per environment. Compose runs it
+from `deploy/db/init/00-roles.sh` when the Postgres volume is first created, and CI runs it before
+`db:migrate`. **Railway has no Postgres init hook**, and the API image has no `psql`, so the same
+statements run from Node instead: [`bootstrap-roles.ts`](../apps/backend/src/db/bootstrap-roles.ts).
 
-The seed is a separate one-shot step — set `SEED_PASSWORD` first, then:
+Until it is, the first migration fails on the first RLS policy and the whole migration rolls back
+(Drizzle wraps the run in one transaction, so the database is left empty, not half-built):
+
+```
+[migrate] failed: role "compass_app" does not exist   -- code 42704
+CREATE POLICY "order_lines_app_scope" ON "order_lines" ... TO "compass_app"
+```
+
+On Railway, set `DB_BOOTSTRAP_ROLES=true` on `@waypoint/api` and put the script first in the
+pre-deploy command, so a fresh environment bootstraps itself with no manual step:
+
+```
+sh -c "node dist/db/bootstrap-roles.js && node dist/db/migrate.js && node dist/db/seed.js"
+```
+
+It reads the passwords from `COMPASS_OWNER_PASSWORD`, `COMPASS_APP_PASSWORD` and
+`COMPASS_READONLY_PASSWORD`, and connects through `ADMIN_URL` if set, otherwise `DIRECT_URL`.
+Creating a role needs `CREATEROLE`, which `compass_owner` does not have — on Railway `DIRECT_URL`
+is the `postgres` superuser, so it works as-is; elsewhere point `ADMIN_URL` at an admin connection.
+
+It is idempotent (an existing role keeps its grants and only has its password reset), so it is safe
+on every deploy. **It is off unless `DB_BOOTSTRAP_ROLES` is set**, because the migration role has no
+`CREATEROLE` on a managed Postgres such as Supabase, where the roles are created by an admin
+instead.
+
+For that case, or to bootstrap by hand, run the SQL directly — note the Railway database is named
+`railway`, not `waypoint`:
 
 ```bash
-railway ssh --service <api-service-id> --environment production --project <project-id>
-cd /repo/apps/backend && node dist/db/seed.js
+railway connect Postgres --tunnel-only   # prints a local host and port, holds open
+
+# in a second terminal, against the tunnel
+psql "postgres://postgres:$POSTGRES_PASSWORD@127.0.0.1:<tunnel-port>/railway" -v ON_ERROR_STOP=1 \
+  -v db=railway \
+  -v owner_password="$COMPASS_OWNER_PASSWORD" \
+  -v app_password="$COMPASS_APP_PASSWORD" \
+  -v readonly_password="$COMPASS_READONLY_PASSWORD" \
+  -f deploy/db/roles.sql
 ```
+
+Locally: `pnpm --filter api db:bootstrap-roles` (Compose already does it for you).
+
+> **`DATABASE_URL` and `DIRECT_URL` currently both point at the `postgres` superuser.** The design is
+> `DATABASE_URL` as `compass_app` (filtered by row-level security) and `DIRECT_URL` as
+> `compass_owner` (migrations and seed, bypasses RLS). A superuser bypasses RLS, so while the API
+> connects as `postgres` every row-level scope guarantee is silently off and out-of-scope rows are
+> readable. Repoint both variables once the roles exist.
+
+### Migrations and seed
+
+The API service's **pre-deploy command** runs `node dist/db/migrate.js`, so a fresh database gets its
+schema on the next deploy. Without it the tables never exist and sign-in fails with
+`relation "users" does not exist`, surfaced as a `500` from `/api/auth/sign-in/email`. The
+deployment still reports healthy, because `/health/live` touches no table.
+
+> **A redeploy does not run the pre-deploy command.** Pre-deploy executes *between build and
+> deploy*, and a redeploy reuses the existing build, so the whole stage is skipped — the deployment
+> goes `Starting Container` → `Nest application successfully started` in a few seconds with no
+> pre-deploy container and no `[migrate]` line in the logs. Migrations only run on a deployment that
+> actually builds: **Deploy latest commit** in the dashboard, a merge to `main`, or `railway up`
+> (which uploads your working tree, so avoid it with uncommitted changes).
+
+Because the pre-deploy command is also skipped when config changes land without a rebuild, the
+reliable way to migrate an already-running database is over SSH. Both steps run in the image, whose
+`WORKDIR` is `/repo/apps/backend`:
+
+```bash
+# IDs for project rare-heart / environment production
+PROJECT=285d28c0-15ac-41e1-bf85-75377d760026
+ENVIRONMENT=production
+API=55df4295-585b-4f3f-804d-1edb60661f0f
+
+railway ssh --project $PROJECT --environment $ENVIRONMENT --service $API "node dist/db/migrate.js"
+railway ssh --project $PROJECT --environment $ENVIRONMENT --service $API "node dist/db/seed.js"
+```
+
+Expect `[migrate] database is up to date`. Migrating alone leaves **empty tables** — sign-in keeps
+failing until the seed runs, so always run both. Set `SEED_PASSWORD` (10+ characters) first or the
+seed skips every persona account. The seed is idempotent, so re-running it is safe.
+
+Re-running the migration is the simplest check: it is safe to repeat and prints
+`[migrate] database is up to date` when the schema is already present.
+
+`Postgres` has **no TCP proxy**, so the database is not reachable from a laptop, and `railway run`
+does not help — it injects the environment variables but runs the command locally, where
+`postgres.railway.internal` does not resolve. Use `railway ssh`, or create a TCP proxy temporarily.
 
 Never run `db:reset` or `drizzle-kit push` against a deployed database.
 
