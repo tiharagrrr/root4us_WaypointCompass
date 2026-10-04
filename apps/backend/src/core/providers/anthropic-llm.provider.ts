@@ -10,6 +10,8 @@ import {
 const MAX_TOKENS = 4096;
 /** Declined requests re-run on Anthropic's recommended fallback model. */
 const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
+/** Used when LLM_MODEL is unset. */
+const DEFAULT_MODEL = 'claude-opus-5-5';
 
 /**
  * LLM_PROVIDER=anthropic: Claude through the Messages API. With tools, the
@@ -21,7 +23,7 @@ export class AnthropicLlmProvider implements LlmProvider {
   private readonly client: Anthropic;
 
   constructor(
-    private readonly options: { apiKey?: string; model: string },
+    private readonly options: { apiKey?: string; model?: string },
     client?: Anthropic,
   ) {
     this.client =
@@ -37,7 +39,7 @@ export class AnthropicLlmProvider implements LlmProvider {
     let message: Anthropic.Beta.BetaMessage;
     try {
       message = await this.client.beta.messages.create({
-        model: this.options.model,
+        model: this.options.model ?? DEFAULT_MODEL,
         max_tokens: MAX_TOKENS,
         betas: [FALLBACK_BETA],
         fallbacks: 'default',

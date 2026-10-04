@@ -35,7 +35,8 @@ Out:
 - `POST /demo/reset`, which rebuilds the demo day (D−1 to D+1): seed and admin tooling (Step 1).
 - Plan repair, reassignment and revisions triggered by a breakdown: planning.
 - Store receipt and issues in store-dispute: receipt.
-- The `LlmProvider` port and its Anthropic adapter: core providers (provider-adapter skill).
+- The `LlmProvider` port and its Anthropic and OpenAI-compatible adapters: core providers
+  (provider-adapter skill).
 - The explain-this-plan panel on 09 and 17: planning.
 - The Flutter driver app: after 4 October, not part of the hackathon build.
 
@@ -85,7 +86,14 @@ second) and only when `SIMULATION_ENABLED=true` and `DEMO_MODE=true`; with eithe
 answers 404, like the demo tools.
 
 The AI switch has two parts. The server gate is `LLM_PROVIDER`: `disabled` (default, no model exists),
-`scripted` (a keyless fake for local runs and tests) or `anthropic` (`ANTHROPIC_API_KEY`, `LLM_MODEL`).
+`scripted` (a keyless fake for local runs and tests), `anthropic` (`ANTHROPIC_API_KEY`, `LLM_MODEL`,
+which defaults to `claude-opus-5-5`) or `openai-compatible`, which is any server that speaks the OpenAI
+chat completions API: `LLM_BASE_URL` carries the version path (`https://api.openai.com/v1`,
+`https://openrouter.ai/api/v1`, `http://localhost:11434/v1`), `LLM_MODEL` is required and has no
+default, and `LLM_API_KEY` is optional, because a local server asks for none. That adapter stays inside
+the part of the API every server implements — `max_tokens`, plain function tools with no `strict`, no
+`parallel_tool_calls` — so a gateway or a local model needs no code change. The director takes one tool
+call a turn whatever comes back, so a server that returns several is not refused.
 The runtime toggle is the setting `simulation.aiDirector` (boolean, default false), which an admin flips
 on A6 → Demo. The director is on only with both, and only then does `GET /simulations` carry the
 `director` link that lets a screen offer an agentic run, the AI badges and the director's report.
@@ -135,7 +143,7 @@ Built so far: three tools (`inject_road_delay`, `inject_failed_delivery`, `noop`
 `atSim`. The summary carries ids, vehicle codes, district ids, statuses and times only: no outlet,
 address, item or volume, and no open alerts yet. The turn counter lives in `simulation_runs.kpis.director`
 (the table has no column for it). The report is written by the worker after `/stop`, never in the request. Provider: the `LlmProvider`
-port with an Anthropic adapter, behind `LLM_PROVIDER=disabled` by default.
+port with an Anthropic adapter and an OpenAI-compatible one, behind `LLM_PROVIDER=disabled` by default.
 
 ## Events
 Emits (each `{ v: 1, runId, ... }`, audited under the same name with source SIMULATION):
@@ -227,7 +235,7 @@ AC-SIM-08  A stopped run reports its KPIs
     And POST /demo/reset afterwards restores the demo day's plan
 
 AC-SIM-09  (stretch) Director decisions are ordinary injections
-  Given LLM_PROVIDER names the Anthropic adapter, the run is agentic, and it runs on synthetic data only
+  Given LLM_PROVIDER names a model adapter (anthropic or openai-compatible), the run is agentic, and it runs on synthetic data only
   When the worker sends the director its summary at each 20 simulated minutes
   Then each tool call becomes one simulation_injections row with proposedBy agent, carried out exactly as a person's
     And at the end the director's narrative is stored in simulation_runs.narrative

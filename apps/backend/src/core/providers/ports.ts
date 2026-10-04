@@ -43,8 +43,9 @@ export interface LlmReply {
 
 /**
  * A language model. LLM_PROVIDER picks the adapter: `scripted` (keyless,
- * deterministic) or `anthropic`; with `disabled`, the default, the token
- * resolves to null and nothing is ever sent anywhere.
+ * deterministic), `anthropic`, or `openai-compatible` for any server that
+ * speaks the OpenAI chat completions API; with `disabled`, the default, the
+ * token resolves to null and nothing is ever sent anywhere.
  */
 export interface LlmProvider {
   readonly name: string;

@@ -506,6 +506,7 @@ describeWithDb('simulation', () => {
       provider: 'disabled',
       apiKey: undefined,
       model: 'none',
+      openai: { baseUrl: undefined, apiKey: undefined, model: 'none' },
     });
     complete.mockClear();
     await advance(off.id, 40);
