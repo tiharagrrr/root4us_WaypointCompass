@@ -7,6 +7,9 @@ export const EVENTS_CHANNEL = 'waypoint:events';
 export interface DeliveredEvent {
   id: string;
   type: string;
+  /** What the event is about; optional so hand-built test events need not carry it. */
+  aggregateType?: string;
+  aggregateId?: string;
   depotId: string | null;
   outletIds: string[];
   userIds: string[];

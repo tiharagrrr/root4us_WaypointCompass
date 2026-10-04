@@ -14418,6 +14418,47 @@
           "alerts"
         ]
       }
+    },
+    "/api/v1/streams/me": {
+      "get": {
+        "operationId": "streamsMe",
+        "parameters": [
+          {
+            "name": "last-event-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "text/event-stream; channels come from the actor, never from the client.",
+        "tags": [
+          "streams"
+        ]
+      }
     }
   },
   "info": {

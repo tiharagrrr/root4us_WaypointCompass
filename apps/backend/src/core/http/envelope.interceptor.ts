@@ -4,6 +4,7 @@ import {
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
+import { SSE_METADATA } from '@nestjs/common/constants';
 import type { Links } from '@waypoint/shared';
 import type { Request, Response } from 'express';
 import { ClsService } from 'nestjs-cls';
@@ -53,7 +54,12 @@ export class EnvelopeInterceptor implements NestInterceptor {
   intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = ctx.switchToHttp().getRequest<Request>();
     const res = ctx.switchToHttp().getResponse<Response>();
-    if (!req.originalUrl.startsWith('/api/v1')) return next.handle();
+    // An SSE handler emits frames, not a resource: Nest writes them as they come.
+    if (
+      !req.originalUrl.startsWith('/api/v1') ||
+      Reflect.getMetadata(SSE_METADATA, ctx.getHandler()) === true
+    )
+      return next.handle();
 
     return next.handle().pipe(
       map((out: unknown) => {
