@@ -94,6 +94,8 @@ export function PlanPanel({ plan, trips, vehicles, onEditVehicle, onAddVehicle, 
           if (!first) return null
           const passes = own.every((t) => !t.violations.some((v) => v.severity === 'HARD'))
           const stops = own.reduce((n, t) => n + t.stops.length, 0)
+          // A trip takes its vehicle's driver (AC-PLN-40); a trip with none blocks publishing.
+          const drivers = [...new Set(own.flatMap((t) => (t.driverName ? [t.driverName] : [])))]
           const canAddTrip = own.length < 2 && (vehicle?.tripsLeft ?? 0) > 0
           return (
             <article key={vehicleId} className="flex w-[404px] flex-col gap-3 rounded-lg border border-border bg-background p-4">
@@ -102,6 +104,10 @@ export function PlanPanel({ plan, trips, vehicles, onEditVehicle, onAddVehicle, 
                   <p className="m-0 font-mono text-[13px] font-bold leading-auto text-foreground">{first.vehicleCode}</p>
                   <p className="type-body-small m-0 text-muted-foreground">
                     {vehicleKind(vehicle?.type ?? 'TRUCK', vehicle?.temp ?? 'AMBIENT')} · {kg(first.weightCapKg)} · {first.volumeCapM3} m³
+                  </p>
+                  <p className="type-body-small m-0 flex items-center gap-1 text-muted-foreground">
+                    <Icon name="account" size={14} />
+                    {drivers.length ? `Driver · ${drivers.join(', ')}` : 'No driver yet'}
                   </p>
                 </div>
                 <StatusChip tone={passes ? 'neutral' : 'danger'}>{passes ? 'Checks pass' : 'Needs attention'}</StatusChip>
