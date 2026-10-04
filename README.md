@@ -2,13 +2,12 @@
 
 > Tech-Triathlon 2026 · root4us_waypointcompass
 
-Waypoint Compass connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots (Peliyagoda, Kandy). One responsive web app serves five roles: **Admin, Dispatcher, Loader, Driver and Store manager**. The driver and loader flows work offline and sync when signal returns.
+Waypoint Compass connects **ordering, planning, loading, delivery and receipt** for Waypoint Group's three brands (Fresh, Style, Tech): 120 outlets, 60 vehicles and two depots. One responsive web app serves 4 main roles: **Dispatcher, Loader, Driver and Store manager** and Admin for setup. The driver and loader flows work offline and sync when signal returns.
 
 | | |
 | --- | --- |
 | **Live URL** | https://waypoint-root4us.up.railway.app |
-| **Demo video** | _YouTube (unlisted) link_ |
-| **Designathon prototype** | _Figma link_ |
+| **Demo video** | https://youtu.be/VErzYMZEvY4 |
 | **Docs** | [Architecture](docs/architecture.md) · [Data model](docs/data-model.md) · [Decisions](docs/decisions.md) · [Departures](docs/departures.md) · [AI tool disclosure](docs/ai-tool-disclosure.md) · [Deployment](docs/deployment.md) |
 
 ---
@@ -82,13 +81,13 @@ trusted automatically.
 
 1. **Store manager** (phone or desktop): sign in as `nimesha.p@waypoint.lk`. **New order**: pick the delivery day (tomorrow or up to two weeks ahead), start the dry or chilled order, add items and send it before the 4 PM cutoff. **Orders** shows the order's progress, and **Timeline** on its card shows who did what and when. **History** lists past orders, each with Reorder and its timeline.
 2. **Dispatcher** (desktop): sign in as `tihara.e@waypoint.lk`. **Order queue** lists the day's orders (mark one urgent, or cancel one with a reason). **Plan** opens the demo day: close the cutoff, run the allocation, review the deferred orders and their reasons, fix or override what the checks flag, then confirm and publish.
-3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle.
-4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync.
+3. **Loader** (phone width): sign in with PIN `2468` on the dock tablet (or as `harini.d@waypoint.lk` on any browser), open the vehicle's load list (reverse stop order), flag a damaged item, and release the vehicle. On the admin side, the device needs to be an accepted device for the loader to sign in.
+4. **Driver** (phone width): at `/sign-in/driver` enter `+94776041932` and the code from `/demo/inbox`, start the trip, go offline (DevTools → Network → Offline), record deliveries and proof of delivery, then go back online and watch the queue sync. Add number from the admin side if it does not work, otherwise switch to driver after logging into another role.
 5. **Dispatcher**: **Dashboard** and **Tracking** show live progress, projected arrivals and late risk; a trip opens its stops with planned, projected and actual times. **Deferrals** holds the outlet deferral history with repeat skips, **Issues** what stores reported, and the end-of-day summary closes the day.
 6. **Store manager**: **Orders** shows the ETA of an order that is on a trip, and a deferred order opens its notice with the reason. **Receipts** lists deliveries to confirm; confirm one line by line against the driver's proof, or report an issue and follow its thread.
 7. **Order timeline**: **Timeline** on any order (the store's Orders and Receipts, the dispatcher's Order queue) lists every step with who, when, device and reason; a delivery recorded offline keeps its device time and is marked Synced late.
 
-Not built yet, shown as placeholders: the dispatcher's Past orders (04) and Plan ahead (12, 13), and the driver's Trips and Past trip (D10, D11). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
+Not built yet, shown as placeholders: the dispatcher's Past orders (04), Plan ahead (12, 13) and Forecast (22), and the driver's Trips and Past trip (D10, D11). Sync conflicts are reported to the phone but have no dispatcher screen (19c).
 
 ## Departures from the Designathon submission
 
@@ -164,11 +163,3 @@ docker-compose.yml
 - **Code freeze:** Sun 4 Oct 2026, 8 PM (Asia/Colombo). Code pushed after 11:59 PM is not judged.
 
 ## Deadlines (Asia/Colombo)
-
-| Phase | Due |
-| --- | --- |
-| Designathon | Tue 29 Sep 2026, 11:59 PM |
-| Hackathon | Sun 4 Oct 2026, 11:59 PM |
-| Datathon | Fri 9 Oct 2026, 11:59 PM |
-
-All competition data is synthetic and used only for this competition.
