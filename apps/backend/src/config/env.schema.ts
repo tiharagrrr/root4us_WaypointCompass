@@ -61,6 +61,57 @@ export const envSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.string().startsWith('whsec_').optional(),
   ),
+  /**
+   * Where SMS goes - sign-in codes, invitation links and the SMS channel of
+   * every notification. demo-inbox (the default) keeps them on this machine at
+   * /api/v1/demo/inbox and needs DEMO_MODE=true; notifylk and textlk are Sri
+   * Lankan gateways on the local operators' routes; twilio is the fallback for
+   * a number that is not +94. A real gateway needs a sender id its operator
+   * has approved, which takes days, so nothing but demo-inbox is the default.
+   */
+  SMS_PROVIDER: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .enum(['demo-inbox', 'notifylk', 'textlk', 'twilio'])
+      .default('demo-inbox'),
+  ),
+  /** Notify.lk: the numeric user id and api key from the dashboard. */
+  NOTIFYLK_USER_ID: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  NOTIFYLK_API_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  /**
+   * The mask the recipient sees. Only a sender id Notify.lk has approved
+   * works; NotifyDEMO, the unapproved default, reaches only the numbers
+   * verified in that account.
+   */
+  NOTIFYLK_SENDER_ID: z.string().default('NotifyDEMO'),
+  /** Text.lk: the bearer token from the dashboard, and its approved sender id. */
+  TEXTLK_API_TOKEN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  TEXTLK_SENDER_ID: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  TWILIO_ACCOUNT_SID: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().startsWith('AC').optional(),
+  ),
+  TWILIO_AUTH_TOKEN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  /** A Twilio number in E.164, or a messaging service SID (MG...). */
+  TWILIO_FROM: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
   /** Starts the demo clock at this instant; honoured only when DEMO_MODE=true. */
   DEMO_CLOCK: z.string().optional(),
   /** The simulator (specs/simulation/spec.md); it also needs DEMO_MODE=true. */
