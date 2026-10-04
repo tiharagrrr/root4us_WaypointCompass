@@ -96,6 +96,23 @@ describe('05 to 09 Plan', () => {
     expect(screen.getByRole('button', { name: /Confirm trips/ })).toBeEnabled()
   })
 
+  it('AC-PLN-41 the plan names each vehicle’s driver', async () => {
+    stubApi(
+      day({
+        plan: aPlan({ summary: { trips: 2, plannedOrders: 2, unplanned: 0, undecided: 0 } }),
+        trips: [
+          aTrip({ driverId: 'usr-aniqa', driverName: 'Aniqa Razick' }),
+          aTrip({ id: 'trip-2', key: 'DRY-22#1', vehicleId: 'veh-dry', vehicleCode: 'DRY-22' }),
+        ],
+        unplanned: [],
+      }),
+    )
+    renderPlan()
+
+    expect(await screen.findByText('Driver · Aniqa Razick')).toBeInTheDocument()
+    expect(screen.getByText('No driver yet')).toBeInTheDocument()
+  })
+
   it('offers no actions when the plan carries no links', async () => {
     stubApi(day({ plan: aPlan({ _links: { self: { href: `/api/v1/plans/${PLAN_ID}` } } }) }))
     renderPlan()

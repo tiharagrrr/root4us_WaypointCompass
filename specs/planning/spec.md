@@ -555,6 +555,17 @@ AC-PLN-40  A trip takes its vehicle's driver
   When Tihara's edit adds REF-07 trip 1 and REF-03 trip 1, each with an order
   Then REF-07 trip 1's driverId is Aniqa and REF-03 trip 1 has no driver
     And GET /plans/{id}/publish-preview lists one NO_DRIVER blocker, for REF-03 trip 1
+
+AC-PLN-41  The plan names each vehicle's driver
+  Given the DRAFT plan for PLG on 2026-10-02 has REF-07 trip 1 with Aniqa Razick as its driver and DRY-22 trip 1 with no driver
+  When Tihara opens 09
+  Then REF-07's card reads "Driver · Aniqa Razick" and DRY-22's reads "No driver yet"
+
+AC-PLN-42  The Add vehicle dialog waits for the plan and lets the vehicle be changed
+  Given 09 shows REF-07 trip 1 while GET /plans/{id}/context has not answered yet
+  When Tihara opens "View and edit" on REF-07, and later starts "+ Add vehicle", picks REF-07 and goes on to Orders
+  Then the first dialog is titled "REF-07 · Reefer" and shows trip 1 with its orders once the context arrives
+    And from Orders the Vehicle step is one click back, where picking DRY-22 opens DRY-22 trip 1
 ```
 
 Checklist (tick in the PR that adds the passing test):
@@ -598,6 +609,8 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-38 Re-sequencing shows its projected arrivals first
 - [x] AC-PLN-39 The live day shows progress, projected arrivals and late risk
 - [x] AC-PLN-40 A trip takes its vehicle's driver
+- [x] AC-PLN-41 The plan names each vehicle's driver
+- [x] AC-PLN-42 The Add vehicle dialog waits for the plan and lets the vehicle be changed
 
 ## Non-functional
 - Engine speed: an S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms
@@ -688,6 +701,10 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 Add vehicle and the driver on 09 (AC-PLN-41, AC-PLN-42, ROO-89): the dialog works its
+  trip out from the engine context whenever that arrives, so opening it early no longer leaves it
+  empty; a done step in a new trip's stepper goes back to it; 09's vehicle cards and 10's trip
+  header name the driver from the trip's `driverName`
 - 2026-10-04 Trip drivers (AC-PLN-40, ROO-76): the plan writer gives every trip its vehicle's driver
   (the depot's driver whose `defaultVehicleId` is the vehicle) on each save; a vehicle with no driver of
   its own keeps whoever SET_DRIVER put on the trip, and still blocks publishing when there is nobody

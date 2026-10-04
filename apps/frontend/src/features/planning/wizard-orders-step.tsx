@@ -18,6 +18,8 @@ export interface OrdersStepProps {
   plan: Plan
   vehicle: PlanVehicleOptionDto
   depotName: string
+  /** The driver the plan has on this vehicle's trips; undefined for a vehicle not on the plan yet. */
+  driverName?: string
   draft: TripDraft
   preview: DraftPreview
   /** Outlet names, from the unplanned orders and the trips' stops (the engine context has none). */
@@ -37,7 +39,7 @@ export interface OrdersStepProps {
  * first, blocked ones dimmed with why), and the trip as the engine times it on the right. Every
  * figure comes from the engine running in the browser, so it changes as orders are added.
  */
-export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, outletName, onChange, onPickTrip, editing }: OrdersStepProps) {
+export function OrdersStep({ input, plan, vehicle, depotName, driverName, draft, preview, outletName, onChange, onPickTrip, editing }: OrdersStepProps) {
   const [filter, setFilter] = useState<'all' | 'fits'>('all')
   const orderOf = (id: string) => input.orders.find((o) => o.id === id)
   const districtName = (id: string) => input.districts[id]?.name ?? id
@@ -143,6 +145,7 @@ export function OrdersStep({ input, plan, vehicle, depotName, draft, preview, ou
           <span className="type-caption text-slate-700">{vehicleKind(vehicle.type, vehicle.temp)}</span>
           <span className="type-card-title text-foreground">Trip {draft.tripNo}</span>
           <span className="type-caption text-muted-foreground">Home · {depotName}</span>
+          {driverName ? <span className="type-caption text-muted-foreground">Driver · {driverName}</span> : null}
           <span className="flex-1" />
           {editing ? (
             <StatusChip tone={problem ? 'danger' : 'neutral'}>{problem ? (TRIP_PROBLEM[problem.rule] ?? RULE_CHIP[problem.rule] ?? problem.rule) : 'Checks pass'}</StatusChip>

@@ -3,10 +3,11 @@
 // 488:9736 (and 11 Over capacity · 269:2996): the orders step only, saved straight to the plan.
 import { usePlanBuildingEdit, usePlanBuildingValidate, type PlanDto, type ViolationDto } from '@compass/api-client'
 import type { EditOp, FixSuggestion } from '@waypoint/engine'
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
+import { Skeleton } from '@/ui/skeleton'
 import { ErrorState } from '@/ui/states'
 import { canTakeTrip, kg, percent, vehicleKind } from './plan-copy'
 import { RevisionReasonBar, type RevisionReason } from './revision-reason'
@@ -40,16 +41,22 @@ type Step = 1 | 2 | 3
 export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVehicleDialogProps) {
   const engine = day.engine
   const vehicles = day.vehicles.data?.data ?? []
-  const draftFor = (vehicleId: string, tripNo?: number): TripDraft | null => {
-    const option = vehicles.find((v) => v.vehicleId === vehicleId)
-    if (!option || !engine) return null
-    const base = { vehicleId, vehicleCode: option.code, tripNo: tripNo ?? option.nextTripNo ?? 1 }
-    return { ...base, orderIds: savedOrders(engine.plan, base) }
-  }
   // Opening from 09 lands on the vehicle's trip; a new vehicle starts on 06. The page mounts the
   // dialog afresh for each opening, so this runs once.
   const [step, setStep] = useState<Step>(start.vehicleId ? 2 : 1)
-  const [draft, setDraft] = useState<TripDraft | null>(() => (start.vehicleId ? draftFor(start.vehicleId, start.tripNo) : null))
+  const [target, setTarget] = useState<{ vehicleId: string; tripNo: number } | null>(
+    start.vehicleId ? { vehicleId: start.vehicleId, tripNo: start.tripNo ?? 1 } : null,
+  )
+  // The trip's orders once the dispatcher has changed them; null while it is as the plan saved it.
+  const [picked, setPicked] = useState<readonly string[] | null>(null)
+  const vehicle = vehicles.find((v) => v.vehicleId === target?.vehicleId)
+  // Worked out from the target on every render, so a dialog opened before the engine context has
+  // loaded fills in when it arrives instead of staying empty.
+  const draft = useMemo<TripDraft | null>(() => {
+    if (!target || !vehicle || !engine) return null
+    const base = { vehicleId: target.vehicleId, vehicleCode: vehicle.code, tripNo: target.tripNo }
+    return { ...base, orderIds: picked ?? savedOrders(engine.plan, base) }
+  }, [target, vehicle, engine, picked])
   const [introduced, setIntroduced] = useState<ViolationDto[] | undefined>(undefined)
   const validate = usePlanBuildingValidate()
   const save = usePlanBuildingEdit()
@@ -60,8 +67,15 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   const [reason, setReason] = useState<RevisionReason>({ note: '' })
   const needsReason = revising && !reason.reasonCode
 
-  const vehicle = vehicles.find((v) => v.vehicleId === draft?.vehicleId)
-  const begin = (vehicleId: string, tripNo?: number) => setDraft(draftFor(vehicleId, tripNo))
+  /** Picks a vehicle's trip. Picking the one already open keeps the orders put on it so far. */
+  const begin = (vehicleId: string, tripNo?: number) => {
+    const no = tripNo ?? vehicles.find((v) => v.vehicleId === vehicleId)?.nextTripNo ?? 1
+    if (target?.vehicleId === vehicleId && target.tripNo === no) return
+    setTarget({ vehicleId, tripNo: no })
+    setPicked(null)
+  }
+  // The driver the plan already has on this vehicle's trips (AC-PLN-40); none before its first save.
+  const driverName = (day.trips.data?.data ?? []).find((t) => t.vehicleId === target?.vehicleId && t.driverName)?.driverName ?? undefined
 
   const preview = useMemo(
     () => (engine && draft ? previewDraft(engine.input, engine.plan, draft) : undefined),
@@ -100,7 +114,8 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   const commit = async (another: boolean) => {
     if (ops.length) await send(ops)
     if (another) {
-      setDraft(null)
+      setTarget(null)
+      setPicked(null)
       setIntroduced(undefined)
       setStep(1)
     } else onClose()
@@ -113,7 +128,7 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
     await send(edits)
     const after = preview?.next ?? engine.plan
     const moved = new Set(fix.edits.flatMap((e) => ('orderId' in e && e.op !== 'ASSIGN_ORDER' ? [e.orderId] : [])))
-    setDraft({ ...draft, orderIds: savedOrders(after, draft).filter((id) => !moved.has(id)) })
+    setPicked(savedOrders(after, draft).filter((id) => !moved.has(id)))
   }
 
   /** 10: every trip of this vehicle comes off the plan, and its orders go back to the list. */
@@ -146,15 +161,15 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
               : step === 1
                 ? 'Pick the vehicle for this trip. Each vehicle runs up to 2 trips a day.'
                 : step === 2
-                  ? `Add orders to Trip ${draft?.tripNo ?? 1}. The first order sets the brand and district.`
-                  : `Check Trip ${draft?.tripNo ?? 1} before you save it.`
+                  ? `Add orders to Trip ${target?.tripNo ?? 1}. The first order sets the brand and district.`
+                  : `Check Trip ${target?.tripNo ?? 1} before you save it.`
           }
         />
-        <WizardSteps step={step} editing={editing} />
+        <WizardSteps step={step} editing={editing} onStep={setStep} />
 
         <div className="min-h-0 overflow-y-auto">
           {step === 1 ? (
-            <VehicleStep vehicles={vehicles} selected={draft?.vehicleId} onSelect={(id) => begin(id)} />
+            <VehicleStep vehicles={vehicles} selected={target?.vehicleId} onSelect={(id) => begin(id)} />
           ) : null}
           {step === 2 && engine && draft && vehicle && preview ? (
             <OrdersStep
@@ -162,10 +177,11 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
               plan={engine.plan}
               vehicle={vehicle}
               depotName={depotName}
+              driverName={driverName}
               draft={draft}
               preview={preview}
               outletName={outletName}
-              onChange={(orderIds) => setDraft({ ...draft, orderIds })}
+              onChange={setPicked}
               onPickTrip={(tripNo) => begin(draft.vehicleId, tripNo)}
               editing={
                 editing
@@ -173,6 +189,19 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
                   : undefined
               }
             />
+          ) : null}
+          {step === 2 && !(engine && draft && vehicle && preview) ? (
+            day.context.isError ? (
+              <div className="px-5 py-3.5">
+                <ErrorState error={day.context.error} onRetry={() => void day.context.refetch()} />
+              </div>
+            ) : (
+              <div className="flex items-start gap-4 px-5 py-3.5" aria-busy="true">
+                <Skeleton className="h-[120px] w-[200px]" />
+                <Skeleton className="h-[320px] w-[340px]" />
+                <Skeleton className="h-[320px] min-w-px flex-1" />
+              </div>
+            )
           ) : null}
           {step === 3 && draft && vehicle ? (
             <CheckStep
@@ -217,8 +246,8 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
         <DialogFooter className="justify-between">
           <p className="type-mono-small m-0 text-muted-foreground">
             {step === 1
-              ? vehicle && draft
-                ? `${vehicle.code} · Trip ${draft.tripNo} · from ${depotName}`
+              ? vehicle && target
+                ? `${vehicle.code} · Trip ${target.tripNo} · from ${depotName}`
                 : 'Pick a vehicle'
               : step === 2
                 ? `${orders} orders · ${kg(trip?.weightKg ?? 0)} · ${full}% full`
@@ -274,8 +303,11 @@ export function AddVehicleDialog({ day, plan, depotName, start, onClose }: AddVe
   )
 }
 
-/** The dialog's own three steps: done ones in black with a tick, the current one in blue. */
-function WizardSteps({ step, editing }: { step: Step; editing: boolean }) {
+/**
+ * The dialog's own three steps: done ones in black with a tick, the current one in blue. While a
+ * new trip is being built a done step is a way back to it, so the vehicle can still be changed.
+ */
+function WizardSteps({ step, editing, onStep }: { step: Step; editing: boolean; onStep: (step: Step) => void }) {
   const steps = ['Vehicle', 'Orders', 'Check'] as const
   return (
     <ol className="m-0 flex list-none items-center gap-3 border-b border-border px-5 py-3">
@@ -286,7 +318,7 @@ function WizardSteps({ step, editing }: { step: Step; editing: boolean }) {
         return (
           <li key={label} className="flex items-center gap-3">
             {i > 0 ? <span aria-hidden="true" className="h-px w-10 bg-slate-300" /> : null}
-            <span className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+            <StepLabel current={current} onClick={done && !editing ? () => onStep(n) : undefined} label={label}>
               <span
                 className={cn(
                   'flex size-[22px] items-center justify-center rounded-full font-mono text-[13px] font-bold',
@@ -296,12 +328,29 @@ function WizardSteps({ step, editing }: { step: Step; editing: boolean }) {
                 {done ? '✓' : n}
               </span>
               <span className={cn('type-body-medium', done || current ? 'text-foreground' : 'text-muted-foreground')}>{label}</span>
-            </span>
+            </StepLabel>
           </li>
         )
       })}
       <li aria-hidden="true" className="flex-1" />
       <li className="type-label uppercase text-muted-foreground">{editing ? 'Editing a saved vehicle' : `Step ${step} of 3`}</li>
     </ol>
+  )
+}
+
+function StepLabel({ current, onClick, label, children }: { current: boolean; onClick?: () => void; label: string; children: ReactNode }) {
+  return onClick ? (
+    <button
+      type="button"
+      aria-label={`Back to ${label}`}
+      onClick={onClick}
+      className="flex cursor-pointer items-center gap-2 rounded-md border-0 bg-transparent p-0 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring/40"
+    >
+      {children}
+    </button>
+  ) : (
+    <span className="flex items-center gap-2" aria-current={current ? 'step' : undefined}>
+      {children}
+    </span>
   )
 }

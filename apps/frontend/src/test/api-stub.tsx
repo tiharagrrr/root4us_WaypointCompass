@@ -38,7 +38,8 @@ export function stubApi(routes: Record<string, Handler>) {
         status: 404,
         headers: { 'content-type': 'application/problem+json' },
       })
-    const result = handler(url, init)
+    // A handler may return a promise, for a test that holds an answer back.
+    const result = await handler(url, init)
     if (result instanceof Response) return result
     return new Response(JSON.stringify(result), { status: 200, headers: { 'content-type': 'application/json' } })
   })

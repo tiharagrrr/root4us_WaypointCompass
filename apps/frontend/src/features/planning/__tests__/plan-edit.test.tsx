@@ -125,4 +125,45 @@ describe('10 and 11 View and edit vehicle', () => {
       ]),
     )
   })
+
+  it('AC-PLN-42 the dialog waits for the plan and lets the vehicle be changed', async () => {
+    // The engine context answers only when the test lets it, as it does on a slow connection.
+    let release: () => void = () => undefined
+    const held = new Promise<void>((resolve) => (release = resolve))
+    stubApi({
+      [`GET /api/v1/depots/PLG/plans/${DATE}`]: () => envelope(aPlan({ summary: { trips: 1, plannedOrders: 2, unplanned: 0, undecided: 0 } })),
+      [`GET /api/v1/plans/${PLAN_ID}/unplanned`]: () => page([]),
+      [`GET /api/v1/plans/${PLAN_ID}/trips`]: () => page([aTrip()]),
+      [`GET /api/v1/plans/${PLAN_ID}/context`]: async () => {
+        await held
+        return envelope(aContext({ trips: [aDraftTrip(['ord-1', 'ord-2'])] }))
+      },
+      [`GET /api/v1/plans/${PLAN_ID}/vehicle-options`]: () =>
+        page([
+          aVehicleOption({ tripsUsed: 1, tripsLeft: 1, nextTripNo: 2 }),
+          aVehicleOption({ vehicleId: 'veh-dry', code: 'DRY-22', temp: 'AMBIENT' }),
+        ]),
+    })
+    const { user, dialog } = await openVehicle()
+
+    // Opened before the context: the vehicle is named and the trip is still loading, not missing.
+    expect(within(dialog).getByText('REF-07 · Reefer')).toBeInTheDocument()
+    expect(within(dialog).queryByRole('region', { name: 'REF-07 trip 1' })).not.toBeInTheDocument()
+    release()
+    const trip = await within(dialog).findByRole('region', { name: 'REF-07 trip 1' })
+    expect(within(trip).getByText('WF-0171')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    // A new trip: from Orders the Vehicle step is one click back, and another vehicle can be picked.
+    await user.click(screen.getByRole('button', { name: /\+ Add vehicle/ }))
+    const wizard = await screen.findByRole('dialog')
+    await user.click(within(wizard).getByRole('radio', { name: /REF-07/ }))
+    await user.click(within(wizard).getByRole('button', { name: 'Next: add orders' }))
+    expect(await within(wizard).findByRole('region', { name: 'REF-07 trip 2' })).toBeInTheDocument()
+    await user.click(within(wizard).getByRole('button', { name: 'Back to Vehicle' }))
+    await user.click(within(wizard).getByRole('radio', { name: /DRY-22/ }))
+    await user.click(within(wizard).getByRole('button', { name: 'Next: add orders' }))
+    expect(await within(wizard).findByRole('region', { name: 'DRY-22 trip 1' })).toBeInTheDocument()
+    expect(within(wizard).getByText('Add orders to Trip 1. The first order sets the brand and district.')).toBeInTheDocument()
+  })
 })
