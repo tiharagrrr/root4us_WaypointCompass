@@ -5,6 +5,8 @@ import { Module } from '@nestjs/common';
 import { ExecutionModule } from '../execution';
 import { LoadingModule } from '../loading';
 import { SyncController } from './controllers/sync.controller';
+import { ChangesScope } from './policies/changes.scope';
+import { ChangesFeed } from './services/changes-feed.service';
 import { SyncService } from './services/sync.service';
 
 /**
@@ -15,7 +17,7 @@ import { SyncService } from './services/sync.service';
 @Module({
   imports: [ExecutionModule, LoadingModule],
   controllers: [SyncController],
-  providers: [SyncService],
+  providers: [SyncService, ChangesFeed, ChangesScope],
   exports: [SyncService],
 })
 export class SyncModule {}

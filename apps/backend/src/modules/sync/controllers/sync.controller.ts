@@ -1,13 +1,29 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Actor as SignedIn } from '@waypoint/shared';
+import type { Request } from 'express';
 import {
   Actor,
   AnyRole,
+  ApiPaginated,
   ApiProblems,
   ApiResource,
 } from '../../../core/http/decorators';
-import { SYNC_BATCH_API_BODY, SyncResponseDto } from '../dto/sync.dto';
+import {
+  ChangesQueryDto,
+  SYNC_BATCH_API_BODY,
+  SyncChangeDto,
+  SyncResponseDto,
+} from '../dto/sync.dto';
+import { ChangesFeed } from '../services/changes-feed.service';
 import { SyncService } from '../services/sync.service';
 
 /**
@@ -18,7 +34,10 @@ import { SyncService } from '../services/sync.service';
 @ApiTags('sync')
 @Controller('sync')
 export class SyncController {
-  constructor(private readonly sync: SyncService) {}
+  constructor(
+    private readonly sync: SyncService,
+    private readonly changes: ChangesFeed,
+  ) {}
 
   @Post()
   @HttpCode(200)
@@ -37,5 +56,41 @@ export class SyncController {
   ): Promise<SyncResponseDto> {
     const outcome = await this.sync.apply(body, actor);
     return { ...outcome, _links: { self: { href: '/api/v1/sync' } } };
+  }
+
+  @Get('changes')
+  @AnyRole()
+  @ApiPaginated(SyncChangeDto)
+  @ApiProblems(400, 403)
+  @ApiOperation({
+    summary: 'Server changes to the device’s trips since a cursor',
+    description:
+      'Revisions, reassignments, re-sequences, cancelled and deferred stops and flag decisions for the trips this device works, oldest first. Send meta.page.nextCursor back as `since`.',
+  })
+  async pull(
+    @Query() query: ChangesQueryDto,
+    @Actor() actor: SignedIn,
+    @Req() req: Request,
+  ) {
+    const { items, page } = await this.changes.list(actor, query);
+    return {
+      items: items.map((change) => ({
+        ...change,
+        occurredAt: change.occurredAt.toISOString(),
+        _links: change.tripId
+          ? { trip: { href: `/api/v1/trips/${change.tripId}` } }
+          : {},
+      })),
+      page,
+      links: {
+        self: { href: req.originalUrl },
+        first: { href: `/api/v1/sync/changes?limit=${page.limit}` },
+        ...(page.nextCursor && {
+          next: {
+            href: `/api/v1/sync/changes?limit=${page.limit}&since=${page.nextCursor}`,
+          },
+        }),
+      },
+    };
   }
 }

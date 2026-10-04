@@ -101,3 +101,56 @@ export const SyncApplyResponse = zod.object({
 })
 })
 
+/**
+ * Revisions, reassignments, re-sequences, cancelled and deferred stops and flag decisions for the trips this device works, oldest first. Send meta.page.nextCursor back as `since`.
+ * @summary Server changes to the device’s trips since a cursor
+ */
+export const syncPullQuerySinceMax = 512;
+
+export const syncPullQueryLimitMax = 200;
+
+
+
+export const SyncPullQueryParams = zod.object({
+  "since": zod.string().max(syncPullQuerySinceMax).optional().describe('The meta.page.nextCursor of the previous pull. Without it the feed starts at the first change for the device'),
+  "limit": zod.number().min(1).max(syncPullQueryLimitMax).optional()
+})
+
+export const SyncPullResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string(),
+  "type": zod.string().describe('plan.revised, trip.reassigned, trip.resequenced, trip.cancelled, stop.deferred or load.flag_decided'),
+  "occurredAt": zod.string(),
+  "tripId": zod.string().nullable(),
+  "data": zod.record(zod.string(), zod.unknown()).describe('The event payload, with v: 1'),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional(),
+  "page": zod.object({
+  "limit": zod.number(),
+  "offset": zod.number(),
+  "total": zod.number()
+})
+}),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})
+

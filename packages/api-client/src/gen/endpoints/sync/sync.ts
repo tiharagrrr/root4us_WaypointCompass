@@ -6,19 +6,30 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
-  useMutation
+  useMutation,
+  useQuery
 } from '@tanstack/react-query';
 import type {
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
   MutationFunction,
   QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
   UseMutationOptions,
-  UseMutationResult
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ProblemDto,
   SyncApply200,
-  SyncApplyBody
+  SyncApplyBody,
+  SyncPull200,
+  SyncPullParams
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -28,6 +39,21 @@ import type { ErrorType , BodyType } from '../../../mutator.ts';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+
+const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
+  const result = { queryKey } as T & { queryKey: K };
+  for (const key of Object.keys(query)) {
+    // The explicit queryKey always wins, matching the previous
+    // `{ ...query, queryKey }` spread where it was set last.
+    if (key === 'queryKey') continue;
+    Object.defineProperty(result, key, {
+      enumerable: true,
+      configurable: true,
+      get: () => (query as Record<string, unknown>)[key],
+    });
+  }
+  return result;
+};
 
 export const getSyncApplyUrl = () => {
 
@@ -117,3 +143,111 @@ export const useSyncApply = <TError = ErrorType<ProblemDto>,
       > => {
       return useMutation(getSyncApplyMutationOptions(options), queryClient);
     }
+    export const getSyncPullUrl = (params?: SyncPullParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/sync/changes?${stringifiedParams}` : `/api/v1/sync/changes`
+}
+
+/**
+ * Revisions, reassignments, re-sequences, cancelled and deferred stops and flag decisions for the trips this device works, oldest first. Send meta.page.nextCursor back as `since`.
+ * @summary Server changes to the device’s trips since a cursor
+ */
+export const syncPull = async (params?: SyncPullParams, options?: Parameters<typeof compassFetch>[1]): Promise<SyncPull200> => {
+
+  return compassFetch<SyncPull200>(getSyncPullUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSyncPullQueryKey = (params?: SyncPullParams,) => {
+    return [
+    `/api/v1/sync/changes`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSyncPullQueryOptions = <TData = Awaited<ReturnType<typeof syncPull>>, TError = ErrorType<ProblemDto>>(params?: SyncPullParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSyncPullQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof syncPull>>> = ({ signal }) => syncPull(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SyncPullQueryResult = NonNullable<Awaited<ReturnType<typeof syncPull>>>
+export type SyncPullQueryError = ErrorType<ProblemDto>
+
+
+export function useSyncPull<TData = Awaited<ReturnType<typeof syncPull>>, TError = ErrorType<ProblemDto>>(
+ params: undefined |  SyncPullParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncPull>>,
+          TError,
+          Awaited<ReturnType<typeof syncPull>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncPull<TData = Awaited<ReturnType<typeof syncPull>>, TError = ErrorType<ProblemDto>>(
+ params?: SyncPullParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof syncPull>>,
+          TError,
+          Awaited<ReturnType<typeof syncPull>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSyncPull<TData = Awaited<ReturnType<typeof syncPull>>, TError = ErrorType<ProblemDto>>(
+ params?: SyncPullParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Server changes to the device’s trips since a cursor
+ */
+
+export function useSyncPull<TData = Awaited<ReturnType<typeof syncPull>>, TError = ErrorType<ProblemDto>>(
+ params?: SyncPullParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof syncPull>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSyncPullQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

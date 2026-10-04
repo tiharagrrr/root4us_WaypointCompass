@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { describeWithDb } from '../../../../test/create-test-app';
 import { expectProblem } from '../../../../test/kernel';
 import { execution, loading } from '../../../../test/worlds';
-import { syncBatches } from '../../../db/schema';
+import { outboxEvents, syncBatches } from '../../../db/schema';
+import { isLateSync } from '../../execution';
 
 const uuid = (sfx: string, n: number) =>
   `00000000-0000-4000-8000-${sfx.padStart(6, '0')}${String(n).padStart(6, '0')}`;
@@ -210,6 +211,249 @@ describeWithDb('sync: a driver replays her outbox (ROO-44)', () => {
     );
     expect((await execution.stopRow(w, d)).status).toBe('ARRIVED');
     expect((await execution.stopRow(w, e)).status).toBe('ARRIVED');
+  });
+
+  it('AC-SYN-04 a late event keeps its device time', async () => {
+    const trip = await execution.seedTrip(w, {
+      tripNo: 1,
+      stops: 2,
+      status: 'IN_PROGRESS',
+    });
+    // Fresh Kadawatha is the first stop of the REF-07 run.
+    const [kadawatha] = trip.stopIds;
+    const [orderId] = trip.orderIds;
+    await execution.setOrderStatus(w, orderId, 'IN_TRANSIT');
+    const lines = await execution.orderLineRows(w, orderId);
+    const base = { tripId: trip.tripId, stopId: kadawatha };
+
+    // She arrived with signal; the arrival is on the server within the five minutes.
+    execution.at(w, '2026-10-02T04:17:00+05:30');
+    const arrived = await post('aniqa', {
+      deviceId: PHONE,
+      events: [
+        {
+          ...base,
+          clientUuid: uuid(w.sfx, 41),
+          type: 'ARRIVED',
+          occurredAt: '2026-10-02T04:12:00+05:30',
+          deviceSeq: 41,
+        },
+      ],
+    });
+    expect(execution.data<Outcome>(arrived).results[0].status).toBe('applied');
+
+    // The delivery is recorded offline at 04:20. At 04:40 the signal blinks and only the
+    // bundle refresh gets through, so the server hears of 04:40 before it hears of 04:20.
+    const delivered = {
+      ...base,
+      clientUuid: uuid(w.sfx, 42),
+      type: 'DELIVERED',
+      occurredAt: '2026-10-02T04:20:00+05:30',
+      deviceSeq: 42,
+      receiverName: 'K. Fernando',
+      attachmentUuids: [crypto.randomUUID()],
+      lines: lines.map((line) => ({
+        orderLineId: line.id,
+        qtyDelivered: line.qty,
+        condition: 'ok',
+      })),
+    };
+    execution.at(w, '2026-10-02T04:40:00+05:30');
+    const refreshed = await post('aniqa', {
+      deviceId: PHONE,
+      events: [
+        {
+          clientUuid: uuid(w.sfx, 43),
+          tripId: trip.tripId,
+          type: 'TRIP_DOWNLOADED',
+          occurredAt: '2026-10-02T04:40:00+05:30',
+          deviceSeq: 43,
+        },
+      ],
+    });
+    expect(execution.data<Outcome>(refreshed).results[0].status).toBe(
+      'applied',
+    );
+
+    execution.at(w, '2026-10-02T05:00:00+05:30');
+    const res = await post('aniqa', { deviceId: PHONE, events: [delivered] });
+    expect(res.status).toBe(200);
+    expect(execution.data<Outcome>(res).results[0].status).toBe('applied');
+
+    // The stop event keeps the device's time beside the server's.
+    const [event] = await execution.eventRows(w, trip.tripId, 'DELIVERED');
+    expect(event.occurredAt.toISOString()).toBe('2026-10-01T22:50:00.000Z');
+    expect(event.receivedAt.toISOString()).toBe('2026-10-01T23:30:00.000Z');
+    expect(event.lateSync).toBe(true);
+    const [onTime] = await execution.eventRows(w, trip.tripId, 'ARRIVED');
+    expect(onTime.lateSync).toBe(false);
+    expect((await execution.stopRow(w, kadawatha)).status).toBe('DELIVERED');
+
+    // The order timeline shows the delivery where it happened, marked Synced late.
+    const timeline = await execution.call(
+      w,
+      'dispatcher',
+      'get',
+      `/timelines/order/${orderId}`,
+    );
+    expect(timeline.status).toBe(200);
+    const entries = execution.data<
+      {
+        action: string;
+        entityId: string;
+        occurredAt: string;
+        syncedLate: boolean;
+      }[]
+    >(timeline);
+    const at = (entry: { occurredAt: string }) =>
+      new Date(entry.occurredAt).getTime();
+    const delivery = entries.find(
+      (entry) =>
+        entry.action === 'execution.stop.completed' &&
+        entry.entityId === kadawatha,
+    );
+    expect(delivery).toBeDefined();
+    expect(at(delivery!)).toBe(Date.parse('2026-10-02T04:20:00+05:30'));
+    expect(delivery!.syncedLate).toBe(true);
+
+    // Ordered by when it happened: the 04:20 delivery sits before the 04:40 refresh, which the
+    // server received twenty minutes earlier.
+    expect(entries.map(at)).toEqual([...entries.map(at)].sort((a, b) => a - b));
+    const refresh = entries.findIndex(
+      (entry) => entry.action === 'execution.trip.downloaded',
+    );
+    expect(refresh).toBeGreaterThan(-1);
+    expect(entries.indexOf(delivery!)).toBeLessThan(refresh);
+
+    // Exactly five minutes is not late; one second more is.
+    const happened = new Date('2026-10-02T04:20:00+05:30');
+    expect(isLateSync(happened, new Date('2026-10-02T04:25:00+05:30'))).toBe(
+      false,
+    );
+    expect(isLateSync(happened, new Date('2026-10-02T04:25:01+05:30'))).toBe(
+      true,
+    );
+  });
+
+  it('AC-SYN-12 the changes feed covers the device’s trips', async () => {
+    const mine = await execution.seedTrip(w, { tripNo: 1, stops: 2 });
+    const theirs = await execution.seedTrip(w, {
+      tripNo: 1,
+      stops: 1,
+      vehicle: 'dry',
+      driver: 'dinushi',
+    });
+    const emit = (type: string, payload: object, time: string, depot = true) =>
+      w.db.insert(outboxEvents).values({
+        type,
+        aggregateType: 'trip',
+        aggregateId: 'x',
+        depotId: depot ? w.depot.plg : null,
+        payload: { v: 1, ...payload },
+        occurredAt: new Date(time),
+      });
+    const pull = (role: execution.Role, query = '') =>
+      execution.call(w, role, 'get', `/sync/changes${query}`);
+    type Feed = {
+      data: {
+        type: string;
+        tripId: string | null;
+        data: { tripId?: string };
+      }[];
+      meta: {
+        page: { limit: number; nextCursor: string | null; hasMore: boolean };
+      };
+    };
+
+    // Her phone pulled at 04:30 and holds the cursor of the last change it read.
+    await emit(
+      'plan.revised',
+      { planId: mine.planId, tripIds: [mine.tripId], revision: 2 },
+      '2026-10-02T04:10:00+05:30',
+    );
+    const first = await pull('aniqa');
+    expect(first.status).toBe(200);
+    expect((first.body as Feed).data.map((c) => c.type)).toEqual([
+      'plan.revised',
+    ]);
+    const c1 = (first.body as Feed).meta.page.nextCursor!;
+    expect(c1).toEqual(expect.any(String));
+
+    // Since then: a re-sequence and a deferred stop on her trip, a reassignment on Dinushi's,
+    // and an event that names no trip of anyone's here.
+    await emit(
+      'trip.resequenced',
+      {
+        tripId: mine.tripId,
+        stopIds: [...mine.stopIds].reverse(),
+        revision: 3,
+      },
+      '2026-10-02T04:35:00+05:30',
+    );
+    await emit(
+      'stop.deferred',
+      { tripId: mine.tripId, stopId: mine.stopIds[1], toDate: '2026-10-03' },
+      '2026-10-02T04:40:00+05:30',
+    );
+    await emit(
+      'trip.reassigned',
+      {
+        tripId: theirs.tripId,
+        driverId: w.as.dinushi.id,
+        vehicleChanged: false,
+      },
+      '2026-10-02T04:45:00+05:30',
+    );
+    await emit(
+      'stop.deferred',
+      { tripId: crypto.randomUUID(), stopId: crypto.randomUUID() },
+      '2026-10-02T04:50:00+05:30',
+    );
+
+    const res = await pull('aniqa', `?since=${c1}`);
+    expect(res.status).toBe(200);
+    const body = res.body as Feed;
+    expect(body.data.map((c) => [c.type, c.tripId])).toEqual([
+      ['trip.resequenced', mine.tripId],
+      ['stop.deferred', mine.tripId],
+    ]);
+    expect(JSON.stringify(body)).not.toContain(theirs.tripId);
+    expect(body.meta.page).toMatchObject({ limit: 50, hasMore: false });
+    expect(body.meta.page.nextCursor).toEqual(expect.any(String));
+
+    // Paged, the cursor carries on exactly where the page ended.
+    const one = (await pull('aniqa', `?since=${c1}&limit=1`)).body as Feed;
+    expect(one.data.map((c) => c.type)).toEqual(['trip.resequenced']);
+    expect(one.meta.page).toMatchObject({ limit: 1, hasMore: true });
+    const two = (
+      await pull('aniqa', `?since=${one.meta.page.nextCursor}&limit=1`)
+    ).body as Feed;
+    expect(two.data.map((c) => c.type)).toEqual(['stop.deferred']);
+    expect(two.meta.page.hasMore).toBe(false);
+
+    // Caught up: nothing newer, and the device keeps the cursor it has.
+    const caughtUp = (
+      await pull('aniqa', `?since=${body.meta.page.nextCursor}`)
+    ).body as Feed;
+    expect(caughtUp.data).toEqual([]);
+    expect(caughtUp.meta.page.nextCursor).toBeNull();
+
+    // Dinushi hears of her own trip only; a dispatcher is not a field device.
+    const hers = (await pull('dinushi')).body as Feed;
+    expect(hers.data.map((c) => [c.type, c.tripId])).toEqual([
+      ['trip.reassigned', theirs.tripId],
+    ]);
+    expectProblem(await pull('dispatcher'), 'FORBIDDEN');
+
+    // A cursor that is not one of the feed's own is a 400, never a 500.
+    const foreign = Buffer.from(
+      JSON.stringify({ k: 'x', id: 'y', s: '-createdAt' }),
+    ).toString('base64url');
+    for (const since of ['not-a-cursor', c1.slice(0, -6), foreign]) {
+      const bad = await pull('aniqa', `?since=${since}`);
+      expect(bad.status).toBe(400);
+      expectProblem(bad, 'VALIDATION_FAILED');
+    }
   });
 
   it('AC-SYN-05 batches over 100 are refused, and a malformed envelope is a 400', async () => {
