@@ -4,9 +4,7 @@ import { ROLE_ROUTES } from '@/app/role-routes'
 import { ROLE_HOME } from '@/features/identity/role-home'
 import { Button } from '@/ui/button'
 import { Card } from '@/ui/card'
-import { StatusChip } from '@/ui/status-chip'
 import { Wordmark } from '@/ui/wordmark'
-import { useHealth } from './health'
 
 /** The three ways in, one per kind of device (A0, D0a, L1). */
 const SIGN_INS = [
@@ -16,13 +14,11 @@ const SIGN_INS = [
 ]
 
 /**
- * Start page: API health, the three ways to sign in and a way into each role's area. Someone who
- * is already signed in goes straight to their role's home.
+ * Start page: the three ways to sign in and a way into each role's area. Someone who is already
+ * signed in goes straight to their role's home.
  */
 export function HomePage() {
-  const health = useHealth()
   const me = useMeGet({ query: { retry: false } })
-  const ok = health.data?.status === 'ok'
 
   if (me.data) return <Navigate to={ROLE_HOME[me.data.data.role]} replace />
 
@@ -31,11 +27,6 @@ export function HomePage() {
       <header className="flex flex-col gap-3">
         <Wordmark />
         <p className="type-body m-0 text-slate-700">Delivery planning for Waypoint Fresh, Style and Tech.</p>
-        <div role="status">
-          <StatusChip tone={health.isPending ? 'muted' : ok ? 'success' : 'danger'}>
-            {health.isPending ? 'Checking API…' : ok ? 'API, database and Redis online' : 'API unavailable'}
-          </StatusChip>
-        </div>
       </header>
 
       <section aria-labelledby="sign-in-heading" className="flex flex-col gap-3">
