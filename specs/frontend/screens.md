@@ -347,6 +347,14 @@ Screen-specific states and actions, from Step 8:
 
 ## Changelog
 
+- 2026-10-04 ROO-81 A3 Outlets, A4 Depots and A5 Vehicles built at `/admin/outlets`,
+  `/admin/depots` and `/admin/vehicles`, replacing their placeholders: the outlet edit dialog with
+  the window rules, the depot's docks, cutoff override and run waves, and the vehicle list with its
+  edit and status dialogs and this week's fuel against quota. Screens live in
+  `src/features/master-data/` and `src/features/fleet/`. Outlets with no manager and vehicles that
+  are not active are flagged in their lists. The three frames still need `/fidelity`: the Figma MCP
+  was not reachable in the session that built them, so they follow A1 and A6's parts and spacing
+
 - 2026-10-02 ROO-15 the five shells, their routes and the role guard; the six composites
   (Sheet, CapacityMeter, DeliveryWindow, StopSequenceRow, DriverStopCard, PinKeypad); touch density
   on the control tokens; `useEventStream`; i18n in `src/i18n/en.json`; the service worker. Icons now

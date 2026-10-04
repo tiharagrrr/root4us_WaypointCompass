@@ -19,6 +19,10 @@ import type {
 } from 'msw';
 
 import type {
+  DepotWavesCreate201,
+  DepotWavesGet200,
+  DepotWavesList200,
+  DepotWavesUpdate200,
   DepotsGet200,
   DepotsList200,
   DepotsUpdate200
@@ -36,6 +40,24 @@ export const getDepotsGetResponseMock = (overrideResponse: Partial<Extract<Depot
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getDepotsUpdateResponseMock = (overrideResponse: Partial<Extract<DepotsUpdate200, object>> = {}): DepotsUpdate200 => ({data: {id: "PLG", name: "Peliyagoda", kind: "CENTRAL", address: null, lat: 6.9654, lng: 79.8871, dockCount: 6, chilledDocks: 2, cutoffMin: null, effectiveCutoffMin: 960, effectiveCutoff: "16:00", _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getDepotWavesListResponseMock = (overrideResponse: Partial<Extract<DepotWavesList200, object>> = {}): DepotWavesList200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "0192f0c7-0000-7000-8000-000000000000", depotId: "PLG", label: "Run 1", departFromMin: 315, departFrom: "05:15", departToMin: 390, departTo: "06:30", brands: ["FRESH"], _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }, ...overrideResponse})
+
+export const getDepotWavesCreateResponseMock = (overrideResponse: Partial<Extract<DepotWavesCreate201, object>> = {}): DepotWavesCreate201 => ({data: {id: "0192f0c7-0000-7000-8000-000000000000", depotId: "PLG", label: "Run 1", departFromMin: 315, departFrom: "05:15", departToMin: 390, departTo: "06:30", brands: ["FRESH"], _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getDepotWavesGetResponseMock = (overrideResponse: Partial<Extract<DepotWavesGet200, object>> = {}): DepotWavesGet200 => ({data: {id: "0192f0c7-0000-7000-8000-000000000000", depotId: "PLG", label: "Run 1", departFromMin: 315, departFrom: "05:15", departToMin: 390, departTo: "06:30", brands: ["FRESH"], _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getDepotWavesUpdateResponseMock = (overrideResponse: Partial<Extract<DepotWavesUpdate200, object>> = {}): DepotWavesUpdate200 => ({data: {id: "0192f0c7-0000-7000-8000-000000000000", depotId: "PLG", label: "Run 1", departFromMin: 315, departFrom: "05:15", departToMin: 390, departTo: "06:30", brands: ["FRESH"], _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -75,8 +97,71 @@ export const getDepotsUpdateMockHandler = (overrideResponse?: DepotsUpdate200 | 
       })
   }, options)
 }
+
+export const getDepotWavesListMockHandler = (overrideResponse?: DepotWavesList200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DepotWavesList200> | DepotWavesList200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/depots/:depotId/waves', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDepotWavesListResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getDepotWavesCreateMockHandler = (overrideResponse?: DepotWavesCreate201 | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<DepotWavesCreate201> | DepotWavesCreate201), options?: RequestHandlerOptions) => {
+  return http.post('*/api/v1/depots/:depotId/waves', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDepotWavesCreateResponseMock(),
+      { status: 201
+      })
+  }, options)
+}
+
+export const getDepotWavesGetMockHandler = (overrideResponse?: DepotWavesGet200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<DepotWavesGet200> | DepotWavesGet200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/depots/:depotId/waves/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDepotWavesGetResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getDepotWavesUpdateMockHandler = (overrideResponse?: DepotWavesUpdate200 | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<DepotWavesUpdate200> | DepotWavesUpdate200), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/v1/depots/:depotId/waves/:id', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getDepotWavesUpdateResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getDepotWavesRemoveMockHandler = (overrideResponse?: void | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<void> | void), options?: RequestHandlerOptions) => {
+  return http.delete('*/api/v1/depots/:depotId/waves/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {await delay(300);
+  if (typeof overrideResponse === 'function') {await overrideResponse(info); }
+
+    return new HttpResponse(null,
+      { status: 204
+      })
+  }, options)
+}
 export const getDepotsMock = () => [
   getDepotsListMockHandler(),
   getDepotsGetMockHandler(),
-  getDepotsUpdateMockHandler()
+  getDepotsUpdateMockHandler(),
+  getDepotWavesListMockHandler(),
+  getDepotWavesCreateMockHandler(),
+  getDepotWavesGetMockHandler(),
+  getDepotWavesUpdateMockHandler(),
+  getDepotWavesRemoveMockHandler()
 ]

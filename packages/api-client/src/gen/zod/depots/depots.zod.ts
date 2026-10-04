@@ -150,3 +150,207 @@ export const DepotsUpdateResponse = zod.object({
 })
 })
 
+/**
+ * @summary List a depot's run waves
+ */
+export const DepotWavesListParams = zod.object({
+  "depotId": zod.string()
+})
+
+export const DepotWavesListResponse = zod.object({
+  "data": zod.array(zod.object({
+  "id": zod.string(),
+  "depotId": zod.string(),
+  "label": zod.string(),
+  "departFromMin": zod.number().describe('Minutes after midnight'),
+  "departFrom": zod.string(),
+  "departToMin": zod.number(),
+  "departTo": zod.string(),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional(),
+  "page": zod.object({
+  "limit": zod.number(),
+  "offset": zod.number(),
+  "total": zod.number()
+})
+}),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+})
+
+/**
+ * @summary Add a run wave
+ */
+export const DepotWavesCreateParams = zod.object({
+  "depotId": zod.string()
+})
+
+export const depotWavesCreateBodyLabelMax = 40;
+
+export const depotWavesCreateBodyDepartFromMinMin = 0;
+export const depotWavesCreateBodyDepartFromMinMax = 1439;
+
+export const depotWavesCreateBodyDepartToMinMin = 0;
+export const depotWavesCreateBodyDepartToMinMax = 1439;
+
+
+
+
+export const DepotWavesCreateBody = zod.object({
+  "label": zod.string().min(1).max(depotWavesCreateBodyLabelMax),
+  "departFromMin": zod.number().min(depotWavesCreateBodyDepartFromMinMin).max(depotWavesCreateBodyDepartFromMinMax),
+  "departToMin": zod.number().min(depotWavesCreateBodyDepartToMinMin).max(depotWavesCreateBodyDepartToMinMax),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])).min(1)
+})
+
+export const DepotWavesCreateResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "depotId": zod.string(),
+  "label": zod.string(),
+  "departFromMin": zod.number().describe('Minutes after midnight'),
+  "departFrom": zod.string(),
+  "departToMin": zod.number(),
+  "departTo": zod.string(),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary One run wave
+ */
+export const DepotWavesGetParams = zod.object({
+  "depotId": zod.string(),
+  "id": zod.string()
+})
+
+export const DepotWavesGetResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "depotId": zod.string(),
+  "label": zod.string(),
+  "departFromMin": zod.number().describe('Minutes after midnight'),
+  "departFrom": zod.string(),
+  "departToMin": zod.number(),
+  "departTo": zod.string(),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Edit a run wave
+ */
+export const DepotWavesUpdateParams = zod.object({
+  "depotId": zod.string(),
+  "id": zod.string()
+})
+
+export const depotWavesUpdateBodyLabelMax = 40;
+
+export const depotWavesUpdateBodyDepartFromMinMin = 0;
+export const depotWavesUpdateBodyDepartFromMinMax = 1439;
+
+export const depotWavesUpdateBodyDepartToMinMin = 0;
+export const depotWavesUpdateBodyDepartToMinMax = 1439;
+
+
+
+
+export const DepotWavesUpdateBody = zod.object({
+  "label": zod.string().min(1).max(depotWavesUpdateBodyLabelMax).optional(),
+  "departFromMin": zod.number().min(depotWavesUpdateBodyDepartFromMinMin).max(depotWavesUpdateBodyDepartFromMinMax).optional(),
+  "departToMin": zod.number().min(depotWavesUpdateBodyDepartToMinMin).max(depotWavesUpdateBodyDepartToMinMax).optional(),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])).min(1).optional()
+})
+
+export const DepotWavesUpdateResponse = zod.object({
+  "data": zod.object({
+  "id": zod.string(),
+  "depotId": zod.string(),
+  "label": zod.string(),
+  "departFromMin": zod.number().describe('Minutes after midnight'),
+  "departFrom": zod.string(),
+  "departToMin": zod.number(),
+  "departTo": zod.string(),
+  "brands": zod.array(zod.enum(['FRESH', 'STYLE', 'TECH'])),
+  "_links": zod.record(zod.string(), zod.object({
+  "href": zod.string(),
+  "method": zod.enum(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']).optional(),
+  "title": zod.string().optional(),
+  "templated": zod.boolean().optional(),
+  "requires": zod.array(zod.string()).optional()
+}))
+}),
+  "meta": zod.object({
+  "requestId": zod.string(),
+  "serverTime": zod.string(),
+  "apiVersion": zod.string(),
+  "notices": zod.array(zod.object({
+  "code": zod.string(),
+  "message": zod.string()
+})).optional()
+})
+})
+
+/**
+ * @summary Remove a run wave
+ */
+export const DepotWavesRemoveParams = zod.object({
+  "depotId": zod.string(),
+  "id": zod.string()
+})
+
+export const DepotWavesRemoveResponse = zod.void()
+

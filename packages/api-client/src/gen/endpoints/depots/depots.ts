@@ -25,11 +25,17 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CreateDepotWaveDto,
+  DepotWavesCreate201,
+  DepotWavesGet200,
+  DepotWavesList200,
+  DepotWavesUpdate200,
   DepotsGet200,
   DepotsList200,
   DepotsUpdate200,
   ProblemDto,
-  UpdateDepotDto
+  UpdateDepotDto,
+  UpdateDepotWaveDto
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -342,4 +348,465 @@ export const useDepotsUpdate = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getDepotsUpdateMutationOptions(options), queryClient);
+    }
+    export const getDepotWavesListUrl = (depotId: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/waves`
+}
+
+/**
+ * @summary List a depot's run waves
+ */
+export const depotWavesList = async (depotId: string, options?: Parameters<typeof compassFetch>[1]): Promise<DepotWavesList200> => {
+
+  return compassFetch<DepotWavesList200>(getDepotWavesListUrl(depotId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDepotWavesListQueryKey = (depotId: string,) => {
+    return [
+    `/api/v1/depots/${depotId}/waves`
+    ] as const;
+    }
+
+
+export const getDepotWavesListQueryOptions = <TData = Awaited<ReturnType<typeof depotWavesList>>, TError = ErrorType<ProblemDto>>(depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDepotWavesListQueryKey(depotId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof depotWavesList>>> = ({ signal }) => depotWavesList(depotId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: depotId !== null && depotId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DepotWavesListQueryResult = NonNullable<Awaited<ReturnType<typeof depotWavesList>>>
+export type DepotWavesListQueryError = ErrorType<ProblemDto>
+
+
+export function useDepotWavesList<TData = Awaited<ReturnType<typeof depotWavesList>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depotWavesList>>,
+          TError,
+          Awaited<ReturnType<typeof depotWavesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepotWavesList<TData = Awaited<ReturnType<typeof depotWavesList>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depotWavesList>>,
+          TError,
+          Awaited<ReturnType<typeof depotWavesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepotWavesList<TData = Awaited<ReturnType<typeof depotWavesList>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List a depot's run waves
+ */
+
+export function useDepotWavesList<TData = Awaited<ReturnType<typeof depotWavesList>>, TError = ErrorType<ProblemDto>>(
+ depotId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDepotWavesListQueryOptions(depotId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getDepotWavesCreateUrl = (depotId: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/waves`
+}
+
+/**
+ * @summary Add a run wave
+ */
+export const depotWavesCreate = async (depotId: string,
+    createDepotWaveDto: CreateDepotWaveDto, options?: Parameters<typeof compassFetch>[1]): Promise<DepotWavesCreate201> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<DepotWavesCreate201>(getDepotWavesCreateUrl(depotId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(createDepotWaveDto)
+  }
+);}
+
+
+
+
+
+export const getDepotWavesCreateMutationKey = () => ['depotWavesCreate'] as const;
+
+export const getDepotWavesCreateMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesCreate>>, TError,DepotWavesCreateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof depotWavesCreate>>, TError,DepotWavesCreateMutationVariables, TContext> => {
+
+const mutationKey = getDepotWavesCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof depotWavesCreate>>, DepotWavesCreateMutationVariables> = (props) => {
+          const {depotId,data} = props ?? {};
+
+          return  depotWavesCreate(depotId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DepotWavesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof depotWavesCreate>>>
+    export type DepotWavesCreateMutationBody = BodyType<CreateDepotWaveDto>
+    export type DepotWavesCreateMutationError = ErrorType<ProblemDto>
+    export type DepotWavesCreateMutationVariables = {depotId: string;data: BodyType<CreateDepotWaveDto>}
+
+    /**
+ * @summary Add a run wave
+ */
+export const useDepotWavesCreate = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesCreate>>, TError,DepotWavesCreateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof depotWavesCreate>>,
+        TError,
+        DepotWavesCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDepotWavesCreateMutationOptions(options), queryClient);
+    }
+    export const getDepotWavesGetUrl = (depotId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/waves/${id}`
+}
+
+/**
+ * @summary One run wave
+ */
+export const depotWavesGet = async (depotId: string,
+    id: string, options?: Parameters<typeof compassFetch>[1]): Promise<DepotWavesGet200> => {
+
+  return compassFetch<DepotWavesGet200>(getDepotWavesGetUrl(depotId,id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDepotWavesGetQueryKey = (depotId: string,
+    id: string,) => {
+    return [
+    `/api/v1/depots/${depotId}/waves/${id}`
+    ] as const;
+    }
+
+
+export const getDepotWavesGetQueryOptions = <TData = Awaited<ReturnType<typeof depotWavesGet>>, TError = ErrorType<ProblemDto>>(depotId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDepotWavesGetQueryKey(depotId,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof depotWavesGet>>> = ({ signal }) => depotWavesGet(depotId,id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: depotId !== null && depotId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DepotWavesGetQueryResult = NonNullable<Awaited<ReturnType<typeof depotWavesGet>>>
+export type DepotWavesGetQueryError = ErrorType<ProblemDto>
+
+
+export function useDepotWavesGet<TData = Awaited<ReturnType<typeof depotWavesGet>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depotWavesGet>>,
+          TError,
+          Awaited<ReturnType<typeof depotWavesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepotWavesGet<TData = Awaited<ReturnType<typeof depotWavesGet>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depotWavesGet>>,
+          TError,
+          Awaited<ReturnType<typeof depotWavesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepotWavesGet<TData = Awaited<ReturnType<typeof depotWavesGet>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary One run wave
+ */
+
+export function useDepotWavesGet<TData = Awaited<ReturnType<typeof depotWavesGet>>, TError = ErrorType<ProblemDto>>(
+ depotId: string,
+    id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depotWavesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDepotWavesGetQueryOptions(depotId,id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getDepotWavesUpdateUrl = (depotId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/waves/${id}`
+}
+
+/**
+ * @summary Edit a run wave
+ */
+export const depotWavesUpdate = async (depotId: string,
+    id: string,
+    updateDepotWaveDto: UpdateDepotWaveDto, options?: Parameters<typeof compassFetch>[1]): Promise<DepotWavesUpdate200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<DepotWavesUpdate200>(getDepotWavesUpdateUrl(depotId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateDepotWaveDto)
+  }
+);}
+
+
+
+
+
+export const getDepotWavesUpdateMutationKey = () => ['depotWavesUpdate'] as const;
+
+export const getDepotWavesUpdateMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesUpdate>>, TError,DepotWavesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof depotWavesUpdate>>, TError,DepotWavesUpdateMutationVariables, TContext> => {
+
+const mutationKey = getDepotWavesUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof depotWavesUpdate>>, DepotWavesUpdateMutationVariables> = (props) => {
+          const {depotId,id,data} = props ?? {};
+
+          return  depotWavesUpdate(depotId,id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DepotWavesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof depotWavesUpdate>>>
+    export type DepotWavesUpdateMutationBody = BodyType<UpdateDepotWaveDto>
+    export type DepotWavesUpdateMutationError = ErrorType<ProblemDto>
+    export type DepotWavesUpdateMutationVariables = {depotId: string;id: string;data: BodyType<UpdateDepotWaveDto>}
+
+    /**
+ * @summary Edit a run wave
+ */
+export const useDepotWavesUpdate = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesUpdate>>, TError,DepotWavesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof depotWavesUpdate>>,
+        TError,
+        DepotWavesUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDepotWavesUpdateMutationOptions(options), queryClient);
+    }
+    export const getDepotWavesRemoveUrl = (depotId: string,
+    id: string,) => {
+
+
+
+
+  return `/api/v1/depots/${depotId}/waves/${id}`
+}
+
+/**
+ * @summary Remove a run wave
+ */
+export const depotWavesRemove = async (depotId: string,
+    id: string, options?: Parameters<typeof compassFetch>[1]): Promise<void> => {
+
+  return compassFetch<void>(getDepotWavesRemoveUrl(depotId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDepotWavesRemoveMutationKey = () => ['depotWavesRemove'] as const;
+
+export const getDepotWavesRemoveMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesRemove>>, TError,DepotWavesRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof depotWavesRemove>>, TError,DepotWavesRemoveMutationVariables, TContext> => {
+
+const mutationKey = getDepotWavesRemoveMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof depotWavesRemove>>, DepotWavesRemoveMutationVariables> = (props) => {
+          const {depotId,id} = props ?? {};
+
+          return  depotWavesRemove(depotId,id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DepotWavesRemoveMutationResult = NonNullable<Awaited<ReturnType<typeof depotWavesRemove>>>
+
+    export type DepotWavesRemoveMutationError = ErrorType<ProblemDto>
+    export type DepotWavesRemoveMutationVariables = {depotId: string;id: string}
+
+    /**
+ * @summary Remove a run wave
+ */
+export const useDepotWavesRemove = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depotWavesRemove>>, TError,DepotWavesRemoveMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof depotWavesRemove>>,
+        TError,
+        DepotWavesRemoveMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDepotWavesRemoveMutationOptions(options), queryClient);
     }

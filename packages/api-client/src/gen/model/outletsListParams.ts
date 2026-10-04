@@ -58,4 +58,8 @@ include?: string;
  * one of NORMAL, VAN_ONLY, MALL_DOCK; comma-separated for any of. Also filter[parkingConstraint][op] with op in eq, ne, null.
  */
 'filter[parkingConstraint]'?: string;
+/**
+ * true or false; comma-separated for any of. Also filter[hasManager][op] with op in eq.
+ */
+'filter[hasManager]'?: string;
 };

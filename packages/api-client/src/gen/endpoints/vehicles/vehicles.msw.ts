@@ -18,9 +18,17 @@ import type {
   RequestHandlerOptions
 } from 'msw';
 
+import {
+  VehicleStatus,
+  VehicleTemp,
+  VehicleType
+} from '../../model';
 import type {
   VehicleFuelFuel200,
-  VehicleStatusSetStatus200
+  VehicleStatusSetStatus200,
+  VehiclesGet200,
+  VehiclesList200,
+  VehiclesUpdate200
 } from '../../model';
 
 
@@ -29,6 +37,20 @@ export const getVehicleFuelFuelResponseMock = (overrideResponse: Partial<Extract
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
 export const getVehicleStatusSetStatusResponseMock = (overrideResponse: Partial<Extract<VehicleStatusSetStatus200, object>> = {}): VehicleStatusSetStatus200 => ({data: {id: "VEH007", code: "REF-07", depotId: "PLG", status: "BREAKDOWN", statusReason: "Compressor fault", statusChangedAt: "2026-10-02T04:40:00+05:30", version: 4, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getVehiclesListResponseMock = (overrideResponse: Partial<Extract<VehiclesList200, object>> = {}): VehiclesList200 => ({data: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: "VEH007", code: "REF-07", registrationNo: "WP-REF-07", type: faker.helpers.arrayElement(Object.values(VehicleType)), temp: faker.helpers.arrayElement(Object.values(VehicleTemp)), weightCapKg: 3000, volumeCapM3: 20, fuelType: "diesel", kmPerL: 6, weeklyFuelQuotaL: 400, depotId: "PLG", status: faker.helpers.arrayElement(Object.values(VehicleStatus)), statusReason: null, statusChangedAt: null, driver: {...{id: "user_01J9", name: "Aniqa Razick"},}, version: 4, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }})), meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined]), page: {limit: 10, offset: 0, total: 57}}, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }, ...overrideResponse})
+
+export const getVehiclesGetResponseMock = (overrideResponse: Partial<Extract<VehiclesGet200, object>> = {}): VehiclesGet200 => ({data: {id: "VEH007", code: "REF-07", registrationNo: "WP-REF-07", type: faker.helpers.arrayElement(Object.values(VehicleType)), temp: faker.helpers.arrayElement(Object.values(VehicleTemp)), weightCapKg: 3000, volumeCapM3: 20, fuelType: "diesel", kmPerL: 6, weeklyFuelQuotaL: 400, depotId: "PLG", status: faker.helpers.arrayElement(Object.values(VehicleStatus)), statusReason: null, statusChangedAt: null, driver: {...{id: "user_01J9", name: "Aniqa Razick"},}, version: 4, _links: {
+        [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
+      }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
+
+export const getVehiclesUpdateResponseMock = (overrideResponse: Partial<Extract<VehiclesUpdate200, object>> = {}): VehiclesUpdate200 => ({data: {id: "VEH007", code: "REF-07", registrationNo: "WP-REF-07", type: faker.helpers.arrayElement(Object.values(VehicleType)), temp: faker.helpers.arrayElement(Object.values(VehicleTemp)), weightCapKg: 3000, volumeCapM3: 20, fuelType: "diesel", kmPerL: 6, weeklyFuelQuotaL: 400, depotId: "PLG", status: faker.helpers.arrayElement(Object.values(VehicleStatus)), statusReason: null, statusChangedAt: null, driver: {...{id: "user_01J9", name: "Aniqa Razick"},}, version: 4, _links: {
         [faker.string.alphanumeric(5)]: {href: "/api/v1/orders/0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e", method: faker.helpers.arrayElement([faker.helpers.arrayElement(['GET','POST','PATCH','PUT','DELETE'] as const), undefined]), title: "Cancel order", templated: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), requires: ["If-Match","reasonNote"]}
       }}, meta: {requestId: "0192a3f5-1b2c-7d3e-8f4a-5b6c7d8e9f0a", serverTime: "2026-10-01T15:40:03+05:30", apiVersion: "1.0.0", notices: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({code: "ORDER_ROLLED_TO_NEXT_RUN", message: "Sent after the 4 PM cutoff: delivers Saturday."})), undefined])}, ...overrideResponse})
 
@@ -56,7 +78,46 @@ export const getVehicleStatusSetStatusMockHandler = (overrideResponse?: VehicleS
       })
   }, options)
 }
+
+export const getVehiclesListMockHandler = (overrideResponse?: VehiclesList200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VehiclesList200> | VehiclesList200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/vehicles', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getVehiclesListResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getVehiclesGetMockHandler = (overrideResponse?: VehiclesGet200 | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<VehiclesGet200> | VehiclesGet200), options?: RequestHandlerOptions) => {
+  return http.get('*/api/v1/vehicles/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getVehiclesGetResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
+
+export const getVehiclesUpdateMockHandler = (overrideResponse?: VehiclesUpdate200 | ((info: Parameters<Parameters<typeof http.patch>[1]>[0]) => Promise<VehiclesUpdate200> | VehiclesUpdate200), options?: RequestHandlerOptions) => {
+  return http.patch('*/api/v1/vehicles/:id', async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {await delay(300);
+
+
+    return HttpResponse.json(overrideResponse !== undefined
+    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
+    : getVehiclesUpdateResponseMock(),
+      { status: 200
+      })
+  }, options)
+}
 export const getVehiclesMock = () => [
   getVehicleFuelFuelMockHandler(),
-  getVehicleStatusSetStatusMockHandler()
+  getVehicleStatusSetStatusMockHandler(),
+  getVehiclesListMockHandler(),
+  getVehiclesGetMockHandler(),
+  getVehiclesUpdateMockHandler()
 ]

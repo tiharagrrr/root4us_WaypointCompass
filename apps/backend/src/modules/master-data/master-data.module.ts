@@ -4,17 +4,20 @@
 import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit';
 import { CalendarController } from './controllers/calendar.controller';
+import { DepotWavesController } from './controllers/depot-waves.controller';
 import { DepotsController } from './controllers/depots.controller';
 import { DistrictsController } from './controllers/districts.controller';
 import { ItemsController } from './controllers/items.controller';
 import { OutletsController } from './controllers/outlets.controller';
 import { ReferenceController } from './controllers/reference.controller';
+import { DepotWaveLinks } from './policies/depot-wave.links';
 import { DepotLinks } from './policies/depot.links';
 import { DistrictLinks } from './policies/district.links';
 import { ItemLinks } from './policies/item.links';
 import { DepotScope, OutletScope } from './policies/master-data.scope';
 import { OutletLinks } from './policies/outlet.links';
 import { CalendarService } from './services/calendar.service';
+import { DepotWavesService } from './services/depot-waves.service';
 import { DepotsService } from './services/depots.service';
 import { ItemQueries } from './services/item.queries';
 import { OutletQueries } from './services/outlet.queries';
@@ -25,6 +28,8 @@ const providers = [
   CalendarService,
   DepotsService,
   DepotLinks,
+  DepotWaveLinks,
+  DepotWavesService,
   DepotScope,
   DistrictLinks,
   ItemLinks,
@@ -41,6 +46,7 @@ const providers = [
   controllers: [
     CalendarController,
     DepotsController,
+    DepotWavesController,
     DistrictsController,
     ItemsController,
     OutletsController,
