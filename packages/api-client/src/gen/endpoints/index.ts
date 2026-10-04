@@ -1,4 +1,5 @@
 export * from './alerts/alerts.ts';
+export * from './audit/audit.ts';
 export * from './calendar/calendar.ts';
 export * from './clock/clock.ts';
 export * from './deferral-reasons/deferral-reasons.ts';
