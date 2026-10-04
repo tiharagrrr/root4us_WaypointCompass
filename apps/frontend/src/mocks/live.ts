@@ -37,6 +37,9 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   // Master data reads and the A3/A4 edits (ROO-19).
   { method: "all", path: "/api/v1/depots" },
   { method: "all", path: "/api/v1/depots/:id" },
+  // A4's run waves (ROO-81).
+  { method: "all", path: "/api/v1/depots/:id/waves" },
+  { method: "all", path: "/api/v1/depots/:id/waves/*" },
   // Ordering's depot day and loading's boards (planning's day plan is below).
   { method: "all", path: "/api/v1/depots/:id/days/*" },
   { method: "all", path: "/api/v1/depots/:id/loading/*" },
@@ -93,9 +96,12 @@ export const LIVE_ENDPOINTS: readonly LiveEndpoint[] = [
   { method: "all", path: "/api/v1/plans/*" },
   { method: "all", path: "/api/v1/deferrals" },
   { method: "all", path: "/api/v1/deferrals/*" },
-  // Fleet: a vehicle's fuel for a week (ROO-42) and its status (ROO-56).
+  // Fleet: a vehicle's fuel for a week (ROO-42), its status (ROO-56) and A5's
+  // list, read and edit (ROO-81).
   { method: "get", path: "/api/v1/vehicles/:id/fuel" },
   { method: "put", path: "/api/v1/vehicles/:id/status" },
+  { method: "all", path: "/api/v1/vehicles" },
+  { method: "all", path: "/api/v1/vehicles/:id" },
 ];
 
 /** Pass-through handlers; they go before the mocks so they win. */

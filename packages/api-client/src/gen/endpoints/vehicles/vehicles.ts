@@ -27,10 +27,16 @@ import type {
 import type {
   ProblemDto,
   SetVehicleStatusDto,
+  UpdateVehicleDto,
   VehicleFuelFuel200,
   VehicleFuelFuelParams,
   VehicleStatusSetStatus200,
-  VehicleStatusSetStatusHeaders
+  VehicleStatusSetStatusHeaders,
+  VehiclesGet200,
+  VehiclesList200,
+  VehiclesListParams,
+  VehiclesUpdate200,
+  VehiclesUpdateHeaders
 } from '../../model';
 
 import { compassFetch } from '../../../mutator.ts';
@@ -259,4 +265,300 @@ export const useVehicleStatusSetStatus = <TError = ErrorType<ProblemDto>,
         TContext
       > => {
       return useMutation(getVehicleStatusSetStatusMutationOptions(options), queryClient);
+    }
+    export const getVehiclesListUrl = (params?: VehiclesListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/vehicles?${stringifiedParams}` : `/api/v1/vehicles`
+}
+
+/**
+ * @summary List vehicles
+ */
+export const vehiclesList = async (params?: VehiclesListParams, options?: Parameters<typeof compassFetch>[1]): Promise<VehiclesList200> => {
+
+  return compassFetch<VehiclesList200>(getVehiclesListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getVehiclesListQueryKey = (params?: VehiclesListParams,) => {
+    return [
+    `/api/v1/vehicles`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getVehiclesListQueryOptions = <TData = Awaited<ReturnType<typeof vehiclesList>>, TError = ErrorType<ProblemDto>>(params?: VehiclesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getVehiclesListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof vehiclesList>>> = ({ signal }) => vehiclesList(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type VehiclesListQueryResult = NonNullable<Awaited<ReturnType<typeof vehiclesList>>>
+export type VehiclesListQueryError = ErrorType<ProblemDto>
+
+
+export function useVehiclesList<TData = Awaited<ReturnType<typeof vehiclesList>>, TError = ErrorType<ProblemDto>>(
+ params: undefined |  VehiclesListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof vehiclesList>>,
+          TError,
+          Awaited<ReturnType<typeof vehiclesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useVehiclesList<TData = Awaited<ReturnType<typeof vehiclesList>>, TError = ErrorType<ProblemDto>>(
+ params?: VehiclesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof vehiclesList>>,
+          TError,
+          Awaited<ReturnType<typeof vehiclesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useVehiclesList<TData = Awaited<ReturnType<typeof vehiclesList>>, TError = ErrorType<ProblemDto>>(
+ params?: VehiclesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List vehicles
+ */
+
+export function useVehiclesList<TData = Awaited<ReturnType<typeof vehiclesList>>, TError = ErrorType<ProblemDto>>(
+ params?: VehiclesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesList>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getVehiclesListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getVehiclesGetUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/vehicles/${id}`
+}
+
+/**
+ * @summary One vehicle
+ */
+export const vehiclesGet = async (id: string, options?: Parameters<typeof compassFetch>[1]): Promise<VehiclesGet200> => {
+
+  return compassFetch<VehiclesGet200>(getVehiclesGetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getVehiclesGetQueryKey = (id: string,) => {
+    return [
+    `/api/v1/vehicles/${id}`
+    ] as const;
+    }
+
+
+export const getVehiclesGetQueryOptions = <TData = Awaited<ReturnType<typeof vehiclesGet>>, TError = ErrorType<ProblemDto>>(id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getVehiclesGetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof vehiclesGet>>> = ({ signal }) => vehiclesGet(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type VehiclesGetQueryResult = NonNullable<Awaited<ReturnType<typeof vehiclesGet>>>
+export type VehiclesGetQueryError = ErrorType<ProblemDto>
+
+
+export function useVehiclesGet<TData = Awaited<ReturnType<typeof vehiclesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof vehiclesGet>>,
+          TError,
+          Awaited<ReturnType<typeof vehiclesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useVehiclesGet<TData = Awaited<ReturnType<typeof vehiclesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof vehiclesGet>>,
+          TError,
+          Awaited<ReturnType<typeof vehiclesGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useVehiclesGet<TData = Awaited<ReturnType<typeof vehiclesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary One vehicle
+ */
+
+export function useVehiclesGet<TData = Awaited<ReturnType<typeof vehiclesGet>>, TError = ErrorType<ProblemDto>>(
+ id: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof vehiclesGet>>, TError, TData>>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getVehiclesGetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export const getVehiclesUpdateUrl = (id: string,) => {
+
+
+
+
+  return `/api/v1/vehicles/${id}`
+}
+
+/**
+ * @summary Edit a vehicle
+ */
+export const vehiclesUpdate = async (id: string,
+    updateVehicleDto: UpdateVehicleDto,
+    headers: VehiclesUpdateHeaders, options?: Parameters<typeof compassFetch>[1]): Promise<VehiclesUpdate200> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return compassFetch<VehiclesUpdate200>(getVehiclesUpdateUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json',...headers, ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateVehicleDto)
+  }
+);}
+
+
+
+
+
+export const getVehiclesUpdateMutationKey = () => ['vehiclesUpdate'] as const;
+
+export const getVehiclesUpdateMutationOptions = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vehiclesUpdate>>, TError,VehiclesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof vehiclesUpdate>>, TError,VehiclesUpdateMutationVariables, TContext> => {
+
+const mutationKey = getVehiclesUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof vehiclesUpdate>>, VehiclesUpdateMutationVariables> = (props) => {
+          const {id,data,headers} = props ?? {};
+
+          return  vehiclesUpdate(id,data,headers,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VehiclesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof vehiclesUpdate>>>
+    export type VehiclesUpdateMutationBody = BodyType<UpdateVehicleDto>
+    export type VehiclesUpdateMutationError = ErrorType<ProblemDto>
+    export type VehiclesUpdateMutationVariables = {id: string;data: BodyType<UpdateVehicleDto>;headers: VehiclesUpdateHeaders}
+
+    /**
+ * @summary Edit a vehicle
+ */
+export const useVehiclesUpdate = <TError = ErrorType<ProblemDto>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof vehiclesUpdate>>, TError,VehiclesUpdateMutationVariables, TContext>, request?: SecondParameter<typeof compassFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof vehiclesUpdate>>,
+        TError,
+        VehiclesUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getVehiclesUpdateMutationOptions(options), queryClient);
     }

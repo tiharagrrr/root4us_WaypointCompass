@@ -22,6 +22,15 @@ import { ApiLinks } from '../../../core/http/decorators';
 
 const MINUTE_OF_DAY = { min: 0, max: 1439 } as const;
 
+/** The store manager linked to the outlet (A3). */
+export class OutletManagerDto {
+  @ApiProperty({ example: 'user_01J9' })
+  id!: string;
+
+  @ApiProperty({ example: 'Nimesha Periyapperuma' })
+  name!: string;
+}
+
 /**
  * One outlet as A3 lists it and D9 reads it. Clock times carry both the
  * integer minutes the engine uses and the label a screen shows
@@ -113,6 +122,13 @@ export class OutletDto {
 
   @ApiProperty({ nullable: true, type: String, example: null })
   accessNotesUpdatedById!: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    type: OutletManagerDto,
+    description: 'The store manager linked here; null means nobody is (A3)',
+  })
+  manager!: OutletManagerDto | null;
 
   @ApiLinks()
   _links!: Record<string, Link>;

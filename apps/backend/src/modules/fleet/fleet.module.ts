@@ -5,17 +5,26 @@ import { Module } from '@nestjs/common';
 import { AuditModule } from '../audit';
 import { VehicleFuelController } from './controllers/vehicle-fuel.controller';
 import { VehicleStatusController } from './controllers/vehicle-status.controller';
+import { VehiclesController } from './controllers/vehicles.controller';
+import { VehicleLinks } from './policies/vehicle.links';
 import { VehicleScope } from './policies/vehicle.scope';
 import { FuelLedgerService } from './services/fuel-ledger.service';
 import { VehicleStatusService } from './services/vehicle-status.service';
 import { VehicleQueries } from './services/vehicle.queries';
+import { VehiclesService } from './services/vehicles.service';
 
 @Module({
   imports: [AuditModule],
-  controllers: [VehicleFuelController, VehicleStatusController],
+  controllers: [
+    VehicleFuelController,
+    VehicleStatusController,
+    VehiclesController,
+  ],
   providers: [
     VehicleScope,
+    VehicleLinks,
     VehicleQueries,
+    VehiclesService,
     FuelLedgerService,
     VehicleStatusService,
   ],
