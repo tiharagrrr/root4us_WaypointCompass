@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router'
 import { cn } from '@/lib/cn'
 import { useRouteHandle } from '../route-handle'
+import { useSyncEngine } from '@/offline'
 import { useEventStream } from '@/realtime/use-event-stream'
 import { Avatar } from '@/ui/avatar'
 import { Icon, type IconName } from '@/ui/icon'
@@ -27,6 +28,8 @@ export function DriverShell() {
   // one the stop needs (the Figma component's own note).
   const { tabBar = true } = useRouteHandle()
   useEventStream()
+  // The phone queues every tap in Dexie; this is what sends them to POST /sync.
+  useSyncEngine()
   const me = useMeGet()
   const person = me.data?.data
 
