@@ -1,7 +1,7 @@
 ---
 module: sync
 owner: Aniqa
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: [D6, D13, "19c"]
 depends-on: [execution, loading]
 ---
@@ -134,11 +134,11 @@ dispatcher sees conflicts for `depotId = actor.depotId`, or all depots when none
 404; a missing permission is 403.
 
 ## Acceptance criteria
-- [ ] AC-SYN-01 A batch applies in deviceSeq order
-- [ ] AC-SYN-02 A replayed batch changes nothing
-- [ ] AC-SYN-03 One bad event never blocks the rest
+- [x] AC-SYN-01 A batch applies in deviceSeq order
+- [x] AC-SYN-02 A replayed batch changes nothing
+- [x] AC-SYN-03 One bad event never blocks the rest
 - [ ] AC-SYN-04 A late event keeps its device time
-- [ ] AC-SYN-05 Batches over 100 are refused
+- [x] AC-SYN-05 Batches over 100 are refused
 - [ ] AC-SYN-06 A delivery after a deferral conflicts
 - [ ] AC-SYN-07 Moved and cancelled stops conflict too
 - [ ] AC-SYN-08 Keep device stands the delivery
@@ -146,7 +146,7 @@ dispatcher sees conflicts for `depotId = actor.depotId`, or all depots when none
 - [ ] AC-SYN-10 Resolving needs a reason and an open conflict
 - [ ] AC-SYN-11 Only dispatchers in scope see conflicts
 - [ ] AC-SYN-12 The changes feed covers the device's trips
-- [ ] AC-SYN-13 Loader events ride the same endpoint
+- [x] AC-SYN-13 Loader events ride the same endpoint
 - [ ] AC-SYN-14 A 401 pauses sync and loses nothing
 - [ ] AC-SYN-15 Sync retries back off
 
@@ -293,4 +293,13 @@ AC-SYN-15  Sync retries back off
   payload? The doc also gives no data fields for the `sync.*` events. (Aniqa)
 
 ## Changelog
+- 2026-10-04 `POST /sync` built (ROO-44, first slice): `SyncService` checks the envelope (400), refuses a batch
+  over 100 events (413), answers 403 to a role with neither `stop:record` nor `load:check`, sorts by deviceSeq,
+  applies each event in its own savepoint through execution's `StopEventService.apply` or loading's
+  `LoaderEventService.apply`, maps a 409 or 412 to `conflict` and other refusals to `rejected`, and writes one
+  `sync_batches` row, one `sync.batch_applied` event and one log line with counts. The wire contract is
+  `syncEventSchema` in `packages/shared/src/schemas/sync.ts` (a union of driver and loader events; it replaces
+  the stop-only `stopEventSchema`); the PWA's `postSync` reads the envelope. AC-SYN-01, 02, 03, 05 and 13 have
+  e2e tests. Not yet: conflict rows and 19c (06 to 11), the changes feed (12), metrics; a conflicting event is
+  reported to the device and left unapplied
 - 2026-09-30 created from the Build Spec

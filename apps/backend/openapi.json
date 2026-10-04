@@ -13947,6 +13947,248 @@
         ]
       }
     },
+    "/api/v1/sync": {
+      "post": {
+        "description": "Up to 100 driver or loader events, applied in deviceSeq order with one result each: applied, duplicate (already held), conflict (the server moved meanwhile) or rejected (with a code and a message). Never fails as a whole because of one event.",
+        "operationId": "syncApply",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A device outbox: up to 100 driver or loader events in deviceSeq order. Each event is validated on its own; one bad event is one rejected result, never a 400.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "deviceId",
+                  "events"
+                ],
+                "properties": {
+                  "deviceId": {
+                    "type": "string",
+                    "example": "dock-plg-01"
+                  },
+                  "events": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "clientUuid",
+                        "tripId",
+                        "type",
+                        "occurredAt"
+                      ],
+                      "properties": {
+                        "clientUuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "tripId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "type": {
+                          "type": "string",
+                          "description": "A StopEventType (driver) or LOAD_LINE_CHECKED, LOAD_CHECK_UNDONE, LOAD_FLAG_RAISED, LOAD_FLAG_UNDONE, LOAD_RECHECKED (loader)",
+                          "example": "DELIVERED"
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "deviceTime": {
+                          "type": "string"
+                        },
+                        "deviceSeq": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "baseVersion": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "note": {
+                          "type": "string",
+                          "maxLength": 2000
+                        },
+                        "attachmentUuids": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uuid"
+                          }
+                        },
+                        "stopId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "outcome": {
+                          "type": "string"
+                        },
+                        "receiverName": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "reasonCode": {
+                          "type": "string"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "orderLineId",
+                              "qtyDelivered",
+                              "condition"
+                            ],
+                            "properties": {
+                              "orderLineId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "qtyDelivered": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "condition": {
+                                "type": "string",
+                                "enum": [
+                                  "ok",
+                                  "damaged",
+                                  "refused"
+                                ]
+                              },
+                              "note": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "reeferTempC": {
+                          "type": "number"
+                        },
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lng": {
+                          "type": "number"
+                        },
+                        "loadLineId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "loadFlagId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "checkedByName": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "qtyLoaded": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "qtyAffected": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "photoClientUuid": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SyncResponseDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED\n\nVALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "PAYLOAD_TOO_LARGE",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Replay a device outbox",
+        "tags": [
+          "sync"
+        ]
+      }
+    },
     "/api/v1/alerts": {
       "get": {
         "operationId": "alertsList",
@@ -22591,6 +22833,100 @@
           "contentType",
           "url",
           "expiresAt",
+          "_links"
+        ]
+      },
+      "SyncResultStatus": {
+        "type": "string",
+        "enum": [
+          "applied",
+          "duplicate",
+          "conflict",
+          "rejected"
+        ]
+      },
+      "SyncResultDto": {
+        "type": "object",
+        "properties": {
+          "clientUuid": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-0000000000aa"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SyncResultStatus"
+              }
+            ]
+          },
+          "code": {
+            "type": "string",
+            "example": "VALIDATION_FAILED",
+            "description": "Why, for conflict and rejected"
+          },
+          "message": {
+            "type": "string",
+            "example": "Who took the delivery?"
+          },
+          "id": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-0000000000bb",
+            "description": "The row the event touched, so the device can reconcile"
+          }
+        },
+        "required": [
+          "clientUuid",
+          "status"
+        ]
+      },
+      "SyncResponseDto": {
+        "type": "object",
+        "properties": {
+          "batchId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-0000000000cc"
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SyncResultDto"
+            }
+          },
+          "received": {
+            "type": "number",
+            "example": 6
+          },
+          "applied": {
+            "type": "number",
+            "example": 5
+          },
+          "duplicates": {
+            "type": "number",
+            "example": 1
+          },
+          "conflicts": {
+            "type": "number",
+            "example": 0
+          },
+          "rejected": {
+            "type": "number",
+            "example": 0
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "batchId",
+          "results",
+          "received",
+          "applied",
+          "duplicates",
+          "conflicts",
+          "rejected",
           "_links"
         ]
       },
