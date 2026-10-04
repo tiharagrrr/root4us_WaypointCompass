@@ -165,6 +165,7 @@ describeWithDb('audit: order timeline', () => {
       reasonCode: 'DELIVERED',
     });
     expect(loaded.syncedLate).toBe(false);
+    expect(delivered.occurredAt).toBe('2026-10-02T04:22:00+05:30');
     expect(moved.status).toBe('RECEIVED');
     expect(received).toMatchObject({
       actorName: 'Nimesha Periyapperuma',

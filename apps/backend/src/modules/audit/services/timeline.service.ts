@@ -101,31 +101,31 @@ export class TimelineService {
     // while the demo clock is off. With it on, the writer's own verdict stands: execution
     // and loading mark a late replay OFFLINE_SYNC, judged on one clock when it arrived.
     const sameClock = this.clock.mode().mode === 'real';
-    return rows.map((row) => toEntry(row, sameClock));
+    return rows.map((row) => this.toEntry(row, sameClock));
   }
-}
 
-function toEntry(row: AuditRow, sameClock: boolean): TimelineEntry {
-  return {
-    id: row.id,
-    seq: row.seq,
-    action: row.action,
-    entityType: row.entityType,
-    entityId: row.entityId,
-    actorId: row.actorId,
-    actorName: row.actorName,
-    actorRole: row.actorRole,
-    deviceId: row.deviceId,
-    source: row.source,
-    status: statusOf(row.after),
-    reasonCode: row.reasonCode,
-    reasonNote: row.reasonNote,
-    occurredAt: row.occurredAt.toISOString(),
-    recordedAt: row.recordedAt.toISOString(),
-    syncedLate:
-      row.source === 'OFFLINE_SYNC' ||
-      (sameClock && syncedLate(row.occurredAt, row.recordedAt)),
-  };
+  private toEntry(row: AuditRow, sameClock: boolean): TimelineEntry {
+    return {
+      id: row.id,
+      seq: row.seq,
+      action: row.action,
+      entityType: row.entityType,
+      entityId: row.entityId,
+      actorId: row.actorId,
+      actorName: row.actorName,
+      actorRole: row.actorRole,
+      deviceId: row.deviceId,
+      source: row.source,
+      status: statusOf(row.after),
+      reasonCode: row.reasonCode,
+      reasonNote: row.reasonNote,
+      occurredAt: this.clock.toIso(row.occurredAt),
+      recordedAt: this.clock.toIso(row.recordedAt),
+      syncedLate:
+        row.source === 'OFFLINE_SYNC' ||
+        (sameClock && syncedLate(row.occurredAt, row.recordedAt)),
+    };
+  }
 }
 
 /** The status a snapshot carries, the one audited field safe to show every reader. */
