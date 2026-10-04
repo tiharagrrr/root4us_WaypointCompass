@@ -32,6 +32,7 @@ export {
   useCachedStops,
   useCachedTrip,
   useCheckedByName,
+  useDockLoaders,
   useOfflineStatus,
   useOnline,
 } from './use-offline'

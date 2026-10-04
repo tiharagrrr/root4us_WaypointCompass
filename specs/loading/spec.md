@@ -129,6 +129,7 @@ Invariants:
 | Method | Path | Permission | Notes |
 | --- | --- | --- | --- |
 | GET | /depots/{id}/loading/runs?date= | load:read | L2m-a: trips by wave with progress and open flags |
+| GET | /depots/{id}/loading/loaders | load:read | L2's Checked by: the depot's dock loader names from A6 (`loading.dockLoaders`); 404 outside the depot scope |
 | GET | /depots/{id}/loading/trips?date=&wave= | load:read | L2's trip list |
 | GET | /trips/{id}/load-list | load:read | Lines grouped by stop, last stop first, with plan revision, flags and links |
 | POST | /trips/{id}/load-list/checks | load:check | Batch of `{ lineId, qtyLoaded, checkedByName, clientUuid, checkedAt }`; 200 with a result per item; also arrives through sync |
@@ -256,6 +257,8 @@ depotId = actor.depotId, or all depots when none is set. Out of scope answers 40
 - [x] AC-LOD-17  Release needs a connection (the API half; L4's offline state is ROO-52's)
 - [x] AC-LOD-18  Offline loader events apply once, in order
 - [x] AC-LOD-19  A moved released trip loads again
+- [ ] AC-LOD-20  The dock picks who checked from the depot's roster
+- [x] AC-LOD-21  Each item is signed by whoever checked it unless the tablet has a name
 
 ```gherkin
 AC-LOD-01  Publishing builds last-stop-first lists
@@ -471,6 +474,20 @@ AC-LOD-19  A moved released trip loads again
   Then the trip is LOADING again, LoadListBuilder refreshes its list and load.list_updated is
       emitted
     And the trip must pass its release checks and be released again
+
+AC-LOD-20  The dock picks who checked from the depot's roster
+  Given Rusiru lists Harini, Kasun and Nuwan as PLG's dock loaders in A6 (setting loading.dockLoaders, depot PLG)
+  When the loader reads GET /depots/PLG/loading/loaders and types "nu" in Checked by
+  Then the response lists the three names, and only Nuwan is offered
+    And a name not on the list still saves as typed, the list stays usable offline from the tablet's copy,
+      and a Kandy loader gets 404 for PLG
+
+AC-LOD-21  Each item is signed by whoever checked it unless the tablet has a name
+  Given no name is set for the tablet
+  When Kasun ticks Fresh milk and Nuwan undoes Basmati rice, each typing their name when asked
+  Then the two queued events carry Kasun and Nuwan, the tablet still has no name, and each checked line shows "by <name>"
+    And a name saved with "Use this name for every item" signs later ticks without asking, until it is
+      cleared by saving the header's Checked by field empty; raising a flag never changes the tablet's name
 ```
 
 ## Non-functional
@@ -619,6 +636,9 @@ frame they depart from.
   table. (Harini, Aniqa)
 
 ## Changelog
+- 2026-10-04 Dock loader roster (ROO-78): `loading.dockLoaders` per-depot setting edited in A6, `GET
+  /depots/{id}/loading/loaders`, and a type-to-filter Checked by (AC-LOD-20, test still to write). Checked by
+  signs each item separately when the tablet has no name, and the tablet name can be cleared (AC-LOD-21)
 - 2026-09-30 created from the Build Spec
 - 2026-10-02 ROO-33: the module built against AC-LOD-01 to 19, each with a
   passing test. `load_releases` and `load_event_receipts` added to the Model;

@@ -12,7 +12,7 @@ import {
 import { useMemo, useState } from 'react'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader } from '@/ui/dialog'
 import { Icon } from '@/ui/icon'
 import { StatusChip } from '@/ui/status-chip'
 import { Textarea } from '@/ui/textarea'
@@ -112,7 +112,7 @@ export function SwapDialog({ order, engine, trips, reasons, busy, onClose, onSwa
               : 'No order on a trip can make room for it without breaking a rule. Override with a note instead.'
           }
         />
-        <div className="flex flex-col gap-4 px-5 py-4">
+        <DialogBody className="px-5 py-4">
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1 rounded-md border border-border bg-page px-4 py-3">
               <span className="type-label uppercase text-muted-foreground">Serve</span>
@@ -188,7 +188,7 @@ export function SwapDialog({ order, engine, trips, reasons, busy, onClose, onSwa
               ) : null}
             </>
           ) : null}
-        </div>
+        </DialogBody>
         <DialogFooter className="justify-between">
           <p className="type-body-small m-0 text-muted-foreground">Both stores are told when you publish.</p>
           <div className="flex gap-2">

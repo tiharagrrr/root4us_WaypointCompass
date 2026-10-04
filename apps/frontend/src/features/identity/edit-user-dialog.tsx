@@ -139,7 +139,7 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
     <Dialog open onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader title={`Edit ${user.name}`} description="A role or scope change needs a reason and signs them out on every device." />
-        <form noValidate onSubmit={(e) => void onSubmit(e)}>
+        <form noValidate className="flex min-h-0 flex-col" onSubmit={(e) => void onSubmit(e)}>
           <DialogBody className="flex flex-col gap-4">
             <Field label="Role" error={errors.role?.message}>
               {() => (

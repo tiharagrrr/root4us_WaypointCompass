@@ -10,9 +10,11 @@ import type { Actor as SignedIn } from '@waypoint/shared';
 import {
   Actor,
   ApiProblems,
+  ApiResource,
   RequirePermission,
 } from '../../../core/http/decorators';
 import {
+  DockLoadersDto,
   LoadLineDto,
   LoadProgressDto,
   LoadRunDto,
@@ -97,5 +99,24 @@ export class LoadingBoardController {
     const date = query.date ?? this.queries.today();
     const trips = await this.queries.trips(depotId, date, actor, query.wave);
     return trips.map((trip) => this.links.summary(trip, actor));
+  }
+
+  /** L2's Checked by: the depot's loader roster from A6, for a shared tablet. */
+  @Get('loaders')
+  @RequirePermission('load:read')
+  @ApiResource(DockLoadersDto)
+  @ApiProblems(401, 403, 404)
+  @ApiOperation({ summary: "The depot's dock loader names" })
+  async loaders(
+    @Param('depotId') depotId: string,
+    @Actor() actor: SignedIn,
+  ): Promise<DockLoadersDto> {
+    return {
+      depotId,
+      names: await this.queries.loaders(depotId, actor),
+      _links: {
+        self: { href: `/api/v1/depots/${depotId}/loading/loaders` },
+      },
+    };
   }
 }

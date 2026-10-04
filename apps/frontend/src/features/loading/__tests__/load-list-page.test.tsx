@@ -84,17 +84,110 @@ describe('L2 Loading list', () => {
     expect(await screen.findByRole('button', { name: 'Undo the check on Fresh milk 1 L' })).toBeInTheDocument()
   })
 
-  it('AC-LOD-06 a checked line offers undo, and queues the undo', async () => {
+  it('AC-LOD-21 with no tablet name each item is signed by whoever checked it', async () => {
     const user = userEvent.setup()
     renderList()
 
-    await user.click(await screen.findByRole('button', { name: 'Undo the check on Basmati rice 5 kg' }))
-    await nameTheChecker(user)
+    await user.click(await tick('Fresh milk 1 L'))
+    expect(await screen.findByText('Who checked this item?')).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Your name'), 'Kasun Perera')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(async () => {
-      const queued = await db.outbox.toArray()
-      expect(queued[0]?.event).toMatchObject({ type: 'LOAD_CHECK_UNDONE', loadLineId: 'line-rice' })
+      const queued = (await db.outbox.toArray()).map((row) => row.event)
+      expect(queued).toEqual([expect.objectContaining({ type: 'LOAD_LINE_CHECKED', loadLineId: 'line-milk', checkedByName: 'Kasun Perera' })])
     })
+    expect(await screen.findByText('by Kasun Perera')).toBeInTheDocument()
+    // It signed the one item: the tablet still has no name.
+    expect(await db.meta.get('checkedByName')).toBeUndefined()
+    expect(screen.getByRole('button', { name: 'Who is checking?' })).toBeInTheDocument()
+  })
+
+  it('AC-LOD-06 unchecking asks for no name and clears who checked it', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    expect(await screen.findByText('by Harini De Mel')).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Undo the check on Basmati rice 5 kg' }))
+
+    await waitFor(async () => {
+      const queued = (await db.outbox.toArray()).map((row) => row.event)
+      expect(queued).toEqual([expect.objectContaining({ type: 'LOAD_CHECK_UNDONE', loadLineId: 'line-rice' })])
+    })
+    expect(screen.queryByText('Who checked this item?')).not.toBeInTheDocument()
+    expect(await tick('Basmati rice 5 kg')).toBeInTheDocument()
+    expect(screen.queryByText('by Harini De Mel')).not.toBeInTheDocument()
+  })
+
+  it('AC-LOD-20 the roster shows when the field is tapped, narrows as she types, and saves only on Save', async () => {
+    const user = userEvent.setup()
+    stubApi({
+      ...routes(aLoadList()),
+      [`GET /api/v1/depots/${DEPOT_ID}/loading/loaders`]: () =>
+        envelope({ depotId: DEPOT_ID, names: ['Kasun Perera', 'Nuwan Silva'], _links: {} }),
+    })
+    renderScreen(
+      <Routes>
+        <Route path="/dock/trips/:id" element={<LoadListPage />} />
+      </Routes>,
+      `/dock/trips/${TRIP_ID}`,
+    )
+
+    await user.click(await tick('Fresh milk 1 L'))
+    const field = await screen.findByLabelText('Your name')
+    // Focused when the dialog opens, but the options wait for a tap.
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+
+    await user.click(field)
+    expect(await screen.findByRole('option', { name: 'Kasun Perera' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Nuwan Silva' })).toBeInTheDocument()
+
+    await user.type(field, 'nu')
+    expect(screen.queryByRole('option', { name: 'Kasun Perera' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('option', { name: 'Nuwan Silva' }))
+    // Picking fills the field; only Save signs the item.
+    expect(field).toHaveValue('Nuwan Silva')
+    expect(await db.outbox.count()).toBe(0)
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(async () => {
+      const queued = (await db.outbox.toArray()).map((row) => row.event)
+      expect(queued).toEqual([expect.objectContaining({ type: 'LOAD_LINE_CHECKED', checkedByName: 'Nuwan Silva' })])
+    })
+  })
+
+  it('AC-LOD-21 a name kept for every item signs the next tick without asking', async () => {
+    const user = userEvent.setup()
+    renderList()
+
+    await user.click(await tick('Fresh milk 1 L'))
+    await user.type(await screen.findByLabelText('Your name'), 'Kasun Perera')
+    await user.click(screen.getByRole('checkbox', { name: 'Use this name for every item on this tablet' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('button', { name: 'Checked by Kasun Perera' })).toBeInTheDocument()
+    expect(await db.meta.get('checkedByName')).toMatchObject({ value: 'Kasun Perera' })
+  })
+
+  it('AC-LOD-21 saving the header field empty clears the tablet name', async () => {
+    const user = userEvent.setup()
+    await db.meta.put({ key: 'checkedByName', value: 'Harini De Mel' })
+    renderList()
+
+    await user.click(await screen.findByRole('button', { name: 'Checked by Harini De Mel' }))
+    // Emptying the field and saving clears it; there is no separate Clear button.
+    await user.clear(await screen.findByLabelText('Your name'))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('button', { name: 'Who is checking?' })).toBeInTheDocument()
+    expect(await db.meta.get('checkedByName')).toBeUndefined()
+  })
+
+  it('AC-LOD-21 a checked line says who checked it', async () => {
+    renderList()
+
+    expect(await screen.findByText('by Harini De Mel')).toBeInTheDocument()
   })
 
   it('AC-LOD-06 a released trip offers no tick at all', async () => {

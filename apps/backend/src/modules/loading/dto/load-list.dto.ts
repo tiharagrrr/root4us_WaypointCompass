@@ -180,6 +180,17 @@ export class LoadRunDto {
   @ApiProperty({ type: [LoadTripSummaryDto] }) trips!: LoadTripSummaryDto[];
 }
 
+/** GET /depots/{id}/loading/loaders: who may sign a check on the shared tablet (A6). */
+export class DockLoadersDto {
+  @ApiProperty() depotId!: string;
+  @ApiProperty({
+    type: [String],
+    description: "The depot's loader names, as the admin lists them in A6",
+  })
+  names!: string[];
+  @ApiLinks() _links!: Links;
+}
+
 /** GET /trips/{id}/release-checks: L4's checklist. */
 export class ReleaseChecksDto {
   @ApiProperty() tripId!: string;

@@ -104,6 +104,19 @@ export const SETTINGS = {
     default: 5.0,
     description: 'Warmest reefer temperature a chilled trip may leave at, °C',
   }),
+  'loading.dockLoaders': define({
+    schema: z
+      .array(z.string().trim().min(1).max(60))
+      .max(50)
+      .refine(
+        (names) =>
+          new Set(names.map((n) => n.toLowerCase())).size === names.length,
+        { message: 'Each name once' },
+      ),
+    default: [],
+    perDepot: true,
+    description: "Names of the loaders who share this depot's dock tablet",
+  }),
   'tracking.offlineAlertMinutes': define({
     schema: z.number().int().min(1).max(240),
     default: 30,

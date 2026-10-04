@@ -12392,6 +12392,89 @@
         ]
       }
     },
+    "/api/v1/depots/{depotId}/loading/loaders": {
+      "get": {
+        "operationId": "loadingBoardLoaders",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DockLoadersDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED\n\nUNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN\n\nFORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "The depot's dock loader names",
+        "tags": [
+          "loading"
+        ]
+      }
+    },
     "/api/v1/trips/{id}/load-list": {
       "get": {
         "operationId": "tripLoadingLoadList",
@@ -25705,6 +25788,32 @@
           "outletId",
           "outletName",
           "flags",
+          "_links"
+        ]
+      },
+      "DockLoadersDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string"
+          },
+          "names": {
+            "description": "The depot's loader names, as the admin lists them in A6",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            }
+          }
+        },
+        "required": [
+          "depotId",
+          "names",
           "_links"
         ]
       },

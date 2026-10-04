@@ -61,7 +61,7 @@ export function DialogHeader({ title, description, className }: DialogHeaderProp
 }
 
 export function DialogBody({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot="dialog-body" className={cn('flex flex-col gap-4 overflow-y-auto p-5', className)} {...props} />
+  return <div data-slot="dialog-body" className={cn('flex min-h-0 flex-col gap-4 overflow-y-auto p-5', className)} {...props} />
 }
 
 export function DialogFooter({ className, ...props }: ComponentProps<'div'>) {

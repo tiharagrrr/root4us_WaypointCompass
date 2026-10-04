@@ -46,7 +46,7 @@ export function PublishDialog({ plan, dayText, depotName, deferred, onClose, onP
           }`}
         />
         {deferred.length ? (
-          <div className="px-5 py-4">
+          <div className="min-h-0 overflow-y-auto px-5 py-4">
             <ul className="m-0 list-none rounded-md border border-border p-0">
               {deferred.slice(0, SHOWN).map((o) => {
                 const glyph = BRAND_GLYPH[o.brand] ?? BRAND_GLYPH.FRESH

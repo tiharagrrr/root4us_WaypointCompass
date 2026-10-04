@@ -177,4 +177,5 @@ export const META_KEYS = {
   syncPaused: 'syncPaused',
   changeCursor: 'changeCursor',
   checkedByName: 'checkedByName',
+  dockLoaders: 'dockLoaders',
 } as const

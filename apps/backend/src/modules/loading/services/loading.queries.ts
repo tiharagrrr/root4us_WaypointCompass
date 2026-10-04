@@ -10,6 +10,7 @@ import {
 } from '@waypoint/shared';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { ClockService } from '../../../core/clock/clock.service';
+import { NotFoundError } from '../../../core/errors/domain-errors';
 import { CrudQueryService } from '../../../core/persistence/crud-query.service';
 import type { ListQuery, Page } from '../../../core/persistence/page';
 import type { StampedDrizzleAdapter } from '../../../core/persistence/transactions';
@@ -494,6 +495,12 @@ export class LoadingQueries {
         },
       };
     });
+  }
+
+  /** The names A6 lists for the depot's shared tablet, or 404 out of scope. */
+  async loaders(depotId: string, actor: Actor): Promise<string[]> {
+    if (!this.scope.seesDepot(depotId, actor)) throw new NotFoundError('depot');
+    return this.settings.get('loading.dockLoaders', depotId);
   }
 
   /** Today in Asia/Colombo, for a request that names no date. */

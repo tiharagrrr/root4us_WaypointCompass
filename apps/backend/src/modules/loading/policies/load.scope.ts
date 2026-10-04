@@ -47,6 +47,20 @@ export class LoadScope extends ScopePolicy {
     return and(...rules);
   }
 
+  /** Whether the actor may see this depot's dock at all (its boards and roster). */
+  seesDepot(depotId: string, actor: Actor): boolean {
+    switch (actor.role) {
+      case 'admin':
+        return true;
+      case 'dispatcher':
+        return !actor.depotId || actor.depotId === depotId;
+      case 'loader':
+        return actor.depotId === depotId;
+      default:
+        return false;
+    }
+  }
+
   /**
    * The scope as a filter on another table's trip id: the trips the actor may
    * touch, as a subquery.

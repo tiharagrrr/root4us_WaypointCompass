@@ -113,7 +113,7 @@ function AddReasonDialog({ open, onOpenChange, onAdded }: { open: boolean; onOpe
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent>
         <DialogHeader title="Add a deferral reason" description="Dispatchers can pick it when they defer an order, and the store sees its label." />
-        <form noValidate onSubmit={(e) => void onSubmit(e)}>
+        <form noValidate className="flex min-h-0 flex-col" onSubmit={(e) => void onSubmit(e)}>
           <DialogBody className="flex flex-col gap-4">
             <Field label="Label" error={errors.label?.message}>
               {(control) => (

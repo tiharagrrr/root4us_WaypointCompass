@@ -39,7 +39,8 @@ const itemLabel = (line: LoadLineView): string =>
  */
 export function FlagItemDialog({ tripId, tripRef, lines, line, onClose }: FlagItemDialogProps) {
   const { t } = useTranslation()
-  const [name, setName] = useCheckedByName()
+  // Offered as who raised it; a flag never changes the tablet's name.
+  const [name] = useCheckedByName()
   const flaggable = lines.filter((candidate) => candidate._links.flag)
   const [lineId, setLineId] = useState(line.id)
   const [reason, setReason] = useState<LoadFlagDtoReason | undefined>(undefined)
@@ -54,7 +55,6 @@ export function FlagItemDialog({ tripId, tripRef, lines, line, onClose }: FlagIt
   const raise = async () => {
     if (!reason) return
     const raisedByName = raisedBy.trim()
-    await setName(raisedByName)
     await enqueue({
       kind: 'loader',
       type: 'LOAD_FLAG_RAISED',

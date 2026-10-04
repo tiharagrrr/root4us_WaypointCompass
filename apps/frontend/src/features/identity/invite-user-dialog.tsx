@@ -96,7 +96,7 @@ export function InviteUserDialog({ open, onOpenChange }: InviteUserDialogProps) 
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent>
         <DialogHeader title="Invite user" description="They get a link to set a password. Access is limited to what you link them to." />
-        <form noValidate onSubmit={(e) => void onSubmit(e)}>
+        <form noValidate className="flex min-h-0 flex-col" onSubmit={(e) => void onSubmit(e)}>
           <DialogBody className="flex flex-col gap-4">
             <Field label="Full name" error={errors.name?.message}>
               {(control) => <Input {...control} {...form.register('name', { required: 'Enter their full name' })} autoFocus />}
