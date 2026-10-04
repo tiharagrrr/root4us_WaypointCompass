@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Actor as SignedIn } from '@waypoint/shared';
 import {
@@ -12,8 +12,10 @@ import { EndOfDayDto } from '../dto/end-of-day.dto';
 import { PlanRevisionDto, UnplannedOrderDto } from '../dto/plan-actions.dto';
 import { PlanContextDto } from '../dto/plan-engine.dto';
 import { PlanDayParamsDto, PlanDto, TripDto } from '../dto/plan.dto';
+import { TrackingDayDto, TrackingQueryDto } from '../dto/tracking.dto';
 import { DriverOptionDto } from '../dto/trip-ops.dto';
 import { DayCloseService } from '../services/day-close.service';
+import { TrackingQueries } from '../services/tracking.queries';
 import { TripOperationsService } from '../services/trip-operations.service';
 import { PlanQueries } from '../services/plan.queries';
 import { PlansService } from '../services/plans.service';
@@ -27,6 +29,7 @@ export class PlansController {
     private readonly queries: PlanQueries,
     private readonly dayClose: DayCloseService,
     private readonly tripOps: TripOperationsService,
+    private readonly trackingQueries: TrackingQueries,
   ) {}
 
   /** The plan, created as a DRAFT on first access (AC-PLN-08). */
@@ -43,6 +46,19 @@ export class PlansController {
       actor,
     );
     return this.queries.view(await this.plans.contextFor(plan), actor);
+  }
+
+  /** 01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39). */
+  @Get('depots/:depotId/tracking')
+  @RequirePermission('plan:read')
+  @ApiResource(TrackingDayDto)
+  @ApiProblems(404)
+  tracking(
+    @Param('depotId') depotId: string,
+    @Query() query: TrackingQueryDto,
+    @Actor() actor: SignedIn,
+  ) {
+    return this.trackingQueries.day(depotId, query.date, actor);
   }
 
   @Get('plans/:id')

@@ -7817,6 +7817,100 @@
         ]
       }
     },
+    "/api/v1/depots/{depotId}/tracking": {
+      "get": {
+        "operationId": "plansTracking",
+        "parameters": [
+          {
+            "name": "depotId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Business date; today by default",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-02",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TrackingDayDto"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/MetaDto"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "FORBIDDEN",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "NOT_FOUND (also outside your scope)\n\nNOT_FOUND (also outside your scope)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "01, 19, 19a: the depot's day on the road, with projected arrivals and late risk (AC-PLN-39).",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
     "/api/v1/plans/{id}": {
       "get": {
         "operationId": "plansGet",
@@ -17707,6 +17801,331 @@
           "publishedById",
           "closedAt",
           "summary",
+          "_links"
+        ]
+      },
+      "TrackingTotalsDto": {
+        "type": "object",
+        "properties": {
+          "trips": {
+            "type": "number",
+            "example": 14
+          },
+          "onRoad": {
+            "type": "number",
+            "example": 11,
+            "description": "Trips in progress"
+          },
+          "released": {
+            "type": "number",
+            "example": 14,
+            "description": "Trips released, on the road or done"
+          },
+          "stopsPlanned": {
+            "type": "number",
+            "example": 148
+          },
+          "stopsDelivered": {
+            "type": "number",
+            "example": 64
+          },
+          "lateRisk": {
+            "type": "number",
+            "example": 2,
+            "description": "Stops still to come projected past their window"
+          },
+          "deferred": {
+            "type": "number",
+            "example": 7,
+            "description": "Confirmed deferrals on the plan"
+          },
+          "repeatSkips": {
+            "type": "number",
+            "example": 2
+          }
+        },
+        "required": [
+          "trips",
+          "onRoad",
+          "released",
+          "stopsPlanned",
+          "stopsDelivered",
+          "lateRisk",
+          "deferred",
+          "repeatSkips"
+        ]
+      },
+      "TrackingStopDto": {
+        "type": "object",
+        "properties": {
+          "stopId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000d101"
+          },
+          "seq": {
+            "type": "number",
+            "nullable": true,
+            "example": 4
+          },
+          "orderNo": {
+            "type": "string",
+            "example": "WF-0171"
+          },
+          "outletId": {
+            "type": "string",
+            "example": "OUT014"
+          },
+          "outletName": {
+            "type": "string",
+            "example": "Fresh Ja-Ela"
+          },
+          "status": {
+            "type": "string",
+            "example": "PENDING"
+          },
+          "windowOpenMin": {
+            "type": "number",
+            "example": 330,
+            "description": "Window opens, minutes after midnight"
+          },
+          "windowCloseMin": {
+            "type": "number",
+            "example": 480,
+            "description": "Window closes, minutes after midnight"
+          },
+          "plannedArrivalAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:40:00+05:30"
+          },
+          "etaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:42:00+05:30",
+            "description": "Projected arrival for a stop still to come; from the engine, from now when the trip is on the road"
+          },
+          "spareMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 18,
+            "description": "Minutes between the projected (or planned) arrival and the window closing; negative is late"
+          },
+          "arrivedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "completedAt": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "standing": {
+            "enum": [
+              "DELIVERED",
+              "PARTIAL",
+              "FAILED",
+              "NEXT",
+              "AT_RISK",
+              "LATE",
+              "PLANNED"
+            ],
+            "type": "string",
+            "example": "NEXT"
+          }
+        },
+        "required": [
+          "stopId",
+          "seq",
+          "orderNo",
+          "outletId",
+          "outletName",
+          "status",
+          "windowOpenMin",
+          "windowCloseMin",
+          "plannedArrivalAt",
+          "etaAt",
+          "spareMin",
+          "arrivedAt",
+          "completedAt",
+          "standing"
+        ]
+      },
+      "TrackingTripDto": {
+        "type": "object",
+        "properties": {
+          "tripId": {
+            "type": "string",
+            "example": "0192a3f4-0000-7000-8000-00000000c101"
+          },
+          "vehicleCode": {
+            "type": "string",
+            "example": "REF-07"
+          },
+          "vehicleType": {
+            "type": "string",
+            "example": "TRUCK"
+          },
+          "vehicleTemp": {
+            "type": "string",
+            "example": "REEFER"
+          },
+          "tripNo": {
+            "type": "number",
+            "nullable": true,
+            "example": 1
+          },
+          "driverName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Aniqa Razick"
+          },
+          "brand": {
+            "type": "string",
+            "example": "FRESH"
+          },
+          "tempClass": {
+            "type": "string",
+            "example": "CHILLED"
+          },
+          "status": {
+            "type": "string",
+            "example": "IN_PROGRESS"
+          },
+          "standing": {
+            "enum": [
+              "ON_TIME",
+              "LATE_RISK",
+              "LOADING",
+              "PLANNED",
+              "COMPLETE"
+            ],
+            "type": "string",
+            "example": "ON_TIME"
+          },
+          "cantRunReason": {
+            "type": "string",
+            "nullable": true,
+            "example": null,
+            "description": "Why the trip cannot run, when the driver or a breakdown said"
+          },
+          "delivered": {
+            "type": "number",
+            "example": 3
+          },
+          "stopsTotal": {
+            "type": "number",
+            "example": 10
+          },
+          "nextEtaAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T07:42:00+05:30"
+          },
+          "nextOutletName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Fresh Ja-Ela"
+          },
+          "nextWindowOpenMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 420
+          },
+          "nextWindowCloseMin": {
+            "type": "number",
+            "nullable": true,
+            "example": 480
+          },
+          "plannedDepartAt": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-10-02T04:40:00+05:30"
+          },
+          "loadWeightKg": {
+            "type": "number",
+            "example": 3420
+          },
+          "loadVolumeM3": {
+            "type": "number",
+            "example": 15.8
+          },
+          "stops": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingStopDto"
+            }
+          }
+        },
+        "required": [
+          "tripId",
+          "vehicleCode",
+          "vehicleType",
+          "vehicleTemp",
+          "tripNo",
+          "driverName",
+          "brand",
+          "tempClass",
+          "status",
+          "standing",
+          "cantRunReason",
+          "delivered",
+          "stopsTotal",
+          "nextEtaAt",
+          "nextOutletName",
+          "nextWindowOpenMin",
+          "nextWindowCloseMin",
+          "plannedDepartAt",
+          "loadWeightKg",
+          "loadVolumeM3",
+          "stops"
+        ]
+      },
+      "TrackingDayDto": {
+        "type": "object",
+        "properties": {
+          "depotId": {
+            "type": "string",
+            "example": "PLG"
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-02"
+          },
+          "planId": {
+            "type": "string",
+            "nullable": true,
+            "example": "0192a3f4-7c1e-7a2b-9d3e-5f6a7b8c9d0e"
+          },
+          "planStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "PUBLISHED"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/TrackingTotalsDto"
+          },
+          "trips": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackingTripDto"
+            }
+          },
+          "_links": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LinkDto"
+            },
+            "description": "self, plan, endOfDay."
+          }
+        },
+        "required": [
+          "depotId",
+          "date",
+          "planId",
+          "planStatus",
+          "totals",
+          "trips",
           "_links"
         ]
       },

@@ -102,6 +102,7 @@ plan and an `Idempotency-Key`; reassign and re-sequence need `If-Match` on the t
 | POST | `/trips/{id}/stops/{stopId}/defer` | `deferral:decide` | Defer one stop mid-route from 19a and 19b, with a reason and the trip's If-Match |
 | POST | `/trips/{id}/resequence/preview` | `trip:resequence` | 19b: the projected arrivals and any violations for an order of the stops, saving nothing |
 | GET | `/plans/{id}/driver-options` | `plan:read` | 20: the depot's drivers and how many trips each has on the plan |
+| GET | `/depots/{id}/tracking?date=` | `plan:read` | 01, 19, 19a: the day's trips with stops planned, projected (engine, from now) and actual, standing and totals |
 | POST | `/trips/{id}/cancel` | `plan:revise` | Before the trip starts |
 
 Errors used: `PLAN_RULE_VIOLATION` (422, with `violations[]` and a `fixes` link), `PLAN_LOCKED`
@@ -530,6 +531,13 @@ AC-PLN-36  The deferral log answers the dispatcher's questions
     And filter[outletId]=<Kadawatha> returns that outlet's deferrals, newest first, for the history panel, and filter[depotId]=PLG only Peliyagoda's
     And Nimesha's skip counts are null, so the store never sees the dispatcher's numbers
 
+AC-PLN-39  The live day shows progress, projected arrivals and late risk
+  Given REF-07 trip 1 at Peliyagoda carries three Fresh orders whose windows close at 07:30, and it left at 05:35 and delivered the first
+  When Tihara reads GET /depots/PLG/tracking?date=2026-10-02 at 05:40 and again at 07:20
+  Then the first read shows the trip ON_TIME with 1 of 3 delivered, the delivered stop's actual arrival, the next stop NEXT with a projected arrival and minutes spare, and totals with one trip on the road
+    And the second read shows the trip LATE_RISK with a stop projected LATE, and totals.lateRisk above 0
+    And before the trip leaves the read shows the planned arrivals and no trip on the road, and a Kandy dispatcher gets 404
+
 AC-PLN-37  The dispatcher picks a driver for a reassign
   Given Peliyagoda has drivers Dinushi, on REF-07's trip in the published plan for 2026-10-02, and Nuwan, on no trip
   When Tihara opens 20 and reads GET /plans/{id}/driver-options
@@ -581,6 +589,7 @@ Checklist (tick in the PR that adds the passing test):
 - [x] AC-PLN-36 The deferral log answers the dispatcher's questions
 - [x] AC-PLN-37 The dispatcher picks a driver for a reassign
 - [x] AC-PLN-38 Re-sequencing shows its projected arrivals first
+- [x] AC-PLN-39 The live day shows progress, projected arrivals and late risk
 
 ## Non-functional
 - Engine speed: an S1-sized input allocates in under 500 ms in Node; `validate()` runs in under 50 ms
@@ -671,6 +680,9 @@ Checklist (tick in the PR that adds the passing test):
   trip's orders? Decides: Tihara with Aniqa.
 
 ## Changelog
+- 2026-10-04 The live day (AC-PLN-39, ROO-46 and 01's KPI row and Today's runs from ROO-38): `GET
+  /depots/{id}/tracking` with stops planned, projected by the engine from now, and actual, a standing
+  per stop and trip, and the day's totals; 01, 19 and 19a read it
 - 2026-10-04 Breakdown repair (AC-PLN-06, ROO-56): the `vehicle.status_changed` consumer, `GET
   /trips/{id}/repair-options`, and 20's vehicle chips from the engine's check
 - 2026-10-04 Stop deferral, the driver picker and the re-sequence preview (AC-PLN-25, AC-PLN-37,
