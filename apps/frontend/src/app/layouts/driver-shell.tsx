@@ -9,7 +9,6 @@ import { useSyncEngine } from '@/offline'
 import { DriverOfflineBanner } from '@/features/execution/driver-offline-banner'
 import { useTripTracking } from '@/features/execution/position-sender'
 import { useEventStream } from '@/realtime/use-event-stream'
-import { useSyncEngine } from '@/offline/use-sync-engine'
 import { Avatar } from '@/ui/avatar'
 import { Icon, type IconName } from '@/ui/icon'
 import { Skeleton } from '@/ui/skeleton'
@@ -31,13 +30,12 @@ export function DriverShell() {
   // one the stop needs (the Figma component's own note).
   const { tabBar = true } = useRouteHandle()
   useEventStream()
-  // The phone queues every tap in Dexie; this is what sends them to POST /sync.
-  useSyncEngine()
   // The phone reports where it is only while a trip is IN_PROGRESS (ROO-37).
   useTripTracking()
   const me = useMeGet()
   const person = me.data?.data
-  // The outbox leaves on its own; a 401 pauses it until this person is signed in again (D6).
+  // The phone queues every tap in Dexie; this sends them to POST /sync. A 401 pauses it until this
+  // person is signed in again (D6).
   useSyncEngine(Boolean(person))
 
   return (

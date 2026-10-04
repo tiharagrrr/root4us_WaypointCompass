@@ -17,7 +17,7 @@ beforeEach(async () => {
 })
 
 function Host({ engine }: { engine: SyncEngine }) {
-  useSyncEngine(engine)
+  useSyncEngine(true, engine)
   return null
 }
 
