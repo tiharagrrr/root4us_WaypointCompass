@@ -1,7 +1,12 @@
 import type { Job } from 'bullmq';
 import type { DemoInbox, DemoMessage } from '../../core/demo/demo-inbox';
 import { AUTH_INVITE_JOB, AUTH_OTP_JOB } from '../../modules/identity';
-import { NotificationsProcessor } from '../notifications.processor';
+import type { JobContextRunner } from '../../core/context/job-context';
+import type { NotificationSender } from '../../modules/notifications';
+import {
+  NotificationsProcessor,
+  notifyBackoff,
+} from '../notifications.processor';
 
 function inbox(enabled: boolean) {
   const messages: Omit<DemoMessage, 'id'>[] = [];
@@ -15,6 +20,13 @@ function inbox(enabled: boolean) {
   return { fake: fake as unknown as DemoInbox, messages };
 }
 
+const processor = (fake: DemoInbox) =>
+  new NotificationsProcessor(
+    fake,
+    {} as NotificationSender,
+    {} as JobContextRunner,
+  );
+
 const otpJob = {
   name: AUTH_OTP_JOB,
   timestamp: Date.parse('2026-10-01T03:00:00Z'),
@@ -24,7 +36,7 @@ const otpJob = {
 describe('NotificationsProcessor', () => {
   it('puts a driver sign-in code in the demo inbox in demo mode', async () => {
     const { fake, messages } = inbox(true);
-    await new NotificationsProcessor(fake).process(otpJob);
+    await processor(fake).process(otpJob);
     expect(messages).toEqual([
       {
         channel: 'sms',
@@ -37,15 +49,15 @@ describe('NotificationsProcessor', () => {
 
   it('fails the job without demo mode until an SMS provider exists', async () => {
     const { fake, messages } = inbox(false);
-    await expect(
-      new NotificationsProcessor(fake).process(otpJob),
-    ).rejects.toThrow(/SMS provider/);
+    await expect(processor(fake).process(otpJob)).rejects.toThrow(
+      /SMS provider/,
+    );
     expect(messages).toHaveLength(0);
   });
 
   it('puts an invitation link in the demo inbox by its channel', async () => {
     const { fake, messages } = inbox(true);
-    await new NotificationsProcessor(fake).process({
+    await processor(fake).process({
       name: AUTH_INVITE_JOB,
       timestamp: Date.parse('2026-09-30T04:30:00Z'),
       data: {
@@ -66,5 +78,9 @@ describe('NotificationsProcessor', () => {
         sentAt: '2026-09-30T04:30:00.000Z',
       },
     ]);
+  });
+
+  it('AC-NTF-06 Retryable failures back off, then fail', () => {
+    expect([1, 2, 3].map(notifyBackoff)).toEqual([30_000, 120_000, 600_000]);
   });
 });

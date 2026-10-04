@@ -164,7 +164,12 @@ describeWithDb('/invitations', () => {
         return Promise.resolve();
       },
     } as unknown as DemoInbox;
-    await new NotificationsProcessor(inbox).process(job);
+    // Only the auth jobs run here; notify.send's collaborators are not needed.
+    await new NotificationsProcessor(
+      inbox,
+      {} as ConstructorParameters<typeof NotificationsProcessor>[1],
+      {} as ConstructorParameters<typeof NotificationsProcessor>[2],
+    ).process(job);
     return messages;
   }
 

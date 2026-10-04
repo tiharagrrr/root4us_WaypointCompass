@@ -14,6 +14,7 @@ export * from './invitations/invitations.ts';
 export * from './items/items.ts';
 export * from './loading/loading.ts';
 export * from './me/me.ts';
+export * from './notifications/notifications.ts';
 export * from './order-lines/order-lines.ts';
 export * from './order-templates/order-templates.ts';
 export * from './orders/orders.ts';

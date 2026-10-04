@@ -114,3 +114,8 @@ row for every intended difference; anything else that differs is a bug.
 | 21 End-of-day summary | Close the day with no next step drawn | A confirm dialog saying what closing does (unserved and failed stops deferred, stores told, plan locked) | Closing cannot be undone |
 | 21 End-of-day summary | No empty, loading or error frame | "No trips ran on this day", skeletons in the frame's layout, and the problem with Try again | Figma has no frame for them |
 | 23 Deferrals | No empty or error frame | "No deferrals in this period" (or "No deferrals match" with filters on), and the problem with Try again; stat cards show "—" when a count fails | specs/frontend/screens.md lists 23 among the screens that need an empty state; Figma has no frame for either |
+| 02 Notifications | Tabs All, Unread, Stores and Archived | All, Unread and Stores | Nothing archives a notification yet; the column exists but no endpoint sets it |
+| 02 Notifications | Footer "Alerts also reach you by SMS when away · Settings" | No footer | There is no notification settings screen to link to yet (preferences, D12 and 18) |
+| 02 Notifications | Line titles like "Late risk · REF-07 Trip 1" | The catalog's titles, like "DRY-31 can't run" | Each title comes from the notifications catalog, shared with SMS, email and push copy |
+| 02 Notifications | The page dims behind the panel | No dimming | A popover anchored to the bell: the dashboard stays readable and live while the panel is open |
+| 02 Notifications | No empty, loading or error frame | "No notifications yet" (or "You're all caught up" on Unread), skeleton lines, and the problem with Try again | Figma has no frame for them |

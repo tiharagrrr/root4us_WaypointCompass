@@ -1,9 +1,9 @@
 ---
 module: notifications
 owner: Nimesha
-status: draft          # draft | ready | in-progress | done
+status: in-progress    # draft | ready | in-progress | done
 screens: ["02", D12]
-depends-on: [identity]
+depends-on: [identity, audit]
 ---
 
 # Notifications
@@ -38,11 +38,14 @@ switched off.
 ## Endpoints
 | Method | Path | Permission | Notes |
 | --- | --- | --- | --- |
-| GET | /me/notifications | any signed-in user | 02 bell; own rows only; cursor pages (limit default 50, max 200) |
+| GET | /me/notifications | any signed-in user | 02 bell; own in-app rows only; cursor pages (limit default 50, max 200), newest first |
+| GET | /me/notifications/summary | any signed-in user | `unread` for the badge; `_links.readAll` while there is something to mark |
+| POST | /me/notifications/{id}/read | any signed-in user | Own row, else 404; audited; announces `notification.read` to the user |
+| POST | /me/notifications/read-all | any signed-in user | Marks every unread in-app row read; one audit row |
 | GET | /notifications | admin (no matrix entry yet) | Delivery log, filterable; see Open questions |
 | GET | /dev/notifications/preview/{event} | development only | `?channel=email&locale=en`; renders a template with fixture data |
 
-Marking an item read (02, M4) and editing preferences (D12) need endpoints; see Open questions.
+Editing preferences (D12) still needs endpoints; see Open questions.
 
 ## Services and helpers
 - `modules/notifications/catalog.ts`: one entry per event with its recipients and default channels.
@@ -62,7 +65,11 @@ Marking an item read (02, M4) and editing preferences (D12) need endpoints; see 
   twilio, notifylk), PUSH_PROVIDER (webpush, disabled), DemoInbox.
 
 ## Events
-Emits: `notification.*` (names not listed yet; see Open questions).
+Emits, both routed to the one user (userIds) so only their stream carries them:
+- `notification.created` `{ notificationId, eventType }` for each new in-app row: the 02 badge and
+  list refetch.
+- `notification.read` `{ notificationIds }` when rows are read: the user's other tabs clear the
+  badge.
 
 Consumes, per the catalog:
 
@@ -107,21 +114,21 @@ Consumes, per the catalog:
 
 Progress: tick a criterion in the same PR as its passing test.
 
-- [ ] AC-NTF-01 One notification per event, person and channel
-- [ ] AC-NTF-02 A replayed event never sends twice
-- [ ] AC-NTF-03 Preferences drop a channel but never in-app
-- [ ] AC-NTF-04 Channels a person can't receive are dropped
-- [ ] AC-NTF-05 Security messages ignore preferences
-- [ ] AC-NTF-06 Retryable failures back off, then fail
-- [ ] AC-NTF-07 A permanent failure is not retried
+- [x] AC-NTF-01 One notification per event, person and channel
+- [x] AC-NTF-02 A replayed event never sends twice
+- [x] AC-NTF-03 Preferences drop a channel but never in-app
+- [x] AC-NTF-04 Channels a person can't receive are dropped
+- [x] AC-NTF-05 Security messages ignore preferences
+- [x] AC-NTF-06 Retryable failures back off, then fail
+- [x] AC-NTF-07 A permanent failure is not retried
 - [ ] AC-NTF-08 Provider receipts move the status
-- [ ] AC-NTF-09 Reading a store's deferral notice is audited
+- [x] AC-NTF-09 Reading a store's deferral notice is audited
 - [ ] AC-NTF-10 Small ETA slips stay quiet and bursts collapse
-- [ ] AC-NTF-11 A revision reaches only the people it affects
+- [x] AC-NTF-11 A revision reaches only the people it affects
 - [ ] AC-NTF-12 No push while the person is watching
-- [ ] AC-NTF-13 The bell lists only my notifications
+- [x] AC-NTF-13 The bell lists only my notifications
 - [ ] AC-NTF-14 Templates fit their channel
-- [ ] AC-NTF-15 The demo inbox shows what each person received
+- [x] AC-NTF-15 The demo inbox shows what each person received
 ```gherkin
 AC-NTF-01  One notification per event, person and channel
   Given Nimesha Periyapperuma, store manager for Fresh Kadawatha, with an email address, a push
@@ -238,23 +245,43 @@ AC-NTF-15  The demo inbox shows what each person received
 - Push on iPhone works only once the PWA is on the home screen (iOS 16.4 and later).
 - English ships first; Sinhala and Tamil are Saturday's stretch.
 
+## Built (ROO-26)
+- `domain/catalog.ts` holds the catalog above for the events that fire today: order.submitted,
+  order.rolled_to_next_run, plan.published (loaders, drivers with trips, stores), plan.revised
+  (only the drivers of the revised trips and the stores on them), deferral.confirmed,
+  deferral.store_responded, load.flag_raised, load.flag_decided, trip.released, stop.completed,
+  trip.cant_run and trip.reassigned. Recipients come from the event's routing: store managers of
+  its outlets, dispatchers of its depot (and unscoped ones), loaders of its depot, the drivers of
+  its trips, the payload's driver, the loader who raised a flag.
+- `NotificationDispatcher` runs as an EventBus consumer inside the relay's transaction. In-app rows
+  are written SENT (they need no provider); email, SMS and push rows are QUEUED and sent by the
+  worker's `notify.send` job on the notifications queue, retried after 30 s, 2 min and 10 min.
+- Providers: none is wired yet. With DEMO_MODE=true email and SMS go to the demo inbox; without it
+  a send fails at once ("no provider"). Push rows are SUPPRESSED until a push provider exists.
+- A placeholder address (`*.waypoint.local`, every driver's) counts as no email; SMS needs a
+  verified phone; push needs a device with a subscription.
+- A channel dropped by preferences or reachability is not written at all.
+- Not yet: AC-NTF-08 (provider receipts, with webhooks), AC-NTF-10 (nothing emits eta.updated yet,
+  and no burst rules), AC-NTF-12 (watching), AC-NTF-14 (preview endpoint), the admin delivery log,
+  preferences endpoints and D12, the cutoff reminder, issue.*, sync.conflict_detected,
+  vehicle.offline and comment.created entries, and Sinhala and Tamil copy (ROO-66).
+
 ## Open questions
-- Which endpoint marks an in-app notification READ (02, M4), and with what permission?
 - Which endpoints read and edit NotificationPreference, and is D12 the screen for it?
 - Which permission guards GET /notifications? The Step 2 matrix has no notification resource.
-- What are the notification.* event names, including the one that drives the 02 unread count?
-- Is a channel dropped by preferences written as a SUPPRESSED row, or not written at all?
 - What are the burst window and the event groups for quiet rules?
 - How does the server know a user has "that record open" on a live stream?
 - Where does the email suppression list live? notifications.ts has no table for it.
-- What is the audit action name for reading a store's deferral notice?
-- Which loaders count as "affected" by plan.revised?
 - Is the eta.updated slip measured against the planned ETA or the last one notified?
-- trip.released lists Push and SMS only, while in-app is "always on": does it get an in-app row?
 - How does the webhooks.inbound job update Notification rows when webhooks may import only core?
 - Which event and recipients carry "admins are notified" for a DEAD webhook delivery?
 - Which event triggers the 15:30 cutoff reminder from the ticker?
-- Which log event names does the module write?
 
 ## Changelog
 - 2026-09-30 created from the Build Spec
+- 2026-10-04 ROO-26: catalog, dispatcher, notify.send with backoff, demo-inbox delivery, the bell
+  endpoints and the 02 panel. Reading is audited as `notifications.notification.read` (and
+  `notifications.notification.all_read`); plan.revised reaches drivers and stores only, since the
+  dock already follows load.list_updated live; trip.released gets an in-app row too, since in-app
+  is always on. Logs: notifications.event.dispatched and notifications.notification.{sent,
+  retrying, failed, suppressed, read}.
