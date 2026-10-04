@@ -2,6 +2,8 @@
 import { useOrdersList, useOrdersSetPriority, type OrderDto } from '@compass/api-client'
 import { addDays } from '@waypoint/shared'
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { HeaderActions } from '@/app/layouts/header-actions'
 import { usePageHeader } from '@/app/layouts/header-slot'
 import { toColomboDate } from '@/lib/format-colombo'
 import { getLink } from '@/lib/links'
@@ -10,6 +12,7 @@ import { Action } from '@/ui/action'
 import { Button } from '@/ui/button'
 import { Input } from '@/ui/input'
 import { Pagination } from '@/ui/pagination'
+import { SegmentedControl } from '@/ui/segmented-control'
 import { Skeleton } from '@/ui/skeleton'
 import { EmptyState, ErrorState } from '@/ui/states'
 import { StatusChip, type StatusTone } from '@/ui/status-chip'
@@ -66,6 +69,7 @@ function groupOf(orders: readonly OrderDto[]): Group[] {
  * order's own `_links`, so an order past PLANNED simply has no buttons.
  */
 export function OrderQueuePage() {
+  const navigate = useNavigate()
   const [date, setDate] = useState(() => addDays(toColomboDate(serverNow()), 1))
   const [search, setSearch] = useState('')
   const [offset, setOffset] = useState(0)
@@ -102,6 +106,17 @@ export function OrderQueuePage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <HeaderActions>
+        <SegmentedControl<'queue' | 'past'>
+          aria-label="Orders"
+          value="queue"
+          onValueChange={(v) => v === 'past' && void navigate('/dispatch/past-orders')}
+          options={[
+            { value: 'queue', label: 'Queue' },
+            { value: 'past', label: 'Past runs' },
+          ]}
+        />
+      </HeaderActions>
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="type-label uppercase text-muted-foreground">Delivery day</span>

@@ -361,3 +361,5 @@ Screen-specific states and actions, from Step 8:
   come from @material-symbols. The dock and driver areas are `/dock` and `/driver`, as Step 8 says.
 - 2026-09-30 created from the Build Spec
 - 2026-10-01 M1, M1a, M1b and M2 built on mocks with the store shell (ROO-20)
+- 2026-10-04 04 Past orders built (ROO-35); 03 and 04 share a Queue / Past runs switch, and the
+  sidebar's Order queue entry stays lit on both
